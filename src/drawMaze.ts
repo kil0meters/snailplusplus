@@ -1,5 +1,4 @@
 // TODO: Switch to uint8array
-let ctx: OffscreenCanvasRenderingContext2D;
 let canvas: OffscreenCanvas;
 
 type RenderGrid = {
@@ -15,19 +14,23 @@ type SetCanvas = {
 onmessage = function(e: MessageEvent<RenderGrid | SetCanvas>) {
   if ("canvas" in e.data) {
     canvas = e.data.canvas;
-
-    //@ts-ignore
-    ctx = canvas.getContext("2d", { alpha: false });
-
-    ctx.translate(.5,.5);
-    ctx.lineWidth = 1;
-    ctx.fillStyle = "#110aef";
-    ctx.strokeStyle = "#068fef";
-
     return;
   }
 
   let {grid, width, height } = e.data;
+
+  canvas.width = width * 10 + 1;
+  canvas.height = height * 10 + 1;
+
+  console.log(`Generating ${width}x${height} maze`);
+
+  let ctx: CanvasRenderingContext2D  = canvas.getContext("2d", { alpha: false });
+
+  ctx.resetTransform();
+  ctx.translate(.5,.5);
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "#110aef";
+  ctx.strokeStyle = "#068fef";
 
   // ctx.clearRect(0, 0, canvas.width, gridCanvas.height);
   ctx.fillRect(0, 0, canvas.width, canvas.height);

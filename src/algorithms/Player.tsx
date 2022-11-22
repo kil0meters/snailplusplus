@@ -1,8 +1,31 @@
-import { Component, createEffect, createSignal, onMount } from 'solid-js';
+import { Component, createEffect, createSignal, onMount, untrack } from 'solid-js';
 import SnailMaze, { BaseMazeProps } from '../SnailMaze';
 
 const PlayerMaze: Component<BaseMazeProps> = (props) => {
-  let [movement, setMovement] = createSignal(0);
+  let inputQueue: number[] = [];
+  let cb: (movement: number) => void | undefined;
+
+  function queueEnqueue(queue: number[], add: number) {
+    if (queue.length >= 2) queue[1] = add;
+    else queue.push(add);
+
+    if (cb && queue.length == 1) {
+      cb(add);
+      cb = undefined;
+    }
+  }
+
+  function queueDequeue(queue: number[], remove: number) {
+    let removed: number | undefined;
+
+    if (queue[0] === remove) removed = queue.shift();
+    if (queue[1] === remove) removed = queue.pop();
+
+    if (cb && removed && queue.length != 0) {
+      cb(queue[0]);
+      cb = undefined;
+    }
+  }
 
   const keyPressed = (e: KeyboardEvent) => {
     if (e.repeat) return;
@@ -10,19 +33,19 @@ const PlayerMaze: Component<BaseMazeProps> = (props) => {
     switch (e.key) {
       case 'w':
       case 'W':
-        setMovement(8);
+        queueEnqueue(inputQueue, 8);
         break;
       case 'a':
       case 'A':
-        setMovement(2);
+        queueEnqueue(inputQueue, 2);
         break;
       case 's':
       case 'S':
-        setMovement(4);
+        queueEnqueue(inputQueue, 4);
         break;
       case 'd':
       case 'D':
-        setMovement(1);
+        queueEnqueue(inputQueue, 1);
         break;
     }
   };
@@ -33,22 +56,31 @@ const PlayerMaze: Component<BaseMazeProps> = (props) => {
     switch (e.key) {
       case 'w':
       case 'W':
-        setMovement((movement() == 8) ? 0 : movement);
+        queueDequeue(inputQueue, 8);
         break;
       case 'a':
       case 'A':
-        setMovement((movement() == 2) ? 0 : movement);
+        queueDequeue(inputQueue, 2);
         break;
       case 's':
       case 'S':
-        setMovement((movement() == 4) ? 0 : movement);
+        queueDequeue(inputQueue, 4);
         break;
       case 'd':
       case 'D':
-        setMovement((movement() == 1) ? 0 : movement);
+        queueDequeue(inputQueue, 1);
         break;
     }
   };
+
+  const onMove = (_: number, cell: number, callback: (next: number) => void) => {
+    if (inputQueue.length == 0 || (cell & inputQueue[0]) != 0) {
+      cb = callback;
+    } else {
+      callback(inputQueue[0]);
+      cb = undefined;
+    }
+  }
 
   let divRef: HTMLDivElement;
 
@@ -66,7 +98,7 @@ const PlayerMaze: Component<BaseMazeProps> = (props) => {
 
       <SnailMaze
         animate={true}
-        movement={movement()}
+        onMove={onMove}
         height={props.height}
         width={props.width}
         onScore={props.onScore}

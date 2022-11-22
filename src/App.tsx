@@ -6,6 +6,8 @@ import ScoreProvider, { ScoreContext } from './ScoreProvider';
 import ShopProvider, { ShopContext, ShopItem } from './ShopProvider';
 import "../assets/font.woff2";
 import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
+import HoldLeftMaze from './algorithms/HoldLeft';
+import { createStoredSignal } from './utils';
 
 const PRICE_SCALER = 1.15;
 
@@ -21,7 +23,7 @@ const ShopListing: Component<ShopItem> = (props) => {
       setShop(
         (shopItem) => shopItem.key === props.key,
         "count",
-        (count) => count + 1
+        (count) => count + 100
       );
     }
   };
@@ -135,12 +137,24 @@ const ShopMazes: Component<ShopItem> = (props) => {
         <RandomWalkMaze
           glasses={upgrades.find(x => x.key == "glasses").owned}
           class={shopMazeClasses}
+          height={3}
+          width={3}
+          onScore={updateScore}
+        />
+      }</For>
+    );
+  }
+  else if (props.key == "hold-left") {
+    return (
+      <For each={Array(props.count)}>{() =>
+        <HoldLeftMaze
+          class={shopMazeClasses}
           height={5}
           width={5}
           onScore={updateScore}
         />
       }</For>
-    );
+    )
   }
 
   return <></>;
@@ -167,6 +181,7 @@ const AutoMazes: Component = () => {
 const Game: Component = () => {
   const [score, setScore] = useContext(ScoreContext);
   const updateScore = (newScore: number) => setScore(score() + newScore);
+  const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 3);
 
   const [displayedScore, setDisplayedScore] = createSignal(score());
 
@@ -194,11 +209,11 @@ const Game: Component = () => {
 
   return (
     <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
-      <div class='flex flex-col gap-8 h-full overflow-auto pb-8'>
+      <div class='flex flex-col gap-8 h-full overflow-auto pb-16'>
         <div class='p-8 bg-black flex justify-center'>
           <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} MAZE FRAGMENTS</span>
         </div>
-        <PlayerMaze class='min-h-[70vh] h-full' height={10} width={10} onScore={updateScore} />
+        <PlayerMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score) => { updateScore(score); setMazeSize(mazeSize() + 1); }} />
         <AutoMazes />
       </div>
       <Shop />

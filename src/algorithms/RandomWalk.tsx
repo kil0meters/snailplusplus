@@ -6,11 +6,11 @@ interface RandomWalkProps extends BaseMazeProps {
 }
 
 const RandomWalkMaze: Component<RandomWalkProps> = (props) => {
-  let [movement, setMovement] = createSignal(0);
+  let timeoutId: number | undefined;
 
-  let id;
+  const onMove = (_movement: number, cell: number, callback: (next: number) => void) => {
+    if (timeoutId) clearTimeout(timeoutId);
 
-  const onMove = (cell: number) => {
     if (props.glasses) {
       let options = [];
 
@@ -19,25 +19,21 @@ const RandomWalkMaze: Component<RandomWalkProps> = (props) => {
       if ((cell & 4) == 0) options.push(4);
       if ((cell & 8) == 0) options.push(8);
 
-      setMovement(options[Math.floor(Math.random() * options.length)]);
+      callback(options[Math.floor(Math.random() * options.length)]);
+    } else {
+      let movement = 1 << Math.floor(Math.random() * 4);
+
+      if ((cell & movement) != 0) {
+        timeoutId = setTimeout(callback, SNAIL_MOVEMENT_TIME, movement);
+      } else {
+        callback(movement);
+      }
     }
   };
-
-  createEffect(() => {
-    if (props.glasses) {
-      if (id) clearInterval(id);
-    } else {
-      id = setInterval(() => {
-        setMovement(1 << Math.floor(Math.random() * 4));
-      }, SNAIL_MOVEMENT_TIME);
-    }
-  })
-
 
   return (
     <SnailMaze
       animate={true}
-      movement={movement()}
       onMove={onMove}
       height={props.height}
       width={props.width}
