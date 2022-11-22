@@ -280,7 +280,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   });
 
   return (
-    <div ref={container} class={`flex items-center justify-center h-full ${props.class}`}>
+    <div ref={container} class={`flex items-center justify-center ${props.class}`}>
       <canvas
         ref={canvas}
         width={props.width * 10 + 1}

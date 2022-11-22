@@ -109,9 +109,9 @@ const Game: Component = () => {
 
   return (
     <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden'>
-      <div class='flex flex-col gap-4 h-full overflow-auto p-8'>
+      <div class='flex flex-col gap-8 h-full overflow-auto p-8'>
         <span class='text-4xl text-center font-extrabold'>{score()} MAZE FRAGMENTS</span>
-        <PlayerMaze class='min-h-[70vh]' height={10} width={10} onScore={updateScore} />
+        <PlayerMaze class='min-h-[70vh] h-full' height={10} width={10} onScore={updateScore} />
         <AutoMazes />
       </div>
       <Shop />
