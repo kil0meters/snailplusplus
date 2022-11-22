@@ -11,6 +11,9 @@ module.exports = {
         'blue': '0 0px 10px 0px rgba(0, 0, 255, 0.5)'
       }
     },
+    fontFamily: {
+      'pixelated': ['"Press Start 2P"', "monospace"]
+    }
   },
   plugins: [],
 };

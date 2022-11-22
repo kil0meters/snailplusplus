@@ -1,10 +1,10 @@
-import { Component, createSignal, For, onCleanup, useContext } from 'solid-js';
+import { Component, createEffect, createSignal, For, onCleanup, useContext } from 'solid-js';
 import music from '../assets/gameplay.mp3';
 import PlayerMaze from './algorithms/Player';
 import RandomWalkMaze from './algorithms/RandomWalk';
 import ScoreProvider, { ScoreContext } from './ScoreProvider';
 import ShopProvider, { ShopContext, ShopItem } from './ShopProvider';
-
+import "../assets/font.woff2";
 
 const PRICE_SCALER = 1.15;
 
@@ -74,10 +74,18 @@ const ShopMazes: Component<ShopItem> = (props) => {
 
   const updateScore = (newScore: number) => setScore(score() + newScore);
 
+  const shopMazeClasses = 'w-[101px] h-[101px] hover:scale-[200%] hover:z-50 transition-all hover:shadow-blue'
+
   if (props.key == "random-walk") {
     return (
       <For each={Array(props.count)}>{() =>
-        <RandomWalkMaze class='w-[101px] h-[101px]' height={5} width={5} onScore={updateScore} />
+        <RandomWalkMaze
+          glasses={true}
+          class={shopMazeClasses}
+          height={5}
+          width={5}
+          onScore={updateScore}
+        />
       }</For>
     );
   }
@@ -107,10 +115,36 @@ const Game: Component = () => {
   const [score, setScore] = useContext(ScoreContext);
   const updateScore = (newScore: number) => setScore(score() + newScore);
 
+  const [displayedScore, setDisplayedScore] = createSignal(score());
+
+  createEffect(() => {
+    let difference = score() - displayedScore();
+    let prev = new Date();
+
+    if (difference < 0) {
+      setDisplayedScore(score());
+      return;
+    }
+
+    const animate = () => {
+      let now = new Date();
+      let dt = now.valueOf() - prev.valueOf();
+      setDisplayedScore(Math.min(displayedScore() + difference * dt / 1000, score()));
+
+      if (displayedScore() != score()) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  });
+
   return (
-    <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden'>
-      <div class='flex flex-col gap-8 h-full overflow-auto p-8'>
-        <span class='text-4xl text-center font-extrabold'>{score()} MAZE FRAGMENTS</span>
+    <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
+      <div class='flex flex-col gap-8 h-full overflow-auto pb-8'>
+        <div class='p-8 bg-black flex justify-center'>
+          <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} MAZE FRAGMENTS</span>
+        </div>
         <PlayerMaze class='min-h-[70vh] h-full' height={10} width={10} onScore={updateScore} />
         <AutoMazes />
       </div>
@@ -121,7 +155,7 @@ const Game: Component = () => {
 
 const App: Component = () => {
   let audio;
-  const [gameStarted, setGameStarted] = createSignal(false);
+  const [gameStarted, setGameStarted] = createSignal(true);
 
   const startGame = () => {
     setGameStarted(true);

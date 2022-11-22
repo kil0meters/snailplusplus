@@ -1,4 +1,4 @@
-import { Component, createSignal, onMount } from 'solid-js';
+import { Component, createEffect, createSignal, onMount } from 'solid-js';
 import SnailMaze, { BaseMazeProps } from '../SnailMaze';
 
 const PlayerMaze: Component<BaseMazeProps> = (props) => {
@@ -65,6 +65,7 @@ const PlayerMaze: Component<BaseMazeProps> = (props) => {
       onKeyUp={keyReleased}>
 
       <SnailMaze
+        animate={true}
         movement={movement()}
         height={props.height}
         width={props.width}
@@ -73,6 +74,7 @@ const PlayerMaze: Component<BaseMazeProps> = (props) => {
       />
     </div>
   );
+
 }
 
 export default PlayerMaze;
