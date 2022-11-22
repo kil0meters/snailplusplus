@@ -1,10 +1,11 @@
-import { Component, createEffect, createSignal, For, onCleanup, useContext } from 'solid-js';
+import { Component, createEffect, createSignal, For, on, onCleanup, useContext } from 'solid-js';
 import music from '../assets/gameplay.mp3';
 import PlayerMaze from './algorithms/Player';
 import RandomWalkMaze from './algorithms/RandomWalk';
 import ScoreProvider, { ScoreContext } from './ScoreProvider';
 import ShopProvider, { ShopContext, ShopItem } from './ShopProvider';
 import "../assets/font.woff2";
+import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
 
 const PRICE_SCALER = 1.15;
 
@@ -37,8 +38,44 @@ const ShopListing: Component<ShopItem> = (props) => {
   );
 }
 
+const UpgradeListing: Component<Upgrade> = (props) => {
+  const [score, setScore] = useContext(ScoreContext);
+  const [_shop, setUpgrades] = useContext(UpgradesContext);
+
+  const buy = () => {
+    if (props.owned) {
+      setScore(score() + props.price)
+      setUpgrades(
+        (item) => item.key === props.key,
+        "owned",
+        () => false
+      );
+    } else {
+      if (score() >= props.price) {
+        setScore(score() - props.price)
+        setUpgrades(
+          (item) => item.key === props.key,
+          "owned",
+          () => true
+        );
+      }
+    }
+  };
+
+  return <>
+    <button
+      onClick={buy}
+      class={
+        `aspect-square border-4 border-black p-2 transition-all outline-black outline outline-0 hover:outline-4 ${props.owned ? "bg-black text-white" : "bg-white text-black"}`
+      }>
+      {props.name}
+    </button>
+  </>
+}
+
 const Shop: Component = () => {
   const [shop, setShop] = useContext(ShopContext);
+  const [upgrades, _setUpgrades] = useContext(UpgradesContext);
 
   const reset = () => {
     setShop(() => true, "count", () => 0);
@@ -50,7 +87,15 @@ const Shop: Component = () => {
         <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
 
         <div class='flex gap-4'>
-          <button class='aspect-square border-4 border-black p-2 hover:bg-black transition-colors text-black hover:text-white'>Glasses</button>
+          <For each={upgrades}>{item =>
+            <UpgradeListing
+              key={item.key}
+              name={item.name}
+              description={item.description}
+              price={item.price}
+              owned={item.owned}
+            />
+          }</For>
         </div>
       </div>
 
@@ -71,16 +116,24 @@ const Shop: Component = () => {
 
 const ShopMazes: Component<ShopItem> = (props) => {
   const [score, setScore] = useContext(ScoreContext);
+  const [upgrades, _] = useContext(UpgradesContext);
 
   const updateScore = (newScore: number) => setScore(score() + newScore);
 
   const shopMazeClasses = 'w-[101px] h-[101px] hover:scale-[200%] hover:z-50 transition-all hover:shadow-blue'
 
   if (props.key == "random-walk") {
+    // let hasGlasses = false; // upgrades.find(x => x.key == "glasses").owned;
+
+    // createEffect(() => {
+    //   console.log("hello");
+    //   hasGlasses = upgrades.find(x => x.key == "glasses").owned;
+    // });
+
     return (
       <For each={Array(props.count)}>{() =>
         <RandomWalkMaze
-          glasses={true}
+          glasses={upgrades.find(x => x.key == "glasses").owned}
           class={shopMazeClasses}
           height={5}
           width={5}
@@ -175,20 +228,22 @@ const App: Component = () => {
   });
 
   return (
-    <ShopProvider>
-      <ScoreProvider>
-        <div class='h-screen grid'>
-          {gameStarted() ? (
-            <Game />
-          ) : (
-            <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
-              <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
-              <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
-            </div>
-          )}
-        </div>
-      </ScoreProvider>
-    </ShopProvider>
+    <UpgradesProvider>
+      <ShopProvider>
+        <ScoreProvider>
+          <div class='h-screen grid'>
+            {gameStarted() ? (
+              <Game />
+            ) : (
+              <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
+                <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
+                <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
+              </div>
+            )}
+          </div>
+        </ScoreProvider>
+      </ShopProvider>
+    </UpgradesProvider>
   );
 };
 

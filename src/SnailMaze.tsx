@@ -16,7 +16,7 @@ interface SnailMazeProps extends BaseMazeProps {
   onMove?: (cell: number) => void;
 };
 
-const SNAIL_MOVEMENT_TIME = 250;
+export const SNAIL_MOVEMENT_TIME = 250;
 
 const SnailMaze: Component<SnailMazeProps> = (props) => {
   const [grid, setGrid] = createSignal(new Uint8Array);

@@ -1,5 +1,5 @@
 import { Component, createEffect, createSignal } from 'solid-js';
-import SnailMaze, { BaseMazeProps } from '../SnailMaze';
+import SnailMaze, { BaseMazeProps, SNAIL_MOVEMENT_TIME } from '../SnailMaze';
 
 interface RandomWalkProps extends BaseMazeProps {
   glasses?: boolean,
@@ -7,6 +7,8 @@ interface RandomWalkProps extends BaseMazeProps {
 
 const RandomWalkMaze: Component<RandomWalkProps> = (props) => {
   let [movement, setMovement] = createSignal(0);
+
+  let id;
 
   const onMove = (cell: number) => {
     if (props.glasses) {
@@ -18,10 +20,19 @@ const RandomWalkMaze: Component<RandomWalkProps> = (props) => {
       if ((cell & 8) == 0) options.push(8);
 
       setMovement(options[Math.floor(Math.random() * options.length)]);
-    } else {
-      setMovement(1 << Math.floor(Math.random() * 4));
     }
   };
+
+  createEffect(() => {
+    if (props.glasses) {
+      if (id) clearInterval(id);
+    } else {
+      id = setInterval(() => {
+        setMovement(1 << Math.floor(Math.random() * 4));
+      }, SNAIL_MOVEMENT_TIME);
+    }
+  })
+
 
   return (
     <SnailMaze
