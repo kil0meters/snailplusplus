@@ -249,8 +249,6 @@ const App: Component = () => {
   let canvas: HTMLCanvasElement;
 
   init().then(() => {
-    // let lattice = new SnailLattice(4, 10, 100);
-
     loaded = true;
 
     let seed = new Uint16Array(1);
