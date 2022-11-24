@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal, For, on, onCleanup, useContext } from 'solid-js';
+import { Component, createEffect, createSignal, onCleanup, useContext, For } from 'solid-js';
 import music from '../assets/gameplay.mp3';
 import PlayerMaze from './algorithms/Player';
 import RandomWalkMaze from './algorithms/RandomWalk';
@@ -8,6 +8,7 @@ import "../assets/font.woff2";
 import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
 import HoldLeftMaze from './algorithms/HoldLeft';
 import { createStoredSignal } from './utils';
+import init, { SnailLattice } from "snail-lattice";
 
 const PRICE_SCALER = 1.15;
 
@@ -235,31 +236,93 @@ const App: Component = () => {
     audio.play()
   }
 
+  let loaded = true;
+
   onCleanup(() => {
+    loaded = false;
     if (audio) {
       audio.onended = undefined;
       audio.pause();
     }
   });
 
+  let canvas: HTMLCanvasElement;
+
+  init().then(() => {
+    // let lattice = new SnailLattice(4, 10, 100);
+
+    loaded = true;
+
+    let seed = new Uint16Array(1);
+    self.crypto.getRandomValues(seed);
+
+    let start = performance.now();
+    let lattice = new SnailLattice(26, 5, 676, seed[0]);
+    let end = performance.now();
+
+    console.log(`${end - start}`);
+
+    let [width, height] = lattice.get_dimensions();
+
+    let buffer = new Uint8Array(width * height * 4);
+
+    canvas.width = width;
+    canvas.height = height;
+
+    let ctx = canvas.getContext("2d", { alpha: false });
+
+    let prev = performance.now();
+    let renderloop = () => {
+      if (!loaded) return;
+
+      let now = performance.now();
+      let dt = Math.floor((now - prev) * 1000);
+      console.log(`FPS: ${1000/(now - prev)}`);
+      prev = now;
+
+      lattice.tick(dt*2);
+      lattice.render(buffer);
+
+      let imageData = new ImageData(
+        new Uint8ClampedArray(buffer),
+        width,
+        height
+      );
+
+      ctx.putImageData(imageData, 0, 0);
+
+      requestAnimationFrame(renderloop);
+    }
+
+    requestAnimationFrame(renderloop);
+  });
+
   return (
     <UpgradesProvider>
       <ShopProvider>
         <ScoreProvider>
-          <div class='h-screen grid'>
-            {gameStarted() ? (
-              <Game />
-            ) : (
-              <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
-                <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
-                <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
-              </div>
-            )}
-          </div>
+          <canvas
+            class='ml-4 mt-4'
+            ref={canvas}
+            style={{
+              "image-rendering": "pixelated",
+            }}
+          >
+          </canvas>
         </ScoreProvider>
       </ShopProvider>
     </UpgradesProvider>
   );
 };
+          // <div class='h-screen grid'>
+          //   {gameStarted() ? (
+          //     <Game />
+          //   ) : (
+          //     <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
+          //       <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
+          //       <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
+          //     </div>
+          //   )}
+          // </div>
 
 export default App;

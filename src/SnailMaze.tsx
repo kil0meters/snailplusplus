@@ -2,6 +2,7 @@ import { batch, Component, createEffect, createMemo, createSignal, on, onCleanup
 import snail from '../assets/snail.png';
 import goal from '../assets/goal.png';
 import { generateMaze } from './utils';
+import init, { SnailLattice } from "snail-lattice";
 
 export interface BaseMazeProps {
   onScore: (score: number) => void;
@@ -250,6 +251,12 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(gridCanvas, 0, 0);
+
+    // let data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // // this works (trust me)
+    // make_white(data.data as unknown as Uint8Array);
+    // ctx.putImageData(data, 0, 0);
 
     // right
     if ((lastMovement() & 1) != 0) {
