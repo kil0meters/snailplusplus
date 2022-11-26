@@ -3,6 +3,7 @@ import snail from '../assets/snail.png';
 import goal from '../assets/goal.png';
 import { generateMaze } from './utils';
 import init, { SnailLattice } from "snail-lattice";
+import drawMaze from "./drawMaze";
 
 export interface BaseMazeProps {
   onScore: (score: number) => void;
@@ -214,23 +215,11 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
   const gridCanvas = document.createElement('canvas');
 
-  let canvasWorker = gridCanvas.transferControlToOffscreen();
-
-  const renderGridWorker = new Worker(new URL("./drawMaze.ts", import.meta.url));
-  renderGridWorker.postMessage(
-    { canvas: canvasWorker },
-    [canvasWorker]
-  );
-
   // render grid whenever grid changes
   createEffect(() => {
     if (grid().length != props.width * props.height) return;
 
-    renderGridWorker.postMessage({
-      grid: grid(),
-      width: props.width,
-      height: props.height
-    })
+    drawMaze(gridCanvas, grid(), props.width, props.height);
   });
 
   function drawImage(image: HTMLImageElement, x: number, y: number, rotation: number, flip?: boolean){
@@ -320,7 +309,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   const updateScale = () => {
     const scaleX = container.clientWidth / canvas.width;
     const scaleY = container.clientHeight / canvas.height;
-    setScale(Math.min(scaleX, scaleY));
+    setScale(Math.floor(Math.min(scaleX, scaleY)));
   }
 
   createEffect(() => {

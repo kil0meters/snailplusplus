@@ -4,16 +4,15 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopItem[], SetStoreFunction<ShopItem[]>]>();
 
-type ShopKey = "random-walk" | "hold-left" | "tremaux";
+export type ShopKey = "random-walk" | "hold-left" | "tremaux";
 
-export type ShopItem = {
+export interface ShopItem {
   key: ShopKey;
   name: string;
   description: string;
   price: number;
   count: number;
-}
-
+};
 
 export const shopItems: ShopItem[] = [
   {
@@ -27,14 +26,14 @@ export const shopItems: ShopItem[] = [
     "key": "hold-left",
     "name": "Hold Left Wall",
     "description": "At least it's not unbounded!",
-    "price": 1000,
+    "price": 500,
     "count": 0
   },
   {
     "key": "tremaux",
     "name": "Trémaux's algorithm",
     "description": "It's french",
-    "price": 2000,
+    "price": 1500,
     "count": 0
   }
 ];

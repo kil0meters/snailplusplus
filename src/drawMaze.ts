@@ -1,24 +1,4 @@
-// TODO: Switch to uint8array
-let canvas: OffscreenCanvas;
-
-type RenderGrid = {
-  grid: Uint8Array,
-  width: number,
-  height: number,
-};
-
-type SetCanvas = {
- canvas: OffscreenCanvas
-};
-
-onmessage = function(e: MessageEvent<RenderGrid | SetCanvas>) {
-  if ("canvas" in e.data) {
-    canvas = e.data.canvas;
-    return;
-  }
-
-  let {grid, width, height } = e.data;
-
+export default function drawMaze(canvas, grid, width, height) {
   canvas.width = width * 10 + 1;
   canvas.height = height * 10 + 1;
 

@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import wasm from "vite-plugin-wasm";
+// import wasm from "vite-plugin-wasm";
+import wasmPack from 'vite-plugin-wasm-pack';
 
 export default defineConfig({
   plugins: [
     solidPlugin(),
-    wasm()
+    wasmPack(["./snail-lattice"])
   ],
   server: {
     port: 3000,

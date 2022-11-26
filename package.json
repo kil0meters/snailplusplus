@@ -21,7 +21,6 @@
   "dependencies": {
     "@popperjs/core": "^2.11.6",
     "@types/offscreencanvas": "^2019.7.0",
-    "snail-lattice": "^0.1.0",
     "solid-js": "^1.5.1",
     "solid-popper": "^0.2.1",
     "solid-transition-group": "^0.0.12"

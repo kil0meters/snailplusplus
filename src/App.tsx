@@ -1,14 +1,12 @@
 import { Component, createEffect, createSignal, onCleanup, useContext, For } from 'solid-js';
 import music from '../assets/gameplay.mp3';
 import PlayerMaze from './algorithms/Player';
-import RandomWalkMaze from './algorithms/RandomWalk';
 import ScoreProvider, { ScoreContext } from './ScoreProvider';
 import ShopProvider, { ShopContext, ShopItem } from './ShopProvider';
 import "../assets/font.woff2";
 import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
-import HoldLeftMaze from './algorithms/HoldLeft';
 import { createStoredSignal } from './utils';
-import init, { SnailLattice } from "snail-lattice";
+import AutoMazes from './AutoMazes';
 
 const PRICE_SCALER = 1.15;
 
@@ -24,7 +22,7 @@ const ShopListing: Component<ShopItem> = (props) => {
       setShop(
         (shopItem) => shopItem.key === props.key,
         "count",
-        (count) => count + 100
+        (count) => count + 1
       );
     }
   };
@@ -117,68 +115,6 @@ const Shop: Component = () => {
   );
 }
 
-const ShopMazes: Component<ShopItem> = (props) => {
-  const [score, setScore] = useContext(ScoreContext);
-  const [upgrades, _] = useContext(UpgradesContext);
-
-  const updateScore = (newScore: number) => setScore(score() + newScore);
-
-  const shopMazeClasses = 'w-[101px] h-[101px] hover:scale-[200%] hover:z-50 transition-all hover:shadow-blue'
-
-  if (props.key == "random-walk") {
-    // let hasGlasses = false; // upgrades.find(x => x.key == "glasses").owned;
-
-    // createEffect(() => {
-    //   console.log("hello");
-    //   hasGlasses = upgrades.find(x => x.key == "glasses").owned;
-    // });
-
-    return (
-      <For each={Array(props.count)}>{() =>
-        <RandomWalkMaze
-          glasses={upgrades.find(x => x.key == "glasses").owned}
-          class={shopMazeClasses}
-          height={3}
-          width={3}
-          onScore={updateScore}
-        />
-      }</For>
-    );
-  }
-  else if (props.key == "hold-left") {
-    return (
-      <For each={Array(props.count)}>{() =>
-        <HoldLeftMaze
-          class={shopMazeClasses}
-          height={5}
-          width={5}
-          onScore={updateScore}
-        />
-      }</For>
-    )
-  }
-
-  return <></>;
-};
-
-const AutoMazes: Component = () => {
-  const [shop, _setShop] = useContext(ShopContext);
-
-  return (
-    <div class="self-center grid grid-cols-[repeat(7,min-content)]">
-      <For each={shop}>
-        {item => <ShopMazes
-          key={item.key}
-          name={item.name}
-          description={item.description}
-          price={item.price}
-          count={item.count}
-          />}
-      </For>
-    </div>
-  )
-};
-
 const Game: Component = () => {
   const [score, setScore] = useContext(ScoreContext);
   const updateScore = (newScore: number) => setScore(score() + newScore);
@@ -236,91 +172,31 @@ const App: Component = () => {
     audio.play()
   }
 
-  let loaded = true;
-
   onCleanup(() => {
-    loaded = false;
     if (audio) {
       audio.onended = undefined;
       audio.pause();
     }
   });
 
-  let canvas: HTMLCanvasElement;
-
-  init().then(() => {
-    loaded = true;
-
-    let seed = new Uint16Array(1);
-    self.crypto.getRandomValues(seed);
-
-    let start = performance.now();
-    let lattice = new SnailLattice(26, 5, 676, seed[0]);
-    let end = performance.now();
-
-    console.log(`${end - start}`);
-
-    let [width, height] = lattice.get_dimensions();
-
-    let buffer = new Uint8Array(width * height * 4);
-
-    canvas.width = width;
-    canvas.height = height;
-
-    let ctx = canvas.getContext("2d", { alpha: false });
-
-    let prev = performance.now();
-    let renderloop = () => {
-      if (!loaded) return;
-
-      let now = performance.now();
-      let dt = Math.floor((now - prev) * 1000);
-      console.log(`FPS: ${1000/(now - prev)}`);
-      prev = now;
-
-      lattice.tick(dt*2);
-      lattice.render(buffer);
-
-      let imageData = new ImageData(
-        new Uint8ClampedArray(buffer),
-        width,
-        height
-      );
-
-      ctx.putImageData(imageData, 0, 0);
-
-      requestAnimationFrame(renderloop);
-    }
-
-    requestAnimationFrame(renderloop);
-  });
-
   return (
     <UpgradesProvider>
       <ShopProvider>
         <ScoreProvider>
-          <canvas
-            class='ml-4 mt-4'
-            ref={canvas}
-            style={{
-              "image-rendering": "pixelated",
-            }}
-          >
-          </canvas>
+          <div class='h-screen grid'>
+            {gameStarted() ? (
+              <Game />
+            ) : (
+                <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
+                  <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
+                  <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
+                </div>
+              )}
+          </div>
         </ScoreProvider>
       </ShopProvider>
     </UpgradesProvider>
   );
 };
-          // <div class='h-screen grid'>
-          //   {gameStarted() ? (
-          //     <Game />
-          //   ) : (
-          //     <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
-          //       <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
-          //       <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
-          //     </div>
-          //   )}
-          // </div>
 
 export default App;

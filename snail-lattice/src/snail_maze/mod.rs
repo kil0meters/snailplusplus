@@ -1,22 +1,23 @@
+mod hold_left;
+mod random_walk;
+mod direction;
+
 use bit_vec::BitVec;
 
-use crate::{utils::Vec2, lfsr::LFSR};
+use crate::{utils::Vec2, lfsr::LFSR, snail_lattice::MazeType};
+
+use self::direction::Direction;
+use crate::utils::console_log;
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x68, 0x8F, 0xEF];
 const SNAIL_MOVEMENT_TIME: usize = 250000;
 const ANIMATION_TIME: usize = 500000;
 
-#[derive(Clone, Copy)]
-enum Direction {
-    Up = 0,
-    Down = 1,
-    Left = 2,
-    Right = 3
-}
-
 #[derive(Clone)]
 pub struct SnailMaze {
+    maze_type: MazeType,
+
     // logical dimensions
     width: usize,
     height: usize,
@@ -37,8 +38,10 @@ pub struct SnailMaze {
 }
 
 impl SnailMaze {
-    pub fn new(width: usize, height: usize) -> SnailMaze {
+    pub fn new(maze_type: MazeType, width: usize, height: usize) -> SnailMaze {
         SnailMaze {
+            maze_type,
+
             width,
             height,
 
@@ -155,59 +158,41 @@ impl SnailMaze {
                 // Checking the bottom wall is redundant
                 if y % 10 == 0 && self.maze[loc] {
                     for l in (px..(px + 4 * 10)).step_by(4) {
-                        buffer[l] = SNAIL_FG[0];
-                        buffer[l + 1] = SNAIL_FG[1];
-                        buffer[l + 2] = SNAIL_FG[2];
-                        buffer[l + 3] = 0xFF;
+                        draw_pixel(buffer, l, SNAIL_FG);
                     }
                 }
 
                 else {
                     // if left wall, checking right wall is redundant
                     if self.maze[loc + 2] || y % 10 == 0 {
-                        buffer[px] = SNAIL_FG[0];
-                        buffer[px + 1] = SNAIL_FG[1];
-                        buffer[px + 2] = SNAIL_FG[2];
-                        buffer[px + 3] = 0xFF;
+                        draw_pixel(buffer, px, SNAIL_FG);
                     }
                     else {
-                        buffer[px] = SNAIL_BG[0];
-                        buffer[px + 1] = SNAIL_BG[1];
-                        buffer[px + 2] = SNAIL_BG[2];
-                        buffer[px + 3] = 0xFF;
+                        draw_pixel(buffer, px, SNAIL_BG);
                     }
 
                     for l in ((px + 4)..(px + 4 * 10)).step_by(4) {
-                        buffer[l] = SNAIL_BG[0];
-                        buffer[l + 1] = SNAIL_BG[1];
-                        buffer[l + 2] = SNAIL_BG[2];
-                        buffer[l + 3] = 0xFF;
+                        draw_pixel(buffer, l, SNAIL_BG);
                     }
                 }
             }
 
             // fill end pixel
             let px = 4 * ((by + y) * buffer_width + bx + self.width * 10);
-            buffer[px] = SNAIL_FG[0];
-            buffer[px + 1] = SNAIL_FG[1];
-            buffer[px + 2] = SNAIL_FG[2];
-            buffer[px + 3] = 0xFF;
+            draw_pixel(buffer, px, SNAIL_FG);
         }
 
         let px = 4 * ((by + self.height * 10) * buffer_width + bx);
         for l in (px..(px + 4 * (1 + 10 * self.width))).step_by(4) {
-            buffer[l] = SNAIL_FG[0];
-            buffer[l + 1] = SNAIL_FG[1];
-            buffer[l + 2] = SNAIL_FG[2];
-            buffer[l + 3] = 0xFF;
+            draw_pixel(buffer, l, SNAIL_FG);
         }
     }
 
     pub fn render_foreground(&mut self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
         let snail_image = if (self.clock / ANIMATION_TIME) % 2 == 0 {
-            include_bytes!("../../assets/snail1_8x8.bin")
+            include_bytes!("../../../assets/snail1_8x8.bin")
         } else {
-            include_bytes!("../../assets/snail2_8x8.bin")
+            include_bytes!("../../../assets/snail2_8x8.bin")
         };
 
         let offset_y = if self.prev_snail_pos.y != self.snail_pos.y {
@@ -258,7 +243,7 @@ impl SnailMaze {
         if (self.clock / ANIMATION_TIME) % 2 == 0 {
             const GOAL_IMAGE_SIZE: usize = 7;
 
-            let goal_image = include_bytes!("../../assets/goal_7x7.bin");
+            let goal_image = include_bytes!("../../../assets/goal_7x7.bin");
 
             for y in 0..GOAL_IMAGE_SIZE {
                 for x in 0..GOAL_IMAGE_SIZE {
@@ -275,49 +260,44 @@ impl SnailMaze {
         }
     }
 
-    fn move_snail(&mut self, lfsr: &mut LFSR) {
+    fn move_forward(&mut self) -> bool {
         let coord = 4 * (self.snail_pos.y * self.width + self.snail_pos.x);
         self.prev_snail_pos = self.snail_pos;
 
-        loop {
-            match lfsr.next() {
-                0 => {
-                    self.snail_direction = Direction::Up;
-                    if !self.maze[coord] {
-                        self.snail_pos.y -= 1;
-                        break;
-                    }
-                },
-                1 => {
-                    self.snail_direction = Direction::Down;
-                    if !self.maze[coord + 1] {
-                        self.snail_pos.y += 1;
-                        break;
-                    }
-                },
-                2 => {
-                    self.snail_direction = Direction::Left;
-                    if !self.maze[coord + 2] {
-                        self.snail_pos.x -= 1;
-                        break;
-                    }
-                },
-                3 => {
-                    self.snail_direction = Direction::Right;
-                    if !self.maze[coord + 3] {
-                        self.snail_pos.x += 1;
-                        break;
-                    }
-                },
-                _ => unreachable!(),
+        match self.snail_direction {
+            Direction::Up => if !self.maze[coord] {
+                self.snail_pos.y -= 1;
+                return true;
+            },
+            Direction::Down => if !self.maze[coord + 1] {
+                self.snail_pos.y += 1;
+                return true;
+            },
+            Direction::Left => if !self.maze[coord + 2] {
+                self.snail_pos.x -= 1;
+                return true;
+            },
+            Direction::Right => if !self.maze[coord + 3] {
+                self.snail_pos.x += 1;
+                return true;
             }
+        }
+
+        return false;
+    }
+
+    fn move_snail(&mut self, lfsr: &mut LFSR) {
+        match self.maze_type {
+            MazeType::RandomWalk => self.ai_random_walk(lfsr),
+            MazeType::HoldLeft => self.ai_hold_left(),
+            MazeType::Tremaux => self.ai_random_walk(lfsr),
         }
     }
 
     // progresses time a certain number of microseconds
     // notably, no rendering happens when we tick the time
     // returns true if the tick results in a new maze to be generated
-    pub fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> bool {
+    pub fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
         let prev = self.clock;
         let now = self.clock + dt;
         self.clock = now;
@@ -329,21 +309,22 @@ impl SnailMaze {
             num_movements += 1;
         }
 
-        let mut new_maze = false;
+        let mut total = 0;
 
         for _ in 0..num_movements {
             self.move_snail(lfsr);
 
             if self.snail_pos == self.end_pos {
+                total += self.width * self.height;
                 self.generate_maze(lfsr);
                 self.snail_pos.x = 0;
                 self.snail_pos.y = 0;
+                self.movement_timer = SNAIL_MOVEMENT_TIME;
                 self.prev_snail_pos = self.snail_pos;
-                new_maze = true;
             }
         }
 
-        return new_maze;
+        total
     }
 }
 
@@ -353,4 +334,11 @@ fn discrete_lerp(v1: i32, v2: i32, fact1: i32, fact2: i32) -> i32 {
     let difference = v2 - v1;
     let add = (fact1 * difference) / fact2;
     v1 + add
+}
+
+fn draw_pixel(buffer: &mut [u8], index: usize, pixel: [u8; 3]) {
+    buffer[index] = pixel[0];
+    buffer[index + 1] = pixel[1];
+    buffer[index + 2] = pixel[2];
+    buffer[index + 3] = 0xFF;
 }
