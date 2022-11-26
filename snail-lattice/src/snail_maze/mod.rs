@@ -7,7 +7,6 @@ use bit_vec::BitVec;
 use crate::{utils::Vec2, lfsr::LFSR, snail_lattice::MazeType};
 
 use self::direction::Direction;
-use crate::utils::console_log;
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x68, 0x8F, 0xEF];

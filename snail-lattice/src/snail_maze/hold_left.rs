@@ -1,5 +1,3 @@
-use crate::lfsr::LFSR;
-
 use super::SnailMaze;
 
 impl SnailMaze {
