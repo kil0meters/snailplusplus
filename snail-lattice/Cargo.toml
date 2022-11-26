@@ -19,11 +19,7 @@ bit-vec = "0.6"
 # all the `std::fmt` and `std::panicking` infrastructure, so isn't great for
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.6", optional = true }
-
 wee_alloc = "0.4.5"
-
-[dev-dependencies]
-wasm-bindgen-test = "0.3.13"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

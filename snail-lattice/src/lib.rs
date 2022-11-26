@@ -1,7 +1,10 @@
 mod utils;
 mod lfsr;
-mod snail_maze;
-mod snail_lattice;
+mod maze;
+mod lattice;
+mod snail;
+mod solvers;
+mod direction;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
