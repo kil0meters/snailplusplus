@@ -10,7 +10,7 @@ function mazeSize(key: ShopKey): number[] {
   if (key == "clone") return [20, 2];
 }
 
-interface SnailLatticeElementProps extends ShopItem {}
+interface SnailLatticeElementProps extends ShopItem { }
 
 const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
   let container: HTMLDivElement;
@@ -50,7 +50,7 @@ const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
     const resizeObserver = new ResizeObserver(updateScale);
     resizeObserver.observe(container);
 
-    let ctx = canvas.getContext("2d", { alpha: false });
+    let ctx = canvas.getContext("2d", { alpha: true });
 
     let prev = performance.now();
     let renderloop = () => {
@@ -118,7 +118,7 @@ const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
 const SnailLatticeContainer: Component<ShopItem> = (props) => {
   return (
     <>
-      { props.count === 0 ? <></> : (
+      {props.count === 0 ? <></> : (
         <>
           <h1 class='p-8 bg-black text-white font-pixelated'>{props.name}</h1>
           <div class='px-8 w-full'>
@@ -141,7 +141,7 @@ const AutoMazes: Component = () => {
 
   return (
     <div class="w-full flex gap-8 flex-col">
-      { initialized() && <For each={shop}>
+      {initialized() && <For each={shop}>
         {item => <SnailLatticeContainer {...item} />}
       </For>}
     </div>

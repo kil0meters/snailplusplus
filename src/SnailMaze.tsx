@@ -5,20 +5,12 @@ import { generateMaze } from './utils';
 import init, { SnailLattice } from "snail-lattice";
 import drawMaze from "./drawMaze";
 
-export interface BaseMazeProps {
+interface SnailMazeProps {
   onScore: (score: number) => void;
   width: number;
   class?: string;
   height: number;
   animate?: boolean;
-};
-
-interface SnailMazeProps extends BaseMazeProps {
-  onMove: (
-    movement: number,
-    cell: number,
-    callback: (nextMovement: number) => number
-  ) => void;
 };
 
 export const SNAIL_MOVEMENT_TIME = 250;
@@ -30,149 +22,116 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
   let isVisible: boolean = true;
 
-  // logical player position, origin at top left
-  const [position, setPosition] = createSignal([0, 0]);
+  let position = [0, 0];
+  let prevPosition = [0, 0];
+  let movement = [];
 
-  // tracks the animation percentage of the player movement
-  const [movementProgress, setMovementProgress] = createSignal([0.0, 0.0]);
+  let lastMovement = 1;
 
-  const nextPosition = (currentMovement: number): number[] => {
-    let currentPosition = [...position()];
-    let currentCell = grid()[currentPosition[1] * props.width + currentPosition[0]]
+  const keyPressed = (e: KeyboardEvent) => {
+    if (e.repeat) return;
 
-    // right
-    if ((currentMovement & 1) != 0 && (currentCell & 1) == 0) {
-      currentPosition[0] += 1;
+    switch (e.key) {
+      case 'w':
+      case 'W':
+        movement.unshift(8);
+        break;
+      case 'a':
+      case 'A':
+        movement.unshift(2);
+        break;
+      case 's':
+      case 'S':
+        movement.unshift(4);
+        break;
+      case 'd':
+      case 'D':
+        movement.unshift(1);
+        break;
     }
-
-    // left
-    if ((currentMovement & 2) != 0 && (currentCell & 2) == 0) {
-      currentPosition[0] -= 1;
-    }
-
-    // down
-    if ((currentMovement & 4) != 0 && (currentCell & 4) == 0) {
-      currentPosition[1] += 1;
-    }
-
-    // up
-    if ((currentMovement & 8) != 0 && (currentCell & 8) == 0) {
-      currentPosition[1] -= 1;
-    }
-
-    return currentPosition;
   };
 
-  let stopped = false;
+  const keyReleased = (e: KeyboardEvent) => {
+    if (e.repeat) return;
 
-  // prevents multiple ai tasks being spun up concurrently
-  onCleanup(() => {
-    stopped = true;
-  });
+    switch (e.key) {
+      case 'w':
+      case 'W':
+        movement = movement.filter(x => x != 8);
+        break;
+      case 'a':
+      case 'A':
+        movement = movement.filter(x => x != 2);
+        break;
+      case 's':
+      case 'S':
+        movement = movement.filter(x => x != 4);
+        break;
+      case 'd':
+      case 'D':
+        movement = movement.filter(x => x != 1);
+        break;
+    }
+  };
 
-  const movementLoop = () => {
-    setTimeout(
-      props.onMove,
-      0,
-      lastMovement(),
-      grid()[position()[1] * props.width + position()[0]],
-      (next: number) => {
-        if (!stopped) moveSnail(next);
-      }
-    )
-  }
+  let lastMoved = performance.now();
+  const renderLoop = () => {
+    let now = performance.now();
+    let cell = grid()[position[1] * props.width + position[0]];
 
-  const animateSnailMoving = (movement: number) => {
-    let currentPosition = position();
-    let targetPosition = nextPosition(movement);
+    let timeSinceLastMove = now - lastMoved;
 
-    if (currentPosition[0] === targetPosition[0]
-      && currentPosition[1] === targetPosition[1]) {
-      movementLoop();
-      return;
-    };
+    let moved = false;
 
-    let prev = new Date();
-    let movementDifference = [targetPosition[0] - currentPosition[0], targetPosition[1] - currentPosition[1]];
-    let currentMovementProgress = [0, 0];
-
-    const animateInner = () => {
-      let now = new Date();
-      let dt = now.valueOf() - prev.valueOf();
-
+    if (timeSinceLastMove > SNAIL_MOVEMENT_TIME) {
       // right
-      if (movementDifference[0] > 0) {
-        currentMovementProgress[0] = Math.min(currentMovementProgress[0] + movementDifference[0] * dt / SNAIL_MOVEMENT_TIME, movementDifference[0])
+      if ((movement[0] & 1) != 0 && (cell & 1) == 0) {
+        prevPosition = [...position];
+        position[0] += 1;
+        moved = true;
       }
 
       // left
-      if (movementDifference[0] < 0) {
-        currentMovementProgress[0] = Math.max(currentMovementProgress[0] + movementDifference[0] * dt / SNAIL_MOVEMENT_TIME, movementDifference[0])
+      else if ((movement[0] & 2) != 0 && (cell & 2) == 0) {
+        prevPosition = [...position];
+        position[0] -= 1;
+        moved = true;
       }
 
       // down
-      if (movementDifference[1] > 0) {
-        currentMovementProgress[1] = Math.min(currentMovementProgress[1] + movementDifference[1] * dt / SNAIL_MOVEMENT_TIME, movementDifference[1])
+      else if ((movement[0] & 4) != 0 && (cell & 4) == 0) {
+        prevPosition = [...position];
+        position[1] += 1;
+        moved = true;
       }
 
       // up
-      if (movementDifference[1] < 0) {
-        currentMovementProgress[1] = Math.max(currentMovementProgress[1] + movementDifference[1] * dt / SNAIL_MOVEMENT_TIME, movementDifference[1])
+      else if ((movement[0] & 8) != 0 && (cell & 8) == 0) {
+        prevPosition = [...position];
+        position[1] -= 1;
+        moved = true;
       }
-
-      // I don't know why we need to do prop spreading here.
-      setMovementProgress([...currentMovementProgress]);
-
-      if (movementDifference[0] != currentMovementProgress[0] || movementDifference[1] != currentMovementProgress[1]) {
-        prev = new Date();
-        requestAnimationFrame(animateInner);
-      } else {
-        batch(() => {
-          setPosition(targetPosition);
-          setMovementProgress([0, 0]);
-          movementLoop();
-        });
-      }
-
-      draw()();
     }
 
-    requestAnimationFrame(animateInner);
-  }
+    if (moved) {
+      lastMoved = now;
+      lastMovement = movement[0];
 
-  const moveSnail = (movement: number) => {
-    setLastMovement(movement);
-
-    if (props.animate && isVisible) {
-      animateSnailMoving(movement);
-      return;
+      if (position[0] == props.width - 1 && position[1] == props.height - 1) {
+        setTimeout(() => {
+          props.onScore(props.width * props.height);
+          generateMaze(props.width, props.height, (maze) => {
+            setGrid(maze);
+            position = [0, 0];
+          });
+        }, SNAIL_MOVEMENT_TIME / 2);
+      }
     }
 
-    setTimeout(() => {
-      setPosition(nextPosition(movement));
-      draw()();
-      movementLoop();
-    }, SNAIL_MOVEMENT_TIME);
-
-    return true;
+    draw()();
+    requestAnimationFrame(renderLoop);
   };
-
-  const [lastMovement, setLastMovement] = createSignal(1);
-
-  createEffect(() => {
-    // on win
-    if (position()[0] == props.width - 1 && position()[1] == props.height - 1) {
-      stopped = true;
-      setPosition([0, 0]);
-      generateMaze(props.width, props.height, (maze) => {
-        setGrid(maze);
-
-        stopped = false;
-        movementLoop();
-      });
-      props.onScore(props.width * props.height);
-    }
-  });
+  requestAnimationFrame(renderLoop);
 
   createEffect(() => {
     if (!canvas) return;
@@ -191,27 +150,24 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   const snailImage = new Image;
   snailImage.src = snail;
 
+  snailImage.onload = () => {
+    requestAnimationFrame(draw);
+  };
+
   const goalImage = new Image;
   goalImage.src = goal;
+
+  goalImage.onload = () => {
+    requestAnimationFrame(draw);
+  };
 
   // start on mount
   createEffect(() => {
     generateMaze(props.width, props.height, (maze) => {
       setGrid(maze);
-
-      // start movement loop after maze is generated
-      stopped = false;
-      movementLoop();
     });
   });
 
-  snailImage.onload = () => {
-    requestAnimationFrame(draw);
-  }
-
-  goalImage.onload = () => {
-    requestAnimationFrame(draw);
-  }
 
   const gridCanvas = document.createElement('canvas');
 
@@ -222,7 +178,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
     drawMaze(gridCanvas, grid(), props.width, props.height);
   });
 
-  function drawImage(image: HTMLImageElement, x: number, y: number, rotation: number, flip?: boolean){
+  function drawImage(image: HTMLImageElement, x: number, y: number, rotation: number, flip?: boolean) {
     ctx.setTransform(1, 0, 0, 1, Math.floor(x), Math.floor(y)); // sets scale and origin
     if (flip) {
       ctx.scale(-1, 1);
@@ -241,50 +197,58 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(gridCanvas, 0, 0);
 
-    // let data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let now = performance.now();
+    let timeSinceLastMove = now - lastMoved;
 
-    // // this works (trust me)
-    // make_white(data.data as unknown as Uint8Array);
-    // ctx.putImageData(data, 0, 0);
+    let x: number, y: number;
+
+    if (timeSinceLastMove < SNAIL_MOVEMENT_TIME) {
+      console.log(prevPosition[0], position[0]);
+      x = prevPosition[0] + (position[0] - prevPosition[0]) * (timeSinceLastMove / SNAIL_MOVEMENT_TIME);
+      y = prevPosition[1] + (position[1] - prevPosition[1]) * (timeSinceLastMove / SNAIL_MOVEMENT_TIME);
+    } else {
+      x = position[0];
+      y = position[1];
+    }
 
     // right
-    if ((lastMovement() & 1) != 0) {
+    if ((lastMovement & 1) != 0) {
       drawImage(
         snailImage,
-        (position()[0] + movementProgress()[0]) * 10 + 6,
-        (position()[1] + movementProgress()[1]) * 10 + 6,
+        x * 10 + 6,
+        y * 10 + 6,
         0
       );
     }
 
     // left
-    else if ((lastMovement() & 2) != 0) {
+    else if ((lastMovement & 2) != 0) {
       drawImage(
         snailImage,
-        (position()[0] + movementProgress()[0]) * 10 + 5,
-        (position()[1] + movementProgress()[1]) * 10 + 6,
+        x * 10 + 5,
+        y * 10 + 6,
         0,
         true
       );
     }
 
     // down
-    else if ((lastMovement() & 4) != 0) {
+    else if ((lastMovement & 4) != 0) {
       drawImage(
         snailImage,
-        (position()[0] + movementProgress()[0]) * 10 + 5,
-        (position()[1] + movementProgress()[1]) * 10 + 6,
-        Math.PI/2
+        x * 10 + 5,
+        y * 10 + 6,
+        Math.PI / 2
       );
     }
 
     // up
-    else if ((lastMovement() & 8) != 0) {
+    else if ((lastMovement & 8) != 0) {
       drawImage(
         snailImage,
-        (position()[0] + movementProgress()[0]) * 10 + 6,
-        (position()[1] + movementProgress()[1]) * 10 + 5,
-        3*Math.PI/2
+        x * 10 + 6,
+        y * 10 + 5,
+        3 * Math.PI / 2
       );
     }
 
@@ -300,7 +264,6 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   let animation = false;
   setInterval(() => {
     animation = !animation;
-    draw()();
   }, 500);
 
   let container: HTMLDivElement | undefined;
@@ -320,8 +283,8 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   });
 
   onMount(() => {
-    if (!container || !canvas) return;
     updateScale();
+    container.focus();
 
     const resizeObserver = new ResizeObserver(() => {
       updateScale();
@@ -337,7 +300,13 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
   });
 
   return (
-    <div ref={container} class={`flex items-center justify-center ${props.class}`}>
+    <div
+      onKeyDown={keyPressed}
+      onKeyUp={keyReleased}
+      tabindex={-1}
+      ref={container}
+      class={`flex items-center justify-center outline-0 ${props.class}`}
+    >
       <canvas
         ref={canvas}
         width={props.width * 10 + 1}
