@@ -7,6 +7,7 @@ function mazeSize(key: ShopKey): number[] {
   if (key == "random-walk") return [3, 9];
   if (key == "hold-left") return [5, 6];
   if (key == "tremaux") return [7, 4];
+  if (key == "clone") return [20, 2];
 }
 
 interface SnailLatticeElementProps extends ShopItem {}

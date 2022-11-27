@@ -4,7 +4,7 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopItem[], SetStoreFunction<ShopItem[]>]>();
 
-export type ShopKey = "random-walk" | "hold-left" | "tremaux";
+export type ShopKey = "random-walk" | "hold-left" | "tremaux" | "clone";
 
 export interface ShopItem {
   key: ShopKey;
@@ -34,6 +34,13 @@ export const shopItems: ShopItem[] = [
     "name": "Trémaux's algorithm",
     "description": "It's french",
     "price": 1500,
+    "count": 0
+  },
+  {
+    "key": "clone",
+    "name": "Cloning Snail",
+    "description": "Can't turn but clones itself facing another direction when it reaches a junctionit reaches a junction.",
+    "price": 4000,
     "count": 0
   }
 ];

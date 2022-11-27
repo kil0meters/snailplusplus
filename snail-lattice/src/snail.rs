@@ -7,6 +7,7 @@ pub struct Snail {
     pub pos: Vec2,
     prev_pos: Vec2,
     pub direction: Direction,
+    pub active: bool,
 }
 
 impl Snail {
@@ -16,6 +17,7 @@ impl Snail {
             prev_pos: Vec2 { x: 0, y: 0 },
 
             direction: Direction::Right,
+            active: true
         }
     }
 
@@ -29,10 +31,14 @@ impl Snail {
         bx: usize,
         by: usize
     ) {
-        let snail_image = if animation_cycle {
-            include_bytes!("../../assets/snail1_8x8.bin")
+        let snail_image = if self.active {
+            if animation_cycle {
+                include_bytes!("../../assets/snail1_8x8.bin")
+            } else {
+                include_bytes!("../../assets/snail2_8x8.bin")
+            }
         } else {
-            include_bytes!("../../assets/snail2_8x8.bin")
+            include_bytes!("../../assets/snail1_grayscale_8x8.bin")
         };
 
         let offset_y = if self.prev_pos.y != self.pos.y {
