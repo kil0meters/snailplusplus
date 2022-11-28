@@ -1,8 +1,4 @@
-use crate::{
-    maze::Maze,
-    solvers::Solver,
-    snail::Snail, lfsr::LFSR
-};
+use crate::{lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
 
 pub struct HoldLeft {
     snail: Snail,
@@ -11,14 +7,29 @@ pub struct HoldLeft {
 impl HoldLeft {
     pub fn new(_upgrades: usize) -> Self {
         HoldLeft {
-            snail: Snail::new()
+            snail: Snail::new(),
         }
     }
 }
 
 impl Solver for HoldLeft {
-    fn draw(&self, animation_cycle: bool, movement_timer: usize, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
-        self.snail.draw(animation_cycle, movement_timer, buffer, buffer_width, bx, by);
+    fn draw(
+        &mut self,
+        animation_cycle: bool,
+        movement_timer: usize,
+        buffer: &mut [u8],
+        buffer_width: usize,
+        bx: usize,
+        by: usize,
+    ) {
+        self.snail.draw(
+            animation_cycle,
+            movement_timer,
+            buffer,
+            buffer_width,
+            bx,
+            by,
+        );
     }
 
     fn step(&mut self, maze: &Maze, _lfsr: &mut LFSR) -> bool {
@@ -29,7 +40,6 @@ impl Solver for HoldLeft {
         if !maze.walls[coord + left as usize] {
             self.snail.direction = left;
         }
-
         // otherwise, if there's a wall blocking the front, rotate clockwise until we face an empty
         // wall
         else {

@@ -18,7 +18,7 @@ impl RandomWalk {
 
 impl Solver for RandomWalk {
     fn draw(
-        &self,
+        &mut self,
         animation_cycle: bool,
         movement_timer: usize,
         buffer: &mut [u8],

@@ -1,6 +1,10 @@
 use bit_vec::BitVec;
 
-use crate::{utils::{Vec2, draw_pixel}, lfsr::LFSR, solvers::Solver};
+use crate::{
+    lfsr::LFSR,
+    solvers::Solver,
+    utils::{draw_pixel, Vec2},
+};
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x68, 0x8F, 0xEF];
@@ -32,7 +36,10 @@ impl AutoMaze {
             maze: Maze {
                 width,
                 height,
-                end_pos: Vec2 { x: width - 1, y: height - 1 },
+                end_pos: Vec2 {
+                    x: width - 1,
+                    y: height - 1,
+                },
                 walls: BitVec::from_elem(width * height * 4, true),
             },
         }
@@ -66,12 +73,20 @@ impl AutoMaze {
         total
     }
 
-    pub fn draw(&self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
+    pub fn draw(&mut self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
         let animation_cycle = (self.clock / ANIMATION_TIME) % 2 == 0;
 
         // draw "snail"
-        self.solver.draw(animation_cycle, self.movement_timer, buffer, buffer_width, bx, by);
-        self.maze.draw_foreground(animation_cycle, buffer, buffer_width, bx, by);
+        self.solver.draw(
+            animation_cycle,
+            self.movement_timer,
+            buffer,
+            buffer_width,
+            bx,
+            by,
+        );
+        self.maze
+            .draw_foreground(animation_cycle, buffer, buffer_width, bx, by);
     }
 }
 
@@ -113,7 +128,10 @@ impl Maze {
                     next = Some((x, y - 1));
                 }
                 // down
-                else if direction == 3 && y < self.height - 1 && !visited[(y + 1) * self.width + x] {
+                else if direction == 3
+                    && y < self.height - 1
+                    && !visited[(y + 1) * self.width + x]
+                {
                     self.walls.set((y * self.width + x) * 4 + 1, false);
                     self.walls.set(((y + 1) * self.width + x) * 4, false);
                     next = Some((x, y + 1));
@@ -137,7 +155,8 @@ impl Maze {
         for y in 0..self.height {
             for x in 0..self.width {
                 if !visited[y * self.width + x] {
-                    for direction in [0, 1, 2, 3] {// rng.random_order() {
+                    for direction in [0, 1, 2, 3] {
+                        // rng.random_order() {
                         // right
                         if direction == 0 && x < self.width - 1 && visited[y * self.width + x + 1] {
                             self.walls.set((y * self.width + x) * 4 + 3, false);
@@ -160,7 +179,10 @@ impl Maze {
                             break;
                         }
                         // down
-                        else if direction == 3 && y < self.height - 1 && visited[(y + 1) * self.width + x] {
+                        else if direction == 3
+                            && y < self.height - 1
+                            && visited[(y + 1) * self.width + x]
+                        {
                             self.walls.set((y * self.width + x) * 4 + 1, false);
                             self.walls.set(((y + 1) * self.width + x) * 4, false);
                             self.random_walk(x, y, &mut visited, lfsr);
@@ -175,7 +197,7 @@ impl Maze {
     pub fn draw_background(&self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
         for y in 0..(self.height * 10) {
             for x in 0..self.width {
-                let loc = 4*((y / 10) * self.width + x);
+                let loc = 4 * ((y / 10) * self.width + x);
                 let px = ((by + y) * buffer_width + bx + (x * 10)) * 4;
 
                 // Checking the bottom wall is redundant
@@ -183,14 +205,11 @@ impl Maze {
                     for l in (px..(px + 4 * 10)).step_by(4) {
                         draw_pixel(buffer, l, SNAIL_FG);
                     }
-                }
-
-                else {
+                } else {
                     // if left wall, checking right wall is redundant
                     if self.walls[loc + 2] || y % 10 == 0 {
                         draw_pixel(buffer, px, SNAIL_FG);
-                    }
-                    else {
+                    } else {
                         draw_pixel(buffer, px, SNAIL_BG);
                     }
 
@@ -211,7 +230,14 @@ impl Maze {
         }
     }
 
-    fn draw_foreground(&self, animation_cycle: bool, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
+    fn draw_foreground(
+        &self,
+        animation_cycle: bool,
+        buffer: &mut [u8],
+        buffer_width: usize,
+        bx: usize,
+        by: usize,
+    ) {
         // draw goal
         if animation_cycle {
             const GOAL_IMAGE_SIZE: usize = 7;
@@ -221,12 +247,17 @@ impl Maze {
             for y in 0..GOAL_IMAGE_SIZE {
                 for x in 0..GOAL_IMAGE_SIZE {
                     let goal_px = 4 * (y * GOAL_IMAGE_SIZE + x);
-                    let px = 4 * ((by + x + self.end_pos.y * 10 + 2) * buffer_width + bx + y + self.end_pos.x * 10 + 2);
+                    let px = 4
+                        * ((by + x + self.end_pos.y * 10 + 2) * buffer_width
+                            + bx
+                            + y
+                            + self.end_pos.x * 10
+                            + 2);
 
                     if goal_image[goal_px + 3] != 0 {
                         buffer[px] = goal_image[goal_px];
-                        buffer[px+1] = goal_image[goal_px + 1];
-                        buffer[px+2] = goal_image[goal_px + 2];
+                        buffer[px + 1] = goal_image[goal_px + 1];
+                        buffer[px + 2] = goal_image[goal_px + 2];
                     }
                 }
             }

@@ -1,6 +1,11 @@
 use wasm_bindgen::prelude::*;
 
-use crate::{lfsr::LFSR, utils::set_panic_hook, maze::AutoMaze, solvers::{RandomWalk, HoldLeft, Solver, Tremaux, Clones}};
+use crate::{
+    lfsr::LFSR,
+    maze::AutoMaze,
+    solvers::{Clones, HoldLeft, RandomWalk, Solver, Tremaux},
+    utils::set_panic_hook,
+};
 
 #[derive(Clone, Copy)]
 pub enum MazeType {
@@ -30,7 +35,7 @@ impl SnailLattice {
         width: usize,
         maze_size: usize,
         count: usize,
-        seed: u16
+        seed: u16,
     ) -> SnailLattice {
         #[cfg(feature = "console_error_panic_hook")]
         set_panic_hook();
@@ -49,7 +54,7 @@ impl SnailLattice {
             mazes: Vec::new(),
             maze_type,
             bg_buffer: Vec::new(),
-            lfsr: LFSR::new(seed)
+            lfsr: LFSR::new(seed),
         };
 
         lattice.alter(count as i32);
@@ -87,7 +92,8 @@ impl SnailLattice {
         let mut cy = 0;
 
         for maze in self.mazes.iter_mut() {
-            maze.maze.draw_background(&mut self.bg_buffer, width, cx, cy);
+            maze.maze
+                .draw_background(&mut self.bg_buffer, width, cx, cy);
 
             cx += maze_size;
             if cx >= width {
@@ -118,7 +124,7 @@ impl SnailLattice {
         for maze in self.mazes.iter_mut() {
             maze.draw(buffer, width, cx, cy);
 
-            cx += maze_size;// maze_size;
+            cx += maze_size; // maze_size;
             if cx >= width {
                 cx = 0;
                 cy += maze_size;
@@ -142,7 +148,7 @@ impl SnailLattice {
                     &mut self.bg_buffer,
                     maze_size * self.width,
                     maze_size * (i % self.width),
-                    maze_size * (i / self.width)
+                    maze_size * (i / self.width),
                 );
             }
         }
@@ -157,19 +163,17 @@ impl SnailLattice {
                 self.mazes.pop();
             }
         } else {
-            let solver_builder: fn() -> Box<dyn Solver> = match self.maze_type {
-                MazeType::RandomWalk => || Box::new(RandomWalk::new(0)),
-                MazeType::HoldLeft => || Box::new(HoldLeft::new(0)),
-                MazeType::Tremaux => || Box::new(Tremaux::new(0)),
-                MazeType::Clone => || Box::new(Clones::new(0)),
+            let size = self.maze_size;
+
+            let solver_builder: Box<dyn Fn() -> Box<dyn Solver>> = match self.maze_type {
+                MazeType::RandomWalk => Box::new(|| Box::new(RandomWalk::new(0))),
+                MazeType::HoldLeft => Box::new(|| Box::new(HoldLeft::new(0))),
+                MazeType::Tremaux => Box::new(|| Box::new(Tremaux::new(0))),
+                MazeType::Clone => Box::new(|| Box::new(Clones::new(0, size, size))),
             };
 
             for _ in 0..difference {
-                let mut new_maze = AutoMaze::new(
-                    solver_builder(),
-                    self.maze_size,
-                    self.maze_size
-                );
+                let mut new_maze = AutoMaze::new(solver_builder(), self.maze_size, self.maze_size);
                 new_maze.maze.generate(&mut self.lfsr);
                 self.mazes.push(new_maze);
             }
@@ -178,4 +182,3 @@ impl SnailLattice {
         self.draw_mazes();
     }
 }
-

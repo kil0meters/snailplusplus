@@ -27,6 +27,11 @@ const upgradesDefault: Upgrade[] = [
 ];
 
 export const upgrades: { [key: string]: UpgradeListing } = {
+  "faster-snails": {
+    "name": "Speed",
+    "description": "Makes auto snails twice as fast",
+    "price": 200,
+  },
   "glasses": {
     "name": "Glasses",
     "description": "Gives random walk snails some glasses so they will no longer run into walls",

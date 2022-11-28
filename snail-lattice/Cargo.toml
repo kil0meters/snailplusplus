@@ -1,6 +1,6 @@
 [package]
 name = "snail-lattice"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["kilometers <kilo@meters.sh>"]
 edition = "2018"
 
@@ -20,6 +20,9 @@ bit-vec = "0.6"
 # code size when deploying.
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = "0.4.5"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

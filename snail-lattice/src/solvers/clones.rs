@@ -1,45 +1,72 @@
-use crate::{
-    direction::Direction,
-    maze::Maze,
-    solvers::Solver,
-    snail::Snail, lfsr::LFSR
-};
+use crate::{direction::Direction, lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
 
 pub struct Clones {
-    snails: Vec<Snail>,
+    active_snails: Vec<Snail>,
+    inactive_snails: Vec<Snail>,
+
+    // inactive buffer
+    buffer: Vec<u8>,
 }
 
 impl Clones {
-    pub fn new(_upgrades: usize) -> Self {
+    pub fn new(_upgrades: usize, width: usize, height: usize) -> Self {
         Clones {
-            snails: vec![Snail::new()]
+            active_snails: vec![Snail::new()],
+            inactive_snails: vec![],
+
+            buffer: vec![0; 4 * width * 10 * height * 10],
         }
     }
 
     fn reset(&mut self) {
-        self.snails = vec![Snail::new()];
+        self.active_snails = vec![Snail::new()];
+        self.inactive_snails = vec![]
     }
 }
 
 impl Solver for Clones {
-    fn draw(&self, animation_cycle: bool, movement_timer: usize, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
-        for snail in self.snails.iter() {
-            snail.draw(animation_cycle, movement_timer, buffer, buffer_width, bx, by);
+    fn draw(
+        &mut self,
+        animation_cycle: bool,
+        movement_timer: usize,
+        buffer: &mut [u8],
+        buffer_width: usize,
+        bx: usize,
+        by: usize,
+    ) {
+        for snail in self.inactive_snails.iter() {
+            snail.draw(
+                animation_cycle,
+                movement_timer,
+                buffer,
+                buffer_width,
+                bx,
+                by,
+            );
+        }
+
+        for snail in self.active_snails.iter() {
+            snail.draw(
+                animation_cycle,
+                movement_timer,
+                buffer,
+                buffer_width,
+                bx,
+                by,
+            );
         }
     }
 
     fn step(&mut self, maze: &Maze, _lfsr: &mut LFSR) -> bool {
         let mut new_snails = Vec::new();
 
-        for snail in self.snails.iter_mut() {
-            if !snail.active {
-                continue;
-            }
+        let mut i = 0;
+        while i < self.active_snails.len() {
+            let snail = &mut self.active_snails[i];
 
             let coord = 4 * (snail.pos.y * maze.width + snail.pos.x);
             let left = snail.direction.rotate_counter();
             let right = snail.direction.rotate();
-            // let mut current_snails = vec![snail];
 
             // if there's an option to the left, we create a new snail facing that direction and
             // move that direction
@@ -47,7 +74,6 @@ impl Solver for Clones {
                 let mut new_snail = snail.clone();
                 new_snail.direction = left;
                 new_snails.push(new_snail);
-                // current_snails.push(self.snails.last_mut().unwrap());
             }
 
             // same for right
@@ -60,11 +86,16 @@ impl Solver for Clones {
             // if we can't move forward,
             if !snail.move_forward(maze) {
                 snail.active = false;
-            }
 
-            if snail.pos == maze.end_pos {
-                self.reset();
-                return true;
+                let owned = self.active_snails.remove(i);
+                self.inactive_snails.push(owned);
+            } else {
+                if snail.pos == maze.end_pos {
+                    self.reset();
+                    return true;
+                }
+
+                i += 1;
             }
         }
 
@@ -78,7 +109,7 @@ impl Solver for Clones {
                 return true;
             }
 
-            self.snails.push(snail);
+            self.active_snails.push(snail);
         }
 
         false
