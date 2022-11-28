@@ -1,25 +1,39 @@
-use crate::{
-    direction::Direction,
-    maze::Maze,
-    solvers::Solver,
-    snail::Snail, lfsr::LFSR
-};
+use crate::{direction::Direction, lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
 
 pub struct RandomWalk {
     snail: Snail,
 }
 
 impl RandomWalk {
+    // RANDOM WALK UPGRADES
+    // 1: Don't randomly walk into walls
+    // 2: Straight along corridors
+    // 3:
     pub fn new(_upgrades: usize) -> Self {
         RandomWalk {
-            snail: Snail::new()
+            snail: Snail::new(),
         }
     }
 }
 
 impl Solver for RandomWalk {
-    fn draw(&self, animation_cycle: bool, movement_timer: usize, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
-        self.snail.draw(animation_cycle, movement_timer, buffer, buffer_width, bx, by);
+    fn draw(
+        &self,
+        animation_cycle: bool,
+        movement_timer: usize,
+        buffer: &mut [u8],
+        buffer_width: usize,
+        bx: usize,
+        by: usize,
+    ) {
+        self.snail.draw(
+            animation_cycle,
+            movement_timer,
+            buffer,
+            buffer_width,
+            bx,
+            by,
+        );
     }
 
     fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {

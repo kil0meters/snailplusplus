@@ -7,118 +7,12 @@ import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
 import { createStoredSignal } from './utils';
 import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
-
-const PRICE_SCALER = 1.15;
-
-const ShopListing: Component<ShopItem> = (props) => {
-  const [score, setScore] = useContext(ScoreContext);
-  const [_shop, setShop] = useContext(ShopContext);
-
-  const price = () => Math.floor(props.price * Math.pow(PRICE_SCALER, props.count));
-
-  const buy = () => {
-    if (score() >= price()) {
-      setScore(score() - price())
-      setShop(
-        (shopItem) => shopItem.key === props.key,
-        "count",
-        (count) => count + 1
-      );
-    }
-  };
-
-  return (
-    <button onClick={buy} class='flex hover:bg-neutral-100 p-4 transition-colors text-left'>
-      <div class='flex flex-col'>
-        <span class='text-2xl font-extrabold'>{props.name}</span>
-        <span class=''>{price()} MF</span>
-      </div>
-
-      {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
-    </button>
-  );
-}
-
-const UpgradeListing: Component<Upgrade> = (props) => {
-  const [score, setScore] = useContext(ScoreContext);
-  const [_shop, setUpgrades] = useContext(UpgradesContext);
-
-  const buy = () => {
-    if (props.owned) {
-      setScore(score() + props.price)
-      setUpgrades(
-        (item) => item.key === props.key,
-        "owned",
-        () => false
-      );
-    } else {
-      if (score() >= props.price) {
-        setScore(score() - props.price)
-        setUpgrades(
-          (item) => item.key === props.key,
-          "owned",
-          () => true
-        );
-      }
-    }
-  };
-
-  return <>
-    <button
-      onClick={buy}
-      class={
-        `aspect-square border-4 border-black p-2 transition-all outline-black outline outline-0 hover:outline-4 ${props.owned ? "bg-black text-white" : "bg-white text-black"}`
-      }>
-      {props.name}
-    </button>
-  </>
-}
-
-const Shop: Component = () => {
-  const [shop, setShop] = useContext(ShopContext);
-  const [upgrades, _setUpgrades] = useContext(UpgradesContext);
-
-  const reset = () => {
-    setShop(() => true, "count", () => 0);
-  };
-
-  return (
-    <div class="bg-white overflow-hidden flex flex-col shadow-lg border-l-4 border-black">
-      <div class='border-b-4 border-black p-4'>
-        <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
-
-        <div class='flex gap-4'>
-          <For each={upgrades}>{item =>
-            <UpgradeListing
-              key={item.key}
-              name={item.name}
-              description={item.description}
-              price={item.price}
-              owned={item.owned}
-            />
-          }</For>
-        </div>
-      </div>
-
-      <For each={shop}>{item => <ShopListing
-        key={item.key}
-        name={item.name}
-        description={item.description}
-        price={item.price}
-        count={item.count}
-      />}</For>
-
-      <button onClick={reset} class="bg-red-700 p-4 hover text-red-50 hover:bg-red-600 transition-colors">
-        Reset
-      </button>
-    </div>
-  );
-}
+import Shop from './Shop';
 
 const Game: Component = () => {
   const [score, setScore] = useContext(ScoreContext);
   const updateScore = (newScore: number) => setScore(score() + newScore);
-  const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 3);
+  const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 5);
 
   const [displayedScore, setDisplayedScore] = createSignal(score());
 
@@ -148,9 +42,9 @@ const Game: Component = () => {
     <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
       <div class='flex flex-col gap-8 h-full overflow-auto pb-16'>
         <div class='p-8 bg-black flex justify-center'>
-          <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} MAZE FRAGMENTS</span>
+          <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} fragments</span>
         </div>
-        <SnailMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score) => { updateScore(score); setMazeSize(mazeSize() + 1); }} />
+        <SnailMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score) => { updateScore(score) }} />
         <AutoMazes />
       </div>
       <Shop />

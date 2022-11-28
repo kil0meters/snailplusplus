@@ -203,7 +203,6 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
     let x: number, y: number;
 
     if (timeSinceLastMove < SNAIL_MOVEMENT_TIME) {
-      console.log(prevPosition[0], position[0]);
       x = prevPosition[0] + (position[0] - prevPosition[0]) * (timeSinceLastMove / SNAIL_MOVEMENT_TIME);
       y = prevPosition[1] + (position[1] - prevPosition[1]) * (timeSinceLastMove / SNAIL_MOVEMENT_TIME);
     } else {

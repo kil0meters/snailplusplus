@@ -18,29 +18,29 @@ export const shopItems: ShopItem[] = [
   {
     "key": "random-walk",
     "name": "Random Walk",
-    "description": "Humble beginnings",
-    "price": 100,
+    "description": "Randomly walks around until it happens to stumble its way to the end",
+    "price": 25,
     "count": 0
   },
   {
     "key": "hold-left",
     "name": "Hold Left Wall",
     "description": "At least it's not unbounded!",
-    "price": 500,
+    "price": 300,
     "count": 0
   },
   {
     "key": "tremaux",
     "name": "Trémaux's algorithm",
     "description": "It's french",
-    "price": 1500,
+    "price": 4000,
     "count": 0
   },
   {
     "key": "clone",
     "name": "Cloning Snail",
-    "description": "Can't turn but clones itself facing another direction when it reaches a junctionit reaches a junction.",
-    "price": 4000,
+    "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
+    "price": 50000,
     "count": 0
   }
 ];

@@ -4,9 +4,9 @@ import init, { SnailLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
 
 function mazeSize(key: ShopKey): number[] {
-  if (key == "random-walk") return [3, 9];
-  if (key == "hold-left") return [5, 6];
-  if (key == "tremaux") return [7, 4];
+  if (key == "random-walk") return [5, 9];
+  if (key == "hold-left") return [7, 6];
+  if (key == "tremaux") return [9, 4];
   if (key == "clone") return [20, 2];
 }
 
