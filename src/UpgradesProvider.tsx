@@ -23,13 +23,17 @@ const upgradesDefault: Upgrade[] = [
   {
     key: "banana-peel",
     owned: false
+  },
+  {
+    key: "faster-random-walk",
+    owned: false
   }
 ];
 
 export const upgrades: { [key: string]: UpgradeListing } = {
-  "faster-snails": {
+  "faster-random-walk": {
     "name": "Speed",
-    "description": "Makes auto snails twice as fast",
+    "description": "Makes random walk snails twice as fast",
     "price": 200,
   },
   "glasses": {

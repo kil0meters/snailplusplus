@@ -8,7 +8,7 @@ use super::{direction::Direction, maze::Maze};
 #[derive(Clone)]
 pub struct Snail {
     pub pos: Vec2,
-    prev_pos: Vec2,
+    pub prev_pos: Vec2,
     pub direction: Direction,
     pub active: bool,
 }

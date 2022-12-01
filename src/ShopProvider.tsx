@@ -2,73 +2,86 @@ import { Component, createContext, JSX } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
 import { createLocalStore } from "./utils";
 
-export const ShopContext = createContext<[ShopItem[], SetStoreFunction<ShopItem[]>]>();
+export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 
 export type ShopKey = "random-walk" | "hold-left" | "tremaux" | "clone";
 
 export interface ShopItem {
-  key: ShopKey;
   name: string;
   description: string;
   price: number;
+  baseMultiplier: number;
+  mazeSize: number;
+  latticeWidth: number;
+};
+
+export interface ShopListing {
+  key: ShopKey;
   count: number;
 };
 
-export const shopItems: ShopItem[] = [
+const shopListings: ShopListing[] = [
   {
-    "key": "random-walk",
-    "name": "Random Walk",
-    "description": "Randomly walks around until it happens to stumble its way to the end",
-    "price": 25,
-    "count": 0
+    key: "random-walk",
+    count: 0
   },
   {
-    "key": "hold-left",
-    "name": "Hold Left Wall",
-    "description": "At least it's not unbounded!",
-    "price": 300,
-    "count": 0
+    key: "hold-left",
+    count: 0
   },
   {
-    "key": "tremaux",
-    "name": "Trémaux's algorithm",
-    "description": "It's french",
-    "price": 4000,
-    "count": 0
+    key: "tremaux",
+    count: 0
   },
   {
-    "key": "clone",
-    "name": "Cloning Snail",
-    "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
-    "price": 50000,
-    "count": 0
+    key: "clone",
+    count: 0
   }
 ];
 
+export const shop: { [key in ShopKey]: ShopItem } = {
+  "random-walk": {
+    "name": "Random Walk",
+    "description": "Randomly walks around until it happens to stumble its way to the end",
+    "price": 25,
+    "baseMultiplier": 1,
+    "mazeSize": 5,
+    "latticeWidth": 8
+  },
+  "hold-left": {
+    "name": "Hold Left Wall",
+    "description": "At least it's not unbounded!",
+    "price": 300,
+    "baseMultiplier": 1,
+    "mazeSize": 7,
+    "latticeWidth": 6
+  },
+  "tremaux": {
+    "name": "Trémaux's algorithm",
+    "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
+    "price": 4000,
+    "baseMultiplier": 5,
+    "mazeSize": 9,
+    "latticeWidth": 4
+  },
+  "clone": {
+    "name": "Cloning Snail",
+    "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
+    "price": 50000,
+    "baseMultiplier": 2,
+    "mazeSize": 20,
+    "latticeWidth": 2
+  }
+};
+
 const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
-  const [shop, setShop] = createLocalStore<ShopItem[]>("shop", shopItems);
+  const [shop, setShop] = createLocalStore<ShopListing[]>("shop", shopListings);
 
   // add new things to local shop if key is missing, only run at start
-  for (let item of shopItems) {
-    setShop(
-      x => x.key === item.key && x.price !== item.price,
-      "price",
-      () => item.price
-    );
-
-    setShop(
-      x => x.key === item.key && x.description !== item.description,
-      "description",
-      () => item.description
-    );
-
-    if (!shop.find(x => x.key == item.key)) {
-      setShop([...shop, item]);
+  for (let listing of shopListings) {
+    if (!shop.find(x => x.key == listing.key)) {
+      setShop([...shop, listing]);
     }
-
-    // sort by price
-    setShop([...shop].sort((a, b) => a.price - b.price));
-    // setShop(shop);
   }
 
   return (

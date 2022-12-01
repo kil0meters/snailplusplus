@@ -1,18 +1,9 @@
-import { Component, createEffect, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
-import { ShopContext, ShopItem, ShopKey } from "./ShopProvider";
+import { Component, createEffect, createMemo, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
+import { shop, ShopContext, ShopItem, ShopKey, ShopListing } from "./ShopProvider";
 import init, { SnailLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
 
-function mazeSize(key: ShopKey): number[] {
-  if (key == "random-walk") return [5, 9];
-  if (key == "hold-left") return [7, 6];
-  if (key == "tremaux") return [9, 4];
-  if (key == "clone") return [20, 2];
-}
-
-interface SnailLatticeElementProps extends ShopItem { }
-
-const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
+const SnailLatticeElement: Component<ShopListing> = (props) => {
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
   let loaded = true;
@@ -36,9 +27,10 @@ const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
     intersectionObserver.observe(container);
 
     let seed = self.crypto.getRandomValues(new Uint16Array(1))[0];
-    let [size, latticeWidth] = mazeSize(props.key);
 
-    lattice = new SnailLattice(props.key, latticeWidth, size, props.count, seed);
+    let { mazeSize, latticeWidth } = shop[props.key];
+
+    lattice = new SnailLattice(props.key, latticeWidth, mazeSize, props.count, seed);
 
     let [width, height] = lattice.get_dimensions();
 
@@ -60,7 +52,7 @@ const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
       let dt = Math.floor((now - prev) * 1000);
       prev = now;
 
-      setScore(score() + lattice.tick(dt));
+      setScore(score() + lattice.tick(dt) * shop[props.key].baseMultiplier);
 
       if (visible) {
         lattice.render(buffer);
@@ -115,14 +107,14 @@ const SnailLatticeElement: Component<SnailLatticeElementProps> = (props) => {
   );
 }
 
-const SnailLatticeContainer: Component<ShopItem> = (props) => {
+const SnailLatticeContainer: Component<ShopListing> = (props) => {
   return (
     <>
       {props.count === 0 ? <></> : (
         <>
-          <h1 class='p-8 bg-black text-white font-pixelated'>{props.name}</h1>
+          <h1 class='p-8 bg-black text-white font-pixelated'>{shop[props.key].name}</h1>
           <div class='px-8 w-full'>
-            <SnailLatticeElement {...props} />
+            <SnailLatticeElement key={props.key} count={props.count} />
           </div>
         </>
       )}

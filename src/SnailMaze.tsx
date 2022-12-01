@@ -13,7 +13,7 @@ interface SnailMazeProps {
   animate?: boolean;
 };
 
-export const SNAIL_MOVEMENT_TIME = 250;
+export const SNAIL_MOVEMENT_TIME = 150;
 
 const SnailMaze: Component<SnailMazeProps> = (props) => {
   const [grid, setGrid] = createSignal(new Uint8Array);

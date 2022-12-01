@@ -1,16 +1,16 @@
 import { Component, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
 import { ScoreContext } from "./ScoreProvider";
-import { ShopContext, ShopItem } from "./ShopProvider";
+import { shop, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
 
 const PRICE_SCALER = 1.15;
 
-const ShopListing: Component<ShopItem> = (props) => {
+const ShopListingElement: Component<ShopListing> = (props) => {
   const [score, setScore] = useContext(ScoreContext);
   const [_shop, setShop] = useContext(ShopContext);
   const [hover, setHover] = createSignal(false);
 
-  const price = () => Math.floor(props.price * Math.pow(PRICE_SCALER, props.count));
+  const price = () => Math.floor(shop[props.key].price * Math.pow(PRICE_SCALER, props.count));
 
   const buy = () => {
     if (score() >= price() || true) {
@@ -30,13 +30,13 @@ const ShopListing: Component<ShopItem> = (props) => {
       onClick={buy}
       class='flex hover:bg-neutral-100 p-4 transition-colors text-left'>
       <div class='flex flex-col'>
-        <span class='text-2xl font-extrabold'>{props.name}</span>
-        <span class=''>{price()} MF</span>
+        <span class='text-2xl font-extrabold'>{shop[props.key].name}</span>
+        <span class=''>{price()} fragments</span>
       </div>
 
       {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
 
-      {hover() && <ShopDescription title={props.name} description={props.description} />}
+      {hover() && <ShopDescription title={shop[props.key].name} description={shop[props.key].description} multiplier={shop[props.key].baseMultiplier} />}
     </button>
   );
 }
@@ -46,6 +46,8 @@ const UpgradeListing: Component<Upgrade> = (props) => {
   const [_shop, setUpgrades] = useContext(UpgradesContext);
   const [hover, setHover] = createSignal(false);
 
+
+  return;
   let upgrade = upgrades[props.key];
 
   const buy = () => {
@@ -85,7 +87,8 @@ const UpgradeListing: Component<Upgrade> = (props) => {
 
 const ShopDescription: Component<{
   title: string,
-  description: string
+  description: string,
+  multiplier?: number
 }> = (props) => {
   let hoverContainer: HTMLDivElement;
   let onResize: () => void;
@@ -118,8 +121,13 @@ const ShopDescription: Component<{
       ref={hoverContainer}
       class="absolute bg-white p-4 border-4 border-black flex flex-col gap justify-left text-left w-96"
     >
-      <h1 class="font-bold">{props.title}</h1>
+      <h1 class="font-extrabold">{props.title}</h1>
       <span>{props.description}</span>
+
+      {props.multiplier && <div>
+        <span class="font-bold">Multiplier: </span>
+        <span>{props.multiplier}x</span>
+      </div>}
     </div>
   );
 };
@@ -151,11 +159,8 @@ const Shop: Component = () => {
         </div>
       </div>
 
-      <For each={shop}>{item => <ShopListing
+      <For each={shop}>{item => <ShopListingElement
         key={item.key}
-        name={item.name}
-        description={item.description}
-        price={item.price}
         count={item.count}
       />}</For>
 
