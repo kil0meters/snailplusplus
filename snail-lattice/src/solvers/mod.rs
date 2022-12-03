@@ -2,11 +2,13 @@ use crate::{lfsr::LFSR, maze::Maze};
 
 mod clones;
 mod hold_left;
+mod random_teleport;
 mod random_walk;
 mod tremaux;
 
 pub use clones::Clones;
 pub use hold_left::HoldLeft;
+pub use random_teleport::RandomTeleport;
 pub use random_walk::RandomWalk;
 pub use tremaux::Tremaux;
 

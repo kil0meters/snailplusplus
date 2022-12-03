@@ -3,12 +3,13 @@ use wasm_bindgen::prelude::*;
 use crate::{
     lfsr::LFSR,
     maze::AutoMaze,
-    solvers::{Clones, HoldLeft, RandomWalk, Solver, Tremaux},
+    solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, Tremaux},
     utils::set_panic_hook,
 };
 
 #[derive(Clone, Copy)]
 pub enum MazeType {
+    RandomTeleport,
     RandomWalk,
     HoldLeft,
     Tremaux,
@@ -42,6 +43,7 @@ impl SnailLattice {
 
         let maze_type = match maze_type {
             "random-walk" => MazeType::RandomWalk,
+            "random-teleport" => MazeType::RandomTeleport,
             "hold-left" => MazeType::HoldLeft,
             "tremaux" => MazeType::Tremaux,
             "clone" => MazeType::Clone,
@@ -163,13 +165,12 @@ impl SnailLattice {
                 self.mazes.pop();
             }
         } else {
-            let size = self.maze_size;
-
             let solver_builder: Box<dyn Fn() -> Box<dyn Solver>> = match self.maze_type {
                 MazeType::RandomWalk => Box::new(|| Box::new(RandomWalk::new(0))),
+                MazeType::RandomTeleport => Box::new(|| Box::new(RandomTeleport::new(0))),
                 MazeType::HoldLeft => Box::new(|| Box::new(HoldLeft::new(0))),
                 MazeType::Tremaux => Box::new(|| Box::new(Tremaux::new(0))),
-                MazeType::Clone => Box::new(|| Box::new(Clones::new(0, size, size))),
+                MazeType::Clone => Box::new(|| Box::new(Clones::new(0))),
             };
 
             for _ in 0..difference {

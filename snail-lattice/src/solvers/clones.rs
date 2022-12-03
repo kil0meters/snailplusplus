@@ -1,20 +1,15 @@
-use crate::{direction::Direction, lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
+use crate::{lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
 
 pub struct Clones {
     active_snails: Vec<Snail>,
     inactive_snails: Vec<Snail>,
-
-    // inactive buffer
-    buffer: Vec<u8>,
 }
 
 impl Clones {
-    pub fn new(_upgrades: usize, width: usize, height: usize) -> Self {
+    pub fn new(_upgrades: usize) -> Self {
         Clones {
             active_snails: vec![Snail::new()],
             inactive_snails: vec![],
-
-            buffer: vec![0; 4 * width * 10 * height * 10],
         }
     }
 

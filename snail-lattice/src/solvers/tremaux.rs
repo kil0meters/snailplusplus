@@ -19,58 +19,42 @@ impl Mark {
         self.directions[direction as usize] += 1;
     }
 
+    fn get_color(mark_value: u8) -> [u8; 3] {
+        if mark_value == 1 {
+            [0x00, 0xFF, 0x00]
+        } else {
+            [0xFF, 0x00, 0x00]
+        }
+    }
+
     fn draw(&self, pos: Vec2, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
         let px = 4 * ((by + pos.y * 10) * buffer_width + bx + pos.x * 10);
 
         if self.directions[0] > 0 {
-            let color = if self.directions[0] == 1 {
-                [0x00, 0xFF, 0x00]
-            } else {
-                [0xFF, 0x00, 0x00]
-            };
-
             for index in ((px + 4)..(px + 40)).step_by(8) {
-                draw_pixel(buffer, index, color);
+                draw_pixel(buffer, index, Mark::get_color(self.directions[0]));
             }
         }
 
         if self.directions[1] > 0 {
-            let color = if self.directions[1] == 1 {
-                [0x00, 0xFF, 0x00]
-            } else {
-                [0xFF, 0x00, 0x00]
-            };
-
             for index in ((px + 4 + 40 * buffer_width)..(px + 40 + 40 * buffer_width)).step_by(8) {
-                draw_pixel(buffer, index, color);
+                draw_pixel(buffer, index, Mark::get_color(self.directions[1]));
             }
         }
 
         if self.directions[2] > 0 {
-            let color = if self.directions[2] == 1 {
-                [0x00, 0xFF, 0x00]
-            } else {
-                [0xFF, 0x00, 0x00]
-            };
-
             for index in
                 ((px + 4 * buffer_width)..(px + 40 * buffer_width)).step_by(8 * buffer_width)
             {
-                draw_pixel(buffer, index, color);
+                draw_pixel(buffer, index, Mark::get_color(self.directions[2]));
             }
         }
 
         if self.directions[3] > 0 {
-            let color = if self.directions[3] == 1 {
-                [0x00, 0xFF, 0x00]
-            } else {
-                [0xFF, 0x00, 0x00]
-            };
-
             for index in ((px + 4 * buffer_width + 40)..(px + 40 * buffer_width + 40))
                 .step_by(8 * buffer_width)
             {
-                draw_pixel(buffer, index, color);
+                draw_pixel(buffer, index, Mark::get_color(self.directions[3]));
             }
         }
     }
@@ -125,23 +109,13 @@ impl Solver for Tremaux {
     fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {
         let coord = 4 * (self.snail.pos.y * maze.width + self.snail.pos.x);
 
-        let mut valid_directions = vec![];
+        let walls = &maze.walls[coord..(coord + 4)];
 
-        if !maze.walls[coord] {
-            valid_directions.push(Direction::Up);
-        }
-
-        if !maze.walls[coord + 1] {
-            valid_directions.push(Direction::Down);
-        }
-
-        if !maze.walls[coord + 2] {
-            valid_directions.push(Direction::Left);
-        }
-
-        if !maze.walls[coord + 3] {
-            valid_directions.push(Direction::Right);
-        }
+        let valid_directions: Vec<Direction> = walls
+            .iter()
+            .enumerate()
+            .filter_map(|(i, has_wall)| (!has_wall).then(|| Direction::from_number(i)))
+            .collect();
 
         // if in junction
         if valid_directions.len() > 2 {
@@ -171,23 +145,22 @@ impl Solver for Tremaux {
             // 3. Pick entrance with fewest marks
             else {
                 let mut min_marks = u8::MAX;
-                let mut choices = vec![];
 
                 for (direction, num_marks) in mark.directions.iter().enumerate() {
-                    if valid_directions.contains(&Direction::from_number(direction))
-                        && *num_marks < min_marks
-                    {
+                    if !walls[direction] && *num_marks < min_marks {
                         min_marks = *num_marks;
                     }
                 }
 
-                for (direction, num_marks) in mark.directions.iter().enumerate() {
-                    if valid_directions.contains(&Direction::from_number(direction))
-                        && *num_marks == min_marks
-                    {
-                        choices.push(Direction::from_number(direction));
-                    }
-                }
+                let choices: Vec<Direction> = mark
+                    .directions
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(direction, num_marks)| {
+                        (!walls[direction] && *num_marks == min_marks)
+                            .then(|| Direction::from_number(direction))
+                    })
+                    .collect();
 
                 self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
             }

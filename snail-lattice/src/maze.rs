@@ -1,4 +1,4 @@
-use bit_vec::BitVec;
+use bitvec::prelude::*;
 
 use crate::{
     lfsr::LFSR,
@@ -40,7 +40,9 @@ impl AutoMaze {
                     x: width - 1,
                     y: height - 1,
                 },
-                walls: BitVec::from_elem(width * height * 4, true),
+
+                // initialize bitvec with all trues
+                walls: bitvec![1; width * height * 4],
             },
         }
     }
@@ -145,10 +147,10 @@ impl Maze {
     }
 
     pub fn generate(&mut self, lfsr: &mut LFSR) {
-        // prefill vector with
-        self.walls.set_all();
+        // set all elements in vector to 1s
+        self.walls.set_elements(!0usize);
 
-        let mut visited = BitVec::from_elem(self.width * self.height, false);
+        let mut visited = bitvec![0; self.width * self.height];
 
         self.random_walk(0, 0, &mut visited, lfsr);
 

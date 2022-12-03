@@ -1,6 +1,6 @@
 use crate::{
     maze::SNAIL_MOVEMENT_TIME,
-    utils::{discrete_lerp, Vec2},
+    utils::{console_log, discrete_lerp, Vec2},
 };
 
 use super::{direction::Direction, maze::Maze};
@@ -81,21 +81,21 @@ impl Snail {
                                 * buffer_width
                                 + bx
                                 + x
-                                + self.pos.x * 10
+                                + offset_x as usize
                                 + 2)
                         }
                         Direction::Down => {
                             4 * (((by + y + 2) as i32 + offset_y) as usize * buffer_width
                                 + bx
                                 + (SNAIL_IMAGE_SIZE - x)
-                                + self.pos.x * 10)
+                                + offset_x as usize)
                         }
                         Direction::Left => {
-                            4 * ((by + x + self.pos.y * 10 + 2) * buffer_width
+                            4 * ((by + x + offset_y as usize + 2) * buffer_width
                                 + ((bx + (SNAIL_IMAGE_SIZE - y)) as i32 + offset_x) as usize)
                         }
                         Direction::Right => {
-                            4 * ((by + x + self.pos.y * 10 + 2) * buffer_width
+                            4 * ((by + x + offset_y as usize + 2) * buffer_width
                                 + ((bx + y + 2) as i32 + offset_x) as usize)
                         }
                     };

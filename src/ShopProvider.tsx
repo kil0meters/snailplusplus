@@ -4,7 +4,7 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 
-export type ShopKey = "random-walk" | "hold-left" | "tremaux" | "clone";
+export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone";
 
 export interface ShopItem {
   name: string;
@@ -23,6 +23,10 @@ export interface ShopListing {
 const shopListings: ShopListing[] = [
   {
     key: "random-walk",
+    count: 0
+  },
+  {
+    key: "random-teleport",
     count: 0
   },
   {
@@ -48,21 +52,29 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "mazeSize": 5,
     "latticeWidth": 8
   },
+  "random-teleport": {
+    "name": "Random Teleport",
+    "description": "Randomly teleports to another location",
+    "price": 100,
+    "baseMultiplier": 1,
+    "mazeSize": 7,
+    "latticeWidth": 5
+  },
   "hold-left": {
     "name": "Hold Left Wall",
     "description": "At least it's not unbounded!",
-    "price": 300,
+    "price": 1000,
     "baseMultiplier": 1,
-    "mazeSize": 7,
-    "latticeWidth": 6
+    "mazeSize": 9,
+    "latticeWidth": 4
   },
   "tremaux": {
     "name": "Trémaux's algorithm",
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
-    "price": 4000,
+    "price": 5000,
     "baseMultiplier": 5,
-    "mazeSize": 9,
-    "latticeWidth": 4
+    "mazeSize": 11,
+    "latticeWidth": 3
   },
   "clone": {
     "name": "Cloning Snail",
@@ -80,7 +92,8 @@ const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
   // add new things to local shop if key is missing, only run at start
   for (let listing of shopListings) {
     if (!shop.find(x => x.key == listing.key)) {
-      setShop([...shop, listing]);
+      setShop([...shopListings]);
+      break;
     }
   }
 

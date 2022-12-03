@@ -54,6 +54,7 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
 
       setScore(score() + lattice.tick(dt) * shop[props.key].baseMultiplier);
 
+
       if (visible) {
         lattice.render(buffer);
 
