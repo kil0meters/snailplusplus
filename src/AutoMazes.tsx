@@ -52,7 +52,7 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
       let dt = Math.floor((now - prev) * 1000);
       prev = now;
 
-      setScore(score() + lattice.tick(dt) * shop[props.key].baseMultiplier);
+      setScore(score() + Math.floor(lattice.tick(dt) * shop[props.key].baseMultiplier));
 
 
       if (visible) {

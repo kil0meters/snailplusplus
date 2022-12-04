@@ -9,7 +9,7 @@ use crate::{
 
 use super::Tremaux;
 
-const TIME_TRAVEL_SPEED_FACTOR: usize = 5;
+const TIME_TRAVEL_SPEED_FACTOR: usize = 8;
 const TIME_TRAVEL_MOVEMENT_TIME: usize = SNAIL_MOVEMENT_TIME / TIME_TRAVEL_SPEED_FACTOR;
 
 fn random_color(lfsr: &mut LFSR) -> [u8; 3] {

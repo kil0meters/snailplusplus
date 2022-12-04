@@ -60,7 +60,7 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "name": "Random Teleport",
     "description": "Randomly teleports to another location",
     "price": 100,
-    "baseMultiplier": 1,
+    "baseMultiplier": 1.5,
     "mazeSize": 7,
     "latticeWidth": 5
   },
@@ -84,15 +84,15 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "name": "Time Travel Snail",
     "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
     "price": 20000,
-    "baseMultiplier": 5,
-    "mazeSize": 11,
+    "baseMultiplier": 9,
+    "mazeSize": 13,
     "latticeWidth": 3
   },
   "clone": {
     "name": "Cloning Snail",
     "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
     "price": 50000,
-    "baseMultiplier": 2,
+    "baseMultiplier": 20,
     "mazeSize": 20,
     "latticeWidth": 2
   }
