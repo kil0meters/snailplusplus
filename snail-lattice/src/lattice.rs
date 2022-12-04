@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 use crate::{
     lfsr::LFSR,
     maze::AutoMaze,
-    solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, Tremaux},
+    solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux},
     utils::set_panic_hook,
 };
 
@@ -13,6 +13,7 @@ pub enum MazeType {
     RandomWalk,
     HoldLeft,
     Tremaux,
+    TimeTravel,
     Clone,
 }
 
@@ -46,6 +47,7 @@ impl SnailLattice {
             "random-teleport" => MazeType::RandomTeleport,
             "hold-left" => MazeType::HoldLeft,
             "tremaux" => MazeType::Tremaux,
+            "time-travel" => MazeType::TimeTravel,
             "clone" => MazeType::Clone,
             _ => unreachable!(),
         };
@@ -124,7 +126,7 @@ impl SnailLattice {
         // render foreground of each maze into framebuffer
         // also updates mazes if necessary
         for maze in self.mazes.iter_mut() {
-            maze.draw(buffer, width, cx, cy);
+            maze.draw(&mut self.lfsr, buffer, width, cx, cy);
 
             cx += maze_size; // maze_size;
             if cx >= width {
@@ -170,6 +172,7 @@ impl SnailLattice {
                 MazeType::RandomTeleport => Box::new(|| Box::new(RandomTeleport::new(0))),
                 MazeType::HoldLeft => Box::new(|| Box::new(HoldLeft::new(0))),
                 MazeType::Tremaux => Box::new(|| Box::new(Tremaux::new(0))),
+                MazeType::TimeTravel => Box::new(|| Box::new(TimeTravel::new(0))),
                 MazeType::Clone => Box::new(|| Box::new(Clones::new(0))),
             };
 

@@ -4,7 +4,7 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 
-export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone";
+export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone" | "time-travel";
 
 export interface ShopItem {
   name: string;
@@ -35,6 +35,10 @@ const shopListings: ShopListing[] = [
   },
   {
     key: "tremaux",
+    count: 0
+  },
+  {
+    key: "time-travel",
     count: 0
   },
   {
@@ -69,9 +73,17 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "latticeWidth": 4
   },
   "tremaux": {
-    "name": "Trémaux's algorithm",
+    "name": "Segment Snail",
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
     "price": 5000,
+    "baseMultiplier": 5,
+    "mazeSize": 11,
+    "latticeWidth": 3
+  },
+  "time-travel": {
+    "name": "Time Travel Snail",
+    "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
+    "price": 20000,
     "baseMultiplier": 5,
     "mazeSize": 11,
     "latticeWidth": 3

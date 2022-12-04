@@ -32,6 +32,48 @@ pub fn draw_pixel(buffer: &mut [u8], index: usize, pixel: [u8; 3]) {
     buffer[index + 3] = 0xFF;
 }
 
+/* pub fn draw_rectangle(
+    x: usize,
+    y: usize,
+    w: usize,
+    h: usize,
+    color: [u8; 3],
+    buffer: &mut [u8],
+    buffer_width: usize,
+    bx: usize,
+    by: usize,
+) {
+    let px = 4 * ((y + by) * buffer_width + x + bx);
+
+    for row in 0..h {
+        for col in 0..w {
+            draw_pixel(buffer, px + 4 * (row * buffer_width + col), color);
+        }
+    }
+} */
+
+pub fn draw_rectangle_with<F>(
+    x: usize,
+    y: usize,
+    w: usize,
+    h: usize,
+    mut color: F,
+    buffer: &mut [u8],
+    buffer_width: usize,
+    bx: usize,
+    by: usize,
+) where
+    F: FnMut() -> [u8; 3],
+{
+    let px = 4 * ((y + by) * buffer_width + x + bx);
+
+    for row in 0..h {
+        for col in 0..w {
+            draw_pixel(buffer, px + 4 * (row * buffer_width + col), color());
+        }
+    }
+}
+
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]

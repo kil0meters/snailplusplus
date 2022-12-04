@@ -1,4 +1,10 @@
-use crate::{direction::Direction, lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
+use crate::{
+    direction::Direction,
+    lfsr::LFSR,
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    snail::Snail,
+    solvers::Solver,
+};
 
 pub struct RandomWalk {
     snail: Snail,
@@ -21,6 +27,8 @@ impl Solver for RandomWalk {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
+        _maze: &Maze,
+        _lfsr: &mut LFSR,
         buffer: &mut [u8],
         buffer_width: usize,
         bx: usize,
@@ -29,6 +37,7 @@ impl Solver for RandomWalk {
         self.snail.draw(
             animation_cycle,
             movement_timer,
+            self.movement_time(),
             buffer,
             buffer_width,
             bx,
@@ -57,5 +66,9 @@ impl Solver for RandomWalk {
         } else {
             false
         }
+    }
+
+    fn movement_time(&self) -> usize {
+        SNAIL_MOVEMENT_TIME
     }
 }

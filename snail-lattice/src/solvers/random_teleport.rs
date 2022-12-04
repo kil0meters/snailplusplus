@@ -1,10 +1,9 @@
 use crate::{
-    direction::Direction,
     lfsr::LFSR,
     maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::{console_log, discrete_lerp, draw_pixel},
+    utils::{discrete_lerp, draw_pixel},
 };
 
 const TELEPORTATION_TIME: usize = 6;
@@ -28,14 +27,19 @@ impl Solver for RandomTeleport {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
+        _maze: &Maze,
+        _lfsr: &mut LFSR,
         buffer: &mut [u8],
         buffer_width: usize,
         bx: usize,
         by: usize,
     ) {
+        let movement_time = self.movement_time();
+
         self.snail.draw(
             animation_cycle,
             movement_timer,
+            movement_time,
             buffer,
             buffer_width,
             bx,
@@ -50,11 +54,11 @@ impl Solver for RandomTeleport {
         }
 
         let progress = discrete_lerp(
-            -2,
+            0,
             36,
-            ((self.teleport_timer * SNAIL_MOVEMENT_TIME + movement_timer)
-                % (TELEPORTATION_TIME * SNAIL_MOVEMENT_TIME)) as i32,
-            (TELEPORTATION_TIME * SNAIL_MOVEMENT_TIME) as i32,
+            ((self.teleport_timer * movement_time + movement_timer)
+                % (TELEPORTATION_TIME * movement_time)) as i32,
+            (TELEPORTATION_TIME * movement_time) as i32,
         ) as usize;
 
         // draw progress bar under snail
@@ -80,5 +84,9 @@ impl Solver for RandomTeleport {
         } else {
             false
         }
+    }
+
+    fn movement_time(&self) -> usize {
+        SNAIL_MOVEMENT_TIME
     }
 }

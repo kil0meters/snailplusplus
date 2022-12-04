@@ -54,11 +54,12 @@ impl AutoMaze {
         let prev = self.clock;
         let now = self.clock + dt;
         self.clock = now;
+        let movement_time = self.solver.movement_time();
 
-        let mut num_movements = (now - prev) / SNAIL_MOVEMENT_TIME;
-        self.movement_timer += (now - prev) % SNAIL_MOVEMENT_TIME;
-        if self.movement_timer > SNAIL_MOVEMENT_TIME {
-            self.movement_timer -= SNAIL_MOVEMENT_TIME;
+        let mut num_movements = (now - prev) / movement_time;
+        self.movement_timer += (now - prev) % movement_time;
+        if self.movement_timer > movement_time {
+            self.movement_timer -= movement_time;
             num_movements += 1;
         }
 
@@ -68,20 +69,29 @@ impl AutoMaze {
             if self.solver.step(&self.maze, lfsr) {
                 total += self.maze.width * self.maze.height;
                 self.maze.generate(lfsr);
-                self.movement_timer = SNAIL_MOVEMENT_TIME;
+                self.movement_timer = movement_time;
             }
         }
 
         total
     }
 
-    pub fn draw(&mut self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
+    pub fn draw(
+        &mut self,
+        lfsr: &mut LFSR,
+        buffer: &mut [u8],
+        buffer_width: usize,
+        bx: usize,
+        by: usize,
+    ) {
         let animation_cycle = (self.clock / ANIMATION_TIME) % 2 == 0;
 
         // draw "snail"
         self.solver.draw(
             animation_cycle,
             self.movement_timer,
+            &self.maze,
+            lfsr,
             buffer,
             buffer_width,
             bx,

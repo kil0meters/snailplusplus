@@ -1,4 +1,9 @@
-use crate::{lfsr::LFSR, maze::Maze, snail::Snail, solvers::Solver};
+use crate::{
+    lfsr::LFSR,
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    snail::Snail,
+    solvers::Solver,
+};
 
 pub struct HoldLeft {
     snail: Snail,
@@ -17,6 +22,8 @@ impl Solver for HoldLeft {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
+        _maze: &Maze,
+        _lfsr: &mut LFSR,
         buffer: &mut [u8],
         buffer_width: usize,
         bx: usize,
@@ -25,6 +32,7 @@ impl Solver for HoldLeft {
         self.snail.draw(
             animation_cycle,
             movement_timer,
+            self.movement_time(),
             buffer,
             buffer_width,
             bx,
@@ -56,5 +64,9 @@ impl Solver for HoldLeft {
         } else {
             false
         }
+    }
+
+    fn movement_time(&self) -> usize {
+        SNAIL_MOVEMENT_TIME
     }
 }

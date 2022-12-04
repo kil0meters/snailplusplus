@@ -1,21 +1,21 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{collections::HashMap};
 
 use crate::{
     direction::Direction,
     lfsr::LFSR,
-    maze::Maze,
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::{console_log, draw_pixel, Vec2},
+    utils::{draw_pixel, Vec2},
 };
 
-struct Mark {
+pub struct Mark {
     // [up, down, left, right]
-    directions: Vec<u8>,
+    pub directions: Vec<u8>,
 }
 
 impl Mark {
-    fn add_mark(&mut self, direction: Direction) {
+    pub fn add_mark(&mut self, direction: Direction) {
         self.directions[direction as usize] += 1;
     }
 
@@ -69,8 +69,10 @@ impl Default for Mark {
 }
 
 pub struct Tremaux {
-    snail: Snail,
-    visited: HashMap<Vec2, Mark>,
+    pub snail: Snail,
+    pub visited: HashMap<Vec2, Mark>,
+    movement_time: usize,
+    pub finished: bool,
 }
 
 impl Tremaux {
@@ -78,7 +80,14 @@ impl Tremaux {
         Tremaux {
             snail: Snail::new(),
             visited: HashMap::new(),
+            finished: false,
+            movement_time: SNAIL_MOVEMENT_TIME,
         }
+    }
+
+    pub fn set_movement_time(mut self, movement_time: usize) -> Self {
+        self.movement_time = movement_time;
+        self
     }
 }
 
@@ -87,6 +96,8 @@ impl Solver for Tremaux {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
+        _maze: &Maze,
+        _lfsr: &mut LFSR,
         buffer: &mut [u8],
         buffer_width: usize,
         bx: usize,
@@ -99,6 +110,7 @@ impl Solver for Tremaux {
         self.snail.draw(
             animation_cycle,
             movement_timer,
+            self.movement_time(),
             buffer,
             buffer_width,
             bx,
@@ -107,6 +119,12 @@ impl Solver for Tremaux {
     }
 
     fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {
+        if self.finished {
+            self.snail.reset();
+            self.visited.clear();
+            self.finished = false;
+        }
+
         let coord = 4 * (self.snail.pos.y * maze.width + self.snail.pos.x);
 
         let walls = &maze.walls[coord..(coord + 4)];
@@ -183,11 +201,14 @@ impl Solver for Tremaux {
         self.snail.move_forward(maze);
 
         if self.snail.pos == maze.end_pos {
-            self.snail.reset();
-            self.visited.clear();
+            self.finished = true;
             true
         } else {
             false
         }
+    }
+
+    fn movement_time(&self) -> usize {
+        self.movement_time
     }
 }

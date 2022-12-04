@@ -1,6 +1,5 @@
 use crate::{
-    maze::SNAIL_MOVEMENT_TIME,
-    utils::{console_log, discrete_lerp, Vec2},
+    utils::{discrete_lerp, Vec2},
 };
 
 use super::{direction::Direction, maze::Maze};
@@ -28,6 +27,7 @@ impl Snail {
         &self,
         animation_cycle: bool,
         movement_timer: usize,
+        movement_time: usize,
 
         buffer: &mut [u8],
         buffer_width: usize,
@@ -49,7 +49,7 @@ impl Snail {
                 (self.prev_pos.y * 10) as i32,
                 (self.pos.y * 10) as i32,
                 movement_timer as i32,
-                SNAIL_MOVEMENT_TIME as i32,
+                movement_time as i32,
             )
         } else {
             (self.pos.y * 10) as i32
@@ -60,7 +60,7 @@ impl Snail {
                 (self.prev_pos.x * 10) as i32,
                 (self.pos.x * 10) as i32,
                 movement_timer as i32,
-                SNAIL_MOVEMENT_TIME as i32,
+                movement_time as i32,
             )
         } else {
             (self.pos.x * 10) as i32
