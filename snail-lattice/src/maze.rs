@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
-pub const SNAIL_FG: [u8; 3] = [0x68, 0x8F, 0xEF];
+pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
 pub const SNAIL_MOVEMENT_TIME: usize = 250000;
 pub const ANIMATION_TIME: usize = 500000;
 
