@@ -1,12 +1,13 @@
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{
     direction::Direction,
+    image::Image,
     lfsr::LFSR,
     maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::{draw_pixel, Vec2},
+    utils::Vec2,
 };
 
 pub struct Mark {
@@ -27,34 +28,36 @@ impl Mark {
         }
     }
 
-    fn draw(&self, pos: Vec2, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
-        let px = 4 * ((by + pos.y * 10) * buffer_width + bx + pos.x * 10);
+    fn draw(&self, pos: Vec2, image: &mut Image, bx: usize, by: usize) {
+        let px = 4 * ((by + pos.y * 10) * image.buffer_width + bx + pos.x * 10);
 
         if self.directions[0] > 0 {
             for index in ((px + 4)..(px + 40)).step_by(8) {
-                draw_pixel(buffer, index, Mark::get_color(self.directions[0]));
+                image.draw_pixel(index, Mark::get_color(self.directions[0]));
             }
         }
 
         if self.directions[1] > 0 {
-            for index in ((px + 4 + 40 * buffer_width)..(px + 40 + 40 * buffer_width)).step_by(8) {
-                draw_pixel(buffer, index, Mark::get_color(self.directions[1]));
+            for index in
+                ((px + 4 + 40 * image.buffer_width)..(px + 40 + 40 * image.buffer_width)).step_by(8)
+            {
+                image.draw_pixel(index, Mark::get_color(self.directions[1]));
             }
         }
 
         if self.directions[2] > 0 {
-            for index in
-                ((px + 4 * buffer_width)..(px + 40 * buffer_width)).step_by(8 * buffer_width)
+            for index in ((px + 4 * image.buffer_width)..(px + 40 * image.buffer_width))
+                .step_by(8 * image.buffer_width)
             {
-                draw_pixel(buffer, index, Mark::get_color(self.directions[2]));
+                image.draw_pixel(index, Mark::get_color(self.directions[2]));
             }
         }
 
         if self.directions[3] > 0 {
-            for index in ((px + 4 * buffer_width + 40)..(px + 40 * buffer_width + 40))
-                .step_by(8 * buffer_width)
+            for index in ((px + 4 * image.buffer_width + 40)..(px + 40 * image.buffer_width + 40))
+                .step_by(8 * image.buffer_width)
             {
-                draw_pixel(buffer, index, Mark::get_color(self.directions[3]));
+                image.draw_pixel(index, Mark::get_color(self.directions[3]));
             }
         }
     }
@@ -96,23 +99,20 @@ impl Solver for Tremaux {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
-        _maze: &Maze,
         _lfsr: &mut LFSR,
-        buffer: &mut [u8],
-        buffer_width: usize,
+        image: &mut Image,
         bx: usize,
         by: usize,
     ) {
         for (pos, mark) in self.visited.iter() {
-            mark.draw(*pos, buffer, buffer_width, bx, by);
+            mark.draw(*pos, image, bx, by);
         }
 
         self.snail.draw(
             animation_cycle,
             movement_timer,
             self.movement_time(),
-            buffer,
-            buffer_width,
+            image,
             bx,
             by,
         );

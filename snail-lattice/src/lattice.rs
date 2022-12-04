@@ -1,6 +1,9 @@
+use std::collections::HashSet;
+
 use wasm_bindgen::prelude::*;
 
 use crate::{
+    image::Image,
     lfsr::LFSR,
     maze::AutoMaze,
     solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux},
@@ -23,6 +26,9 @@ pub struct SnailLattice {
     maze_size: usize,
     mazes: Vec<AutoMaze>,
     maze_type: MazeType,
+
+    // stores the indexes of mazes which need to be rerendered
+    render_marked: HashSet<usize>,
 
     bg_buffer: Vec<u8>,
 
@@ -57,6 +63,7 @@ impl SnailLattice {
             maze_size,
             mazes: Vec::new(),
             maze_type,
+            render_marked: HashSet::new(),
             bg_buffer: Vec::new(),
             lfsr: LFSR::new(seed),
         };
@@ -95,9 +102,13 @@ impl SnailLattice {
         let mut cx = 0;
         let mut cy = 0;
 
+        let mut bg_image = Image {
+            buffer: &mut self.bg_buffer,
+            buffer_width: width,
+        };
+
         for maze in self.mazes.iter_mut() {
-            maze.maze
-                .draw_background(&mut self.bg_buffer, width, cx, cy);
+            maze.maze.draw_background(&mut bg_image, cx, cy);
 
             cx += maze_size;
             if cx >= width {
@@ -115,18 +126,41 @@ impl SnailLattice {
             return;
         }
 
+        let maze_size = self.maze_size * 10 + 1;
+        let width = maze_size * self.width;
+
+        if !self.render_marked.is_empty() {
+            let mut bg_image = Image {
+                buffer_width: width,
+                buffer: &mut self.bg_buffer,
+            };
+
+            // render all things necessary
+            for &i in self.render_marked.iter() {
+                self.mazes[i].maze.draw_background(
+                    &mut bg_image,
+                    maze_size * (i % self.width),
+                    maze_size * (i / self.width),
+                );
+            }
+
+            self.render_marked.clear();
+        }
+
         buffer.copy_from_slice(&self.bg_buffer);
 
         let mut cx = 0;
         let mut cy = 0;
 
-        let maze_size = self.maze_size * 10 + 1;
-        let width = maze_size * self.width;
+        let mut image = Image {
+            buffer,
+            buffer_width: width,
+        };
 
         // render foreground of each maze into framebuffer
         // also updates mazes if necessary
         for maze in self.mazes.iter_mut() {
-            maze.draw(&mut self.lfsr, buffer, width, cx, cy);
+            maze.draw(&mut self.lfsr, &mut image, cx, cy);
 
             cx += maze_size; // maze_size;
             if cx >= width {
@@ -139,8 +173,6 @@ impl SnailLattice {
     // progresses all snails a certain number of microseconds
     // returns the number of maze framents accrued
     pub fn tick(&mut self, dt: usize) -> usize {
-        let maze_size = self.maze_size * 10 + 1;
-
         let mut total = 0;
 
         for (i, maze) in self.mazes.iter_mut().enumerate() {
@@ -148,12 +180,9 @@ impl SnailLattice {
             if fragments != 0 {
                 total += fragments;
 
-                maze.maze.draw_background(
-                    &mut self.bg_buffer,
-                    maze_size * self.width,
-                    maze_size * (i % self.width),
-                    maze_size * (i / self.width),
-                );
+                // mark that the current maze needs to be rerendered
+                self.render_marked.insert(i);
+                // queue
             }
         }
 

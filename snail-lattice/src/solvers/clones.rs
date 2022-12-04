@@ -1,4 +1,5 @@
 use crate::{
+    image::{self, Image},
     lfsr::LFSR,
     maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::Snail,
@@ -29,10 +30,8 @@ impl Solver for Clones {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
-        _maze: &Maze,
         _lfsr: &mut LFSR,
-        buffer: &mut [u8],
-        buffer_width: usize,
+        image: &mut Image,
         bx: usize,
         by: usize,
     ) {
@@ -41,8 +40,7 @@ impl Solver for Clones {
                 animation_cycle,
                 movement_timer,
                 self.movement_time(),
-                buffer,
-                buffer_width,
+                image,
                 bx,
                 by,
             );
@@ -53,8 +51,7 @@ impl Solver for Clones {
                 animation_cycle,
                 movement_timer,
                 self.movement_time(),
-                buffer,
-                buffer_width,
+                image,
                 bx,
                 by,
             );

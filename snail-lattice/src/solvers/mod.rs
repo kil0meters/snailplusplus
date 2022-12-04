@@ -1,4 +1,4 @@
-use crate::{lfsr::LFSR, maze::Maze};
+use crate::{image::Image, lfsr::LFSR, maze::Maze};
 
 mod clones;
 mod hold_left;
@@ -19,10 +19,9 @@ pub trait Solver {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
-        maze: &Maze,
         lfsr: &mut LFSR,
-        buffer: &mut [u8],
-        buffer_width: usize,
+
+        image: &mut Image,
         bx: usize,
         by: usize,
     );

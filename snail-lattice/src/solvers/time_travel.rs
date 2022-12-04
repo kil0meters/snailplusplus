@@ -1,10 +1,11 @@
 use crate::{
     direction::Direction,
+    image::Image,
     lfsr::LFSR,
     maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::{draw_rectangle_with, Vec2},
+    utils::Vec2,
 };
 
 use super::Tremaux;
@@ -26,32 +27,28 @@ struct PathTile {
 }
 
 impl PathTile {
-    fn draw(&self, lfsr: &mut LFSR, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
+    fn draw(&self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
         match self.directions {
             // up down
             [true, true, false, false] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 4,
                     self.pos.y * 10,
                     3,
                     10,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
             }
             // left right
             [false, false, true, true] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10,
                     self.pos.y * 10 + 4,
                     10,
                     3,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
@@ -59,26 +56,22 @@ impl PathTile {
 
             // up right
             [true, false, false, true] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 4,
                     self.pos.y * 10,
                     3,
                     7,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
 
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 7,
                     self.pos.y * 10 + 4,
                     4,
                     3,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
@@ -86,26 +79,22 @@ impl PathTile {
 
             // up left
             [true, false, true, false] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 4,
                     self.pos.y * 10,
                     3,
                     7,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
 
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10,
                     self.pos.y * 10 + 4,
                     4,
                     3,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
@@ -113,26 +102,22 @@ impl PathTile {
 
             // down right
             [false, true, false, true] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 4,
                     self.pos.y * 10 + 4,
                     3,
                     7,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
 
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 7,
                     self.pos.y * 10 + 4,
                     4,
                     3,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
@@ -140,26 +125,22 @@ impl PathTile {
 
             // down left
             [false, true, true, false] => {
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10 + 4,
                     self.pos.y * 10 + 4,
                     3,
                     7,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
 
-                draw_rectangle_with(
+                image.draw_rectangle_with(
                     self.pos.x * 10,
                     self.pos.y * 10 + 4,
                     4,
                     3,
                     || random_color(lfsr),
-                    buffer,
-                    buffer_width,
                     bx,
                     by,
                 );
@@ -325,58 +306,44 @@ impl Solver for TimeTravel {
         &mut self,
         animation_cycle: bool,
         movement_timer: usize,
-        maze: &Maze,
         lfsr: &mut LFSR,
-        buffer: &mut [u8],
-        buffer_width: usize,
+        image: &mut Image,
         bx: usize,
         by: usize,
     ) {
         match self.state {
             TimeTravelState::TimeTraveling => {
-                self.snail
-                    .draw(true, 0, SNAIL_MOVEMENT_TIME, buffer, buffer_width, bx, by);
+                self.snail.draw(true, 0, SNAIL_MOVEMENT_TIME, image, bx, by);
 
-                self.time_traveler.draw(
-                    animation_cycle,
-                    movement_timer,
-                    maze,
-                    lfsr,
-                    buffer,
-                    buffer_width,
-                    bx,
-                    by,
-                );
+                self.time_traveler
+                    .draw(animation_cycle, movement_timer, lfsr, image, bx, by);
             }
             TimeTravelState::DrawingPath => {
                 for tile in &self.path {
-                    tile.draw(lfsr, buffer, buffer_width, bx, by);
+                    tile.draw(lfsr, image, bx, by);
                 }
 
-                self.snail
-                    .draw(true, 0, SNAIL_MOVEMENT_TIME, buffer, buffer_width, bx, by);
+                self.snail.draw(true, 0, SNAIL_MOVEMENT_TIME, image, bx, by);
 
                 self.path_drawer.draw(
                     animation_cycle,
                     movement_timer,
                     self.movement_time(),
-                    buffer,
-                    buffer_width,
+                    image,
                     bx,
                     by,
                 );
             }
             TimeTravelState::Normal => {
                 for tile in &self.path {
-                    tile.draw(lfsr, buffer, buffer_width, bx, by);
+                    tile.draw(lfsr, image, bx, by);
                 }
 
                 self.snail.draw(
                     animation_cycle,
                     movement_timer + TIME_TRAVEL_MOVEMENT_TIME * self.time_dilation_timer,
                     SNAIL_MOVEMENT_TIME,
-                    buffer,
-                    buffer_width,
+                    image,
                     bx,
                     by,
                 );

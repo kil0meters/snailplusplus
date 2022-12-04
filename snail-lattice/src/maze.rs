@@ -1,10 +1,6 @@
 use bitvec::prelude::*;
 
-use crate::{
-    lfsr::LFSR,
-    solvers::Solver,
-    utils::{draw_pixel, Vec2},
-};
+use crate::{image::Image, lfsr::LFSR, solvers::Solver, utils::Vec2};
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
@@ -76,29 +72,13 @@ impl AutoMaze {
         total
     }
 
-    pub fn draw(
-        &mut self,
-        lfsr: &mut LFSR,
-        buffer: &mut [u8],
-        buffer_width: usize,
-        bx: usize,
-        by: usize,
-    ) {
+    pub fn draw(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
         let animation_cycle = (self.clock / ANIMATION_TIME) % 2 == 0;
 
         // draw "snail"
-        self.solver.draw(
-            animation_cycle,
-            self.movement_timer,
-            &self.maze,
-            lfsr,
-            buffer,
-            buffer_width,
-            bx,
-            by,
-        );
-        self.maze
-            .draw_foreground(animation_cycle, buffer, buffer_width, bx, by);
+        self.solver
+            .draw(animation_cycle, self.movement_timer, lfsr, image, bx, by);
+        self.maze.draw_foreground(animation_cycle, image, bx, by);
     }
 }
 
@@ -206,50 +186,43 @@ impl Maze {
         }
     }
 
-    pub fn draw_background(&self, buffer: &mut [u8], buffer_width: usize, bx: usize, by: usize) {
+    pub fn draw_background(&self, image: &mut Image, bx: usize, by: usize) {
         for y in 0..(self.height * 10) {
             for x in 0..self.width {
                 let loc = 4 * ((y / 10) * self.width + x);
-                let px = ((by + y) * buffer_width + bx + (x * 10)) * 4;
+                let px = ((by + y) * image.buffer_width + bx + (x * 10)) * 4;
 
                 // Checking the bottom wall is redundant
                 if y % 10 == 0 && self.walls[loc] {
                     for l in (px..(px + 4 * 10)).step_by(4) {
-                        draw_pixel(buffer, l, SNAIL_FG);
+                        image.draw_pixel(l, SNAIL_FG);
                     }
                 } else {
                     // if left wall, checking right wall is redundant
                     if self.walls[loc + 2] || y % 10 == 0 {
-                        draw_pixel(buffer, px, SNAIL_FG);
+                        image.draw_pixel(px, SNAIL_FG);
                     } else {
-                        draw_pixel(buffer, px, SNAIL_BG);
+                        image.draw_pixel(px, SNAIL_BG);
                     }
 
                     for l in ((px + 4)..(px + 4 * 10)).step_by(4) {
-                        draw_pixel(buffer, l, SNAIL_BG);
+                        image.draw_pixel(l, SNAIL_BG);
                     }
                 }
             }
 
             // fill end pixel
-            let px = 4 * ((by + y) * buffer_width + bx + self.width * 10);
-            draw_pixel(buffer, px, SNAIL_FG);
+            let px = 4 * ((by + y) * image.buffer_width + bx + self.width * 10);
+            image.draw_pixel(px, SNAIL_FG);
         }
 
-        let px = 4 * ((by + self.height * 10) * buffer_width + bx);
+        let px = 4 * ((by + self.height * 10) * image.buffer_width + bx);
         for l in (px..(px + 4 * (1 + 10 * self.width))).step_by(4) {
-            draw_pixel(buffer, l, SNAIL_FG);
+            image.draw_pixel(l, SNAIL_FG);
         }
     }
 
-    fn draw_foreground(
-        &self,
-        animation_cycle: bool,
-        buffer: &mut [u8],
-        buffer_width: usize,
-        bx: usize,
-        by: usize,
-    ) {
+    fn draw_foreground(&self, animation_cycle: bool, image: &mut Image, bx: usize, by: usize) {
         // draw goal
         if animation_cycle {
             const GOAL_IMAGE_SIZE: usize = 7;
@@ -260,16 +233,16 @@ impl Maze {
                 for x in 0..GOAL_IMAGE_SIZE {
                     let goal_px = 4 * (y * GOAL_IMAGE_SIZE + x);
                     let px = 4
-                        * ((by + x + self.end_pos.y * 10 + 2) * buffer_width
+                        * ((by + x + self.end_pos.y * 10 + 2) * image.buffer_width
                             + bx
                             + y
                             + self.end_pos.x * 10
                             + 2);
 
                     if goal_image[goal_px + 3] != 0 {
-                        buffer[px] = goal_image[goal_px];
-                        buffer[px + 1] = goal_image[goal_px + 1];
-                        buffer[px + 2] = goal_image[goal_px + 2];
+                        image.buffer[px] = goal_image[goal_px];
+                        image.buffer[px + 1] = goal_image[goal_px + 1];
+                        image.buffer[px + 2] = goal_image[goal_px + 2];
                     }
                 }
             }

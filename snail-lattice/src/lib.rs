@@ -3,6 +3,7 @@
 extern crate test;
 
 mod direction;
+mod image;
 pub mod lattice;
 mod lfsr;
 mod maze;

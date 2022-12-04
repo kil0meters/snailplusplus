@@ -1,4 +1,5 @@
 use crate::{
+    image::Image,
     utils::{discrete_lerp, Vec2},
 };
 
@@ -29,8 +30,7 @@ impl Snail {
         movement_timer: usize,
         movement_time: usize,
 
-        buffer: &mut [u8],
-        buffer_width: usize,
+        image: &mut Image,
         bx: usize,
         by: usize,
     ) {
@@ -78,31 +78,31 @@ impl Snail {
                     let px = match self.direction {
                         Direction::Up => {
                             4 * (((by + (SNAIL_IMAGE_SIZE - y)) as i32 + offset_y) as usize
-                                * buffer_width
+                                * image.buffer_width
                                 + bx
                                 + x
                                 + offset_x as usize
                                 + 2)
                         }
                         Direction::Down => {
-                            4 * (((by + y + 2) as i32 + offset_y) as usize * buffer_width
+                            4 * (((by + y + 2) as i32 + offset_y) as usize * image.buffer_width
                                 + bx
                                 + (SNAIL_IMAGE_SIZE - x)
                                 + offset_x as usize)
                         }
                         Direction::Left => {
-                            4 * ((by + x + offset_y as usize + 2) * buffer_width
+                            4 * ((by + x + offset_y as usize + 2) * image.buffer_width
                                 + ((bx + (SNAIL_IMAGE_SIZE - y)) as i32 + offset_x) as usize)
                         }
                         Direction::Right => {
-                            4 * ((by + x + offset_y as usize + 2) * buffer_width
+                            4 * ((by + x + offset_y as usize + 2) * image.buffer_width
                                 + ((bx + y + 2) as i32 + offset_x) as usize)
                         }
                     };
 
-                    buffer[px] = snail_image[snail_px];
-                    buffer[px + 1] = snail_image[snail_px + 1];
-                    buffer[px + 2] = snail_image[snail_px + 2];
+                    image.buffer[px] = snail_image[snail_px];
+                    image.buffer[px + 1] = snail_image[snail_px + 1];
+                    image.buffer[px + 2] = snail_image[snail_px + 2];
                 }
             }
         }
