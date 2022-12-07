@@ -38,7 +38,45 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
+let cachedInt32Memory0 = new Int32Array();
+
+function getInt32Memory0() {
+    if (cachedInt32Memory0.byteLength === 0) {
+        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachedInt32Memory0;
+}
+
+let cachedUint32Memory0 = new Uint32Array();
+
+function getUint32Memory0() {
+    if (cachedUint32Memory0.byteLength === 0) {
+        cachedUint32Memory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32Memory0;
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    return getUint32Memory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
 let WASM_VECTOR_LEN = 0;
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1);
+    getUint8Memory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
 
 const cachedTextEncoder = new TextEncoder('utf-8');
 
@@ -92,50 +130,12 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
-
-let cachedInt32Memory0 = new Int32Array();
-
-function getInt32Memory0() {
-    if (cachedInt32Memory0.byteLength === 0) {
-        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
-    }
-    return cachedInt32Memory0;
-}
-
-let cachedUint32Memory0 = new Uint32Array();
-
-function getUint32Memory0() {
-    if (cachedUint32Memory0.byteLength === 0) {
-        cachedUint32Memory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachedUint32Memory0;
-}
-
-function getArrayU32FromWasm0(ptr, len) {
-    return getUint32Memory0().subarray(ptr / 4, ptr / 4 + len);
-}
-
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1);
-    getUint8Memory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
-}
 /**
 */
-export class SnailLattice {
+export class CloneLattice {
 
     static __wrap(ptr) {
-        const obj = Object.create(SnailLattice.prototype);
+        const obj = Object.create(CloneLattice.prototype);
         obj.ptr = ptr;
 
         return obj;
@@ -150,20 +150,16 @@ export class SnailLattice {
 
     free() {
         const ptr = this.__destroy_into_raw();
-        wasm.__wbg_snaillattice_free(ptr);
+        wasm.__wbg_clonelattice_free(ptr);
     }
     /**
-    * @param {string} maze_type
     * @param {number} width
-    * @param {number} maze_size
     * @param {number} count
     * @param {number} seed
     */
-    constructor(maze_type, width, maze_size, count, seed) {
-        const ptr0 = passStringToWasm0(maze_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.snaillattice_new(ptr0, len0, width, maze_size, count, seed);
-        return SnailLattice.__wrap(ret);
+    constructor(width, count, seed) {
+        const ret = wasm.clonelattice_new(width, count, seed);
+        return CloneLattice.__wrap(ret);
     }
     /**
     * @returns {Uint32Array}
@@ -171,7 +167,7 @@ export class SnailLattice {
     get_dimensions() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.snaillattice_get_dimensions(retptr, this.ptr);
+            wasm.clonelattice_get_dimensions(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -188,7 +184,7 @@ export class SnailLattice {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.snaillattice_render(this.ptr, ptr0, len0);
+            wasm.clonelattice_render(this.ptr, ptr0, len0);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -199,14 +195,389 @@ export class SnailLattice {
     * @returns {number}
     */
     tick(dt) {
-        const ret = wasm.snaillattice_tick(this.ptr, dt);
+        const ret = wasm.clonelattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
     /**
     * @param {number} difference
     */
     alter(difference) {
-        wasm.snaillattice_alter(this.ptr, difference);
+        wasm.clonelattice_alter(this.ptr, difference);
+    }
+}
+/**
+*/
+export class HoldLeftLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(HoldLeftLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_holdleftlattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} count
+    * @param {number} seed
+    */
+    constructor(width, count, seed) {
+        const ret = wasm.holdleftlattice_new(width, count, seed);
+        return HoldLeftLattice.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_dimensions() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.holdleftlattice_get_dimensions(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    */
+    render(buffer) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.holdleftlattice_render(this.ptr, ptr0, len0);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.holdleftlattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.holdleftlattice_alter(this.ptr, difference);
+    }
+}
+/**
+*/
+export class RandomTeleportLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(RandomTeleportLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_randomteleportlattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} count
+    * @param {number} seed
+    */
+    constructor(width, count, seed) {
+        const ret = wasm.randomteleportlattice_new(width, count, seed);
+        return RandomTeleportLattice.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_dimensions() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.randomteleportlattice_get_dimensions(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    */
+    render(buffer) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.randomteleportlattice_render(this.ptr, ptr0, len0);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.randomteleportlattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.randomteleportlattice_alter(this.ptr, difference);
+    }
+}
+/**
+*/
+export class RandomWalkLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(RandomWalkLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_randomwalklattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} count
+    * @param {number} seed
+    */
+    constructor(width, count, seed) {
+        const ret = wasm.randomwalklattice_new(width, count, seed);
+        return RandomWalkLattice.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_dimensions() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.randomwalklattice_get_dimensions(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    */
+    render(buffer) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.randomwalklattice_render(this.ptr, ptr0, len0);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.randomwalklattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.randomwalklattice_alter(this.ptr, difference);
+    }
+}
+/**
+*/
+export class TimeTravelLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(TimeTravelLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_timetravellattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} count
+    * @param {number} seed
+    */
+    constructor(width, count, seed) {
+        const ret = wasm.timetravellattice_new(width, count, seed);
+        return TimeTravelLattice.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_dimensions() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.timetravellattice_get_dimensions(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    */
+    render(buffer) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.timetravellattice_render(this.ptr, ptr0, len0);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.timetravellattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.timetravellattice_alter(this.ptr, difference);
+    }
+}
+/**
+*/
+export class TremauxLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(TremauxLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_tremauxlattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} count
+    * @param {number} seed
+    */
+    constructor(width, count, seed) {
+        const ret = wasm.tremauxlattice_new(width, count, seed);
+        return TremauxLattice.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_dimensions() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.tremauxlattice_get_dimensions(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    */
+    render(buffer) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.tremauxlattice_render(this.ptr, ptr0, len0);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.tremauxlattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.tremauxlattice_alter(this.ptr, difference);
     }
 }
 

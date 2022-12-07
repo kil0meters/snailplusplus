@@ -1,8 +1,10 @@
+
+
 use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
     utils::Vec2,
@@ -163,22 +165,28 @@ enum TimeTravelState {
     Normal,
 }
 
-pub struct TimeTravel {
-    snail: Snail,
+pub struct TimeTravel<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+{
+    snail: Snail<S>,
     state: TimeTravelState,
     path: Vec<PathTile>,
 
-    path_drawer: Snail,
-    time_traveler: Tremaux,
+    path_drawer: Snail<S>,
+    time_traveler: Tremaux<S>,
     time_dilation_timer: usize,
 }
 
-impl TimeTravel {
-    pub fn new(_upgrades: usize) -> Self {
+impl<const S: usize> Solver<S> for TimeTravel<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+{
+    fn new() -> Self {
         let mut path_drawer = Snail::new();
         path_drawer.active = false;
 
-        let mut time_traveler = Tremaux::new(0).set_movement_time(TIME_TRAVEL_MOVEMENT_TIME);
+        let mut time_traveler = Tremaux::new().set_movement_time(TIME_TRAVEL_MOVEMENT_TIME);
         time_traveler.snail.active = false;
 
         TimeTravel {
@@ -191,10 +199,8 @@ impl TimeTravel {
             time_dilation_timer: 0,
         }
     }
-}
 
-impl Solver for TimeTravel {
-    fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         match self.state {
             TimeTravelState::TimeTraveling => {
                 if self.time_traveler.step(maze, lfsr) {
@@ -205,15 +211,8 @@ impl Solver for TimeTravel {
                 }
             }
             TimeTravelState::DrawingPath => {
-                let coord = 4 * (self.path_drawer.pos.y * maze.width + self.path_drawer.pos.x);
-
-                let walls = &maze.walls[coord..(coord + 4)];
-
-                let valid_directions: Vec<Direction> = walls
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(i, has_wall)| (!has_wall).then(|| Direction::from_number(i)))
-                    .collect();
+                let cell = maze.get_cell(self.path_drawer.pos.x, self.path_drawer.pos.y);
+                let valid_directions = cell.valid_directions();
 
                 // if in junction
                 if valid_directions.len() > 2 {
@@ -236,8 +235,7 @@ impl Solver for TimeTravel {
                     self.path_drawer.direction = *direction;
                 }
                 // if in corridor, keep along
-                else if valid_directions.len() == 2 && walls[self.path_drawer.direction as usize]
-                {
+                else if valid_directions.len() == 2 && cell.has_wall(self.path_drawer.direction) {
                     // make the path_drawer continue along the corridor
                     if self.path_drawer.direction.flip() == valid_directions[0] {
                         self.path_drawer.direction = valid_directions[1];
@@ -245,10 +243,6 @@ impl Solver for TimeTravel {
                         self.path_drawer.direction = valid_directions[0]
                     }
                 }
-                // in dead end, turn around
-                /* else {
-                    self.path_drawer.direction = self.path_drawer.direction.flip();
-                } */
 
                 // draw path
                 if let Some(prev) = self.path.last_mut() {

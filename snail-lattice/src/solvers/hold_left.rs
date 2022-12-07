@@ -1,24 +1,28 @@
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
 };
 
-pub struct HoldLeft {
-    snail: Snail,
+pub struct HoldLeft<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    snail: Snail<S>,
 }
 
-impl HoldLeft {
-    pub fn new(_upgrades: usize) -> Self {
+impl<const S: usize> Solver<S> for HoldLeft<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    fn new() -> Self {
         HoldLeft {
             snail: Snail::new(),
         }
     }
-}
 
-impl Solver for HoldLeft {
     fn draw(
         &mut self,
         animation_cycle: bool,
@@ -38,18 +42,18 @@ impl Solver for HoldLeft {
         );
     }
 
-    fn step(&mut self, maze: &Maze, _lfsr: &mut LFSR) -> bool {
-        let coord = 4 * (self.snail.pos.y * maze.width + self.snail.pos.x);
+    fn step(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) -> bool {
+        let cell = maze.get_cell(self.snail.pos.x, self.snail.pos.y);
         let left = self.snail.direction.rotate_counter();
 
         // if we can move left, do so
-        if !maze.walls[coord + left as usize] {
+        if !cell.has_wall(left) {
             self.snail.direction = left;
         }
         // otherwise, if there's a wall blocking the front, rotate clockwise until we face an empty
         // wall
         else {
-            while maze.walls[coord + self.snail.direction as usize] {
+            while cell.has_wall(self.snail.direction) {
                 self.snail.direction = self.snail.direction.rotate();
             }
         }

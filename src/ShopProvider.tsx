@@ -11,7 +11,6 @@ export interface ShopItem {
   description: string;
   price: number;
   baseMultiplier: number;
-  mazeSize: number;
   latticeWidth: number;
 };
 
@@ -53,7 +52,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "Randomly walks around until it happens to stumble its way to the end",
     "price": 25,
     "baseMultiplier": 1,
-    "mazeSize": 5,
     "latticeWidth": 8
   },
   "random-teleport": {
@@ -61,7 +59,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "Randomly teleports to another location",
     "price": 100,
     "baseMultiplier": 1.5,
-    "mazeSize": 7,
     "latticeWidth": 5
   },
   "hold-left": {
@@ -69,7 +66,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "At least it's not unbounded!",
     "price": 1000,
     "baseMultiplier": 1,
-    "mazeSize": 9,
     "latticeWidth": 4
   },
   "tremaux": {
@@ -77,7 +73,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
     "price": 5000,
     "baseMultiplier": 5,
-    "mazeSize": 11,
     "latticeWidth": 3
   },
   "time-travel": {
@@ -85,7 +80,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
     "price": 20000,
     "baseMultiplier": 9,
-    "mazeSize": 13,
     "latticeWidth": 3
   },
   "clone": {
@@ -93,7 +87,6 @@ export const shop: { [key in ShopKey]: ShopItem } = {
     "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
     "price": 50000,
     "baseMultiplier": 20,
-    "mazeSize": 20,
     "latticeWidth": 2
   }
 };

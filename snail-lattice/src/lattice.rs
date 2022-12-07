@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::AutoMaze,
+    maze::{AutoMaze, CELLS_PER_IDX},
     solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux},
     utils::set_panic_hook,
 };
@@ -20,12 +20,12 @@ pub enum MazeType {
     Clone,
 }
 
-#[wasm_bindgen]
-pub struct SnailLattice {
+pub struct SnailLattice<const S: usize, T: Solver<S>>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
     width: usize,
-    maze_size: usize,
-    mazes: Vec<AutoMaze>,
-    maze_type: MazeType,
+    mazes: Vec<AutoMaze<S, T>>,
 
     // stores the indexes of mazes which need to be rerendered
     render_marked: HashSet<usize>,
@@ -35,34 +35,17 @@ pub struct SnailLattice {
     lfsr: LFSR,
 }
 
-#[wasm_bindgen]
-impl SnailLattice {
-    #[wasm_bindgen(constructor)]
-    pub fn new(
-        maze_type: &str,
-        width: usize,
-        maze_size: usize,
-        count: usize,
-        seed: u16,
-    ) -> SnailLattice {
+impl<const S: usize, T: Solver<S>> SnailLattice<S, T>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    pub fn new(width: usize, count: usize, seed: u16) -> SnailLattice<S, T> {
         #[cfg(feature = "console_error_panic_hook")]
         set_panic_hook();
 
-        let maze_type = match maze_type {
-            "random-walk" => MazeType::RandomWalk,
-            "random-teleport" => MazeType::RandomTeleport,
-            "hold-left" => MazeType::HoldLeft,
-            "tremaux" => MazeType::Tremaux,
-            "time-travel" => MazeType::TimeTravel,
-            "clone" => MazeType::Clone,
-            _ => unreachable!(),
-        };
-
         let mut lattice = SnailLattice {
             width,
-            maze_size,
             mazes: Vec::new(),
-            maze_type,
             render_marked: HashSet::new(),
             bg_buffer: Vec::new(),
             lfsr: LFSR::new(seed),
@@ -79,13 +62,14 @@ impl SnailLattice {
         lattice
     }
 
-    #[wasm_bindgen]
     pub fn get_dimensions(&self) -> Vec<usize> {
         // ceiling division -> count / width
         let height = (self.mazes.len() + self.width - 1) / self.width;
 
-        let height_px = (self.maze_size * 10 + 1) * height;
-        let width_px = (self.maze_size * 10 + 1) * self.width;
+        // let height_px = (self.maze_size * 10 + 1) * height;
+        let height_px = (S * 10 + 1) * height;
+        // let width_px = (self.maze_size * 10 + 1) * self.width;
+        let width_px = (S * 10 + 1) * self.width;
 
         vec![width_px, height_px]
     }
@@ -97,7 +81,8 @@ impl SnailLattice {
 
         self.bg_buffer.resize(width * height * 4, 0);
 
-        let maze_size = self.maze_size * 10 + 1;
+        // let maze_size = self.maze_size * 10 + 1;
+        let maze_size = S * 10 + 1;
 
         let mut cx = 0;
         let mut cy = 0;
@@ -119,14 +104,13 @@ impl SnailLattice {
     }
 
     // renders to a buffer of size 4*self.get_dimensions()
-    #[wasm_bindgen]
     pub fn render(&mut self, buffer: &mut [u8]) {
         // just so we don't panic in case the javascript code messes up
         if self.bg_buffer.len() != buffer.len() {
             return;
         }
 
-        let maze_size = self.maze_size * 10 + 1;
+        let maze_size = S * 10 + 1;
         let width = maze_size * self.width;
 
         if !self.render_marked.is_empty() {
@@ -189,24 +173,14 @@ impl SnailLattice {
         total
     }
 
-    #[wasm_bindgen]
     pub fn alter(&mut self, difference: i32) {
         if difference < 0 {
             for _ in 0..difference.abs() {
                 self.mazes.pop();
             }
         } else {
-            let solver_builder: Box<dyn Fn() -> Box<dyn Solver>> = match self.maze_type {
-                MazeType::RandomWalk => Box::new(|| Box::new(RandomWalk::new(0))),
-                MazeType::RandomTeleport => Box::new(|| Box::new(RandomTeleport::new(0))),
-                MazeType::HoldLeft => Box::new(|| Box::new(HoldLeft::new(0))),
-                MazeType::Tremaux => Box::new(|| Box::new(Tremaux::new(0))),
-                MazeType::TimeTravel => Box::new(|| Box::new(TimeTravel::new(0))),
-                MazeType::Clone => Box::new(|| Box::new(Clones::new(0))),
-            };
-
             for _ in 0..difference {
-                let mut new_maze = AutoMaze::new(solver_builder(), self.maze_size, self.maze_size);
+                let mut new_maze = AutoMaze::<S, T>::new(T::new());
                 new_maze.maze.generate(&mut self.lfsr);
                 self.mazes.push(new_maze);
             }
@@ -215,3 +189,45 @@ impl SnailLattice {
         self.draw_mazes();
     }
 }
+
+macro_rules! lattice_impl {
+    ($name:tt, $size:literal, $solver:ty) => {
+        #[wasm_bindgen]
+        pub struct $name(SnailLattice<$size, $solver>);
+
+        #[wasm_bindgen]
+        impl $name {
+            #[wasm_bindgen(constructor)]
+            pub fn new(width: usize, count: usize, seed: u16) -> Self {
+                Self(SnailLattice::new(width, count, seed))
+            }
+
+            #[wasm_bindgen]
+            pub fn get_dimensions(&self) -> Vec<usize> {
+                self.0.get_dimensions()
+            }
+
+            #[wasm_bindgen]
+            pub fn render(&mut self, buffer: &mut [u8]) {
+                self.0.render(buffer);
+            }
+
+            #[wasm_bindgen]
+            pub fn tick(&mut self, dt: usize) -> usize {
+                self.0.tick(dt)
+            }
+
+            #[wasm_bindgen]
+            pub fn alter(&mut self, difference: i32) {
+                self.0.alter(difference);
+            }
+        }
+    };
+}
+
+lattice_impl!(RandomWalkLattice, 5, RandomWalk<5>);
+lattice_impl!(RandomTeleportLattice, 7, RandomTeleport<7>);
+lattice_impl!(HoldLeftLattice, 9, HoldLeft<9>);
+lattice_impl!(TremauxLattice, 11, Tremaux<11>);
+lattice_impl!(TimeTravelLattice, 13, TimeTravel<13>);
+lattice_impl!(CloneLattice, 20, Clones<20>);

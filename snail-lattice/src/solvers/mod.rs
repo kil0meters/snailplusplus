@@ -1,4 +1,8 @@
-use crate::{image::Image, lfsr::LFSR, maze::Maze};
+use crate::{
+    image::Image,
+    lfsr::LFSR,
+    maze::{Maze, CELLS_PER_IDX},
+};
 
 mod clones;
 mod hold_left;
@@ -14,7 +18,12 @@ pub use random_walk::RandomWalk;
 pub use time_travel::TimeTravel;
 pub use tremaux::Tremaux;
 
-pub trait Solver {
+pub trait Solver<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+{
+    fn new() -> Self;
+
     fn draw(
         &mut self,
         animation_cycle: bool,
@@ -27,7 +36,7 @@ pub trait Solver {
     );
 
     // returns true if the step solved the maze
-    fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool;
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool;
 
     fn movement_time(&self) -> usize;
 }

@@ -1,7 +1,7 @@
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
     utils::discrete_lerp,
@@ -9,21 +9,25 @@ use crate::{
 
 const TELEPORTATION_TIME: usize = 6;
 
-pub struct RandomTeleport {
-    snail: Snail,
+pub struct RandomTeleport<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+{
+    snail: Snail<S>,
     teleport_timer: usize,
 }
 
-impl RandomTeleport {
-    pub fn new(_upgrades: usize) -> Self {
+impl<const S: usize> Solver<S> for RandomTeleport<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+{
+    fn new() -> Self {
         RandomTeleport {
             snail: Snail::new(),
             teleport_timer: 0,
         }
     }
-}
 
-impl Solver for RandomTeleport {
     fn draw(
         &mut self,
         animation_cycle: bool,
@@ -68,13 +72,13 @@ impl Solver for RandomTeleport {
         }
     }
 
-    fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         self.snail.prev_pos.x = self.snail.pos.x;
         self.snail.prev_pos.y = self.snail.pos.y;
         self.teleport_timer += 1;
         if self.teleport_timer % TELEPORTATION_TIME == 0 {
-            self.snail.pos.x = lfsr.big() % maze.width;
-            self.snail.pos.y = lfsr.big() % maze.height;
+            self.snail.pos.x = lfsr.big() % S;
+            self.snail.pos.y = lfsr.big() % S;
 
             if self.snail.pos == maze.end_pos {
                 self.snail.reset();

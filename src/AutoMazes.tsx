@@ -1,13 +1,13 @@
 import { Component, createEffect, createMemo, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
 import { shop, ShopContext, ShopItem, ShopKey, ShopListing } from "./ShopProvider";
-import init, { SnailLattice } from "snail-lattice";
+import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
 
 const SnailLatticeElement: Component<ShopListing> = (props) => {
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
   let loaded = true;
-  let lattice: SnailLattice;
+  let lattice: any; // idc
   let buffer: Uint8Array;
   let visible = true;
 
@@ -28,9 +28,24 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
 
     let seed = self.crypto.getRandomValues(new Uint16Array(1))[0];
 
-    let { mazeSize, latticeWidth } = shop[props.key];
+    let { latticeWidth } = shop[props.key];
 
-    lattice = new SnailLattice(props.key, latticeWidth, mazeSize, props.count, seed);
+    // each lattice type
+    if (props.key == "clone") {
+      lattice = new CloneLattice(latticeWidth, props.count, seed);
+    } else if (props.key == "tremaux") {
+      lattice = new TremauxLattice(latticeWidth, props.count, seed);
+    } else if (props.key == "hold-left") {
+      lattice = new HoldLeftLattice(latticeWidth, props.count, seed);
+    } else if (props.key == "random-walk") {
+      lattice = new RandomWalkLattice(latticeWidth, props.count, seed);
+    } else if (props.key == "time-travel") {
+      lattice = new TimeTravelLattice(latticeWidth, props.count, seed);
+    } else if (props.key == "random-teleport") {
+      lattice = new RandomTeleportLattice(latticeWidth, props.count, seed);
+    }
+
+    if (!lattice) return;
 
     let [width, height] = lattice.get_dimensions();
 

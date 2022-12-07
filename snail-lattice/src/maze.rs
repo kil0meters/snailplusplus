@@ -1,16 +1,40 @@
-use bitvec::prelude::*;
+use std::mem::size_of;
 
-use crate::{image::Image, lfsr::LFSR, solvers::Solver, utils::Vec2};
+use crate::{direction::Direction, image::Image, lfsr::LFSR, solvers::Solver, utils::Vec2};
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
 pub const SNAIL_MOVEMENT_TIME: usize = 250000;
 pub const ANIMATION_TIME: usize = 500000;
 
-pub struct AutoMaze {
-    // due to wasm bindgen limitations we can't use template structs yet so we have to deal with
-    // some overhead here unfortunately
-    solver: Box<dyn Solver>,
+// each cell is 4 bits, so 2 cells per byte
+pub const CELLS_PER_IDX: usize = size_of::<usize>() * 2;
+
+pub struct MazeCell(pub usize);
+
+impl MazeCell {
+    pub fn has_wall(&self, dir: Direction) -> bool {
+        self.0 & (1 << (3 - dir as usize)) != 0
+    }
+
+    pub fn valid_directions(&self) -> Vec<Direction> {
+        vec![
+            Direction::Up,
+            Direction::Down,
+            Direction::Left,
+            Direction::Right,
+        ]
+        .into_iter()
+        .filter(|d| !self.has_wall(*d))
+        .collect()
+    }
+}
+
+pub struct AutoMaze<const S: usize, T: Solver<S>>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    solver: T,
 
     // stores time since start, in microseconds
     clock: usize,
@@ -18,27 +42,22 @@ pub struct AutoMaze {
     // time since last movement
     movement_timer: usize,
 
-    pub maze: Maze,
+    pub maze: Maze<S>,
 }
 
-impl AutoMaze {
-    pub fn new(solver: Box<dyn Solver>, width: usize, height: usize) -> AutoMaze {
+impl<const S: usize, T: Solver<S>> AutoMaze<S, T>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    pub fn new(solver: T) -> AutoMaze<S, T> {
         AutoMaze {
             solver,
-
             clock: 0,
             movement_timer: 0,
 
-            maze: Maze {
-                width,
-                height,
-                end_pos: Vec2 {
-                    x: width - 1,
-                    y: height - 1,
-                },
-
-                // initialize bitvec with all trues
-                walls: bitvec![1; width * height * 4],
+            maze: Maze::<S> {
+                end_pos: Vec2 { x: S - 1, y: S - 1 },
+                walls: [0; _],
             },
         }
     }
@@ -63,7 +82,7 @@ impl AutoMaze {
 
         for _ in 0..num_movements {
             if self.solver.step(&self.maze, lfsr) {
-                total += self.maze.width * self.maze.height;
+                total += S * S;
                 self.maze.generate(lfsr);
                 self.movement_timer = movement_time;
             }
@@ -82,50 +101,73 @@ impl AutoMaze {
     }
 }
 
-pub struct Maze {
-    // logical dimensions
-    pub width: usize,
-    pub height: usize,
-
+// An SxS maze
+pub struct Maze<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
     pub end_pos: Vec2,
 
-    pub walls: BitVec,
+    // each cell is 4 bits
+    pub walls: [usize; (S * S) / CELLS_PER_IDX + 1],
 }
 
-impl Maze {
-    fn random_walk(&mut self, x: usize, y: usize, visited: &mut BitVec, lfsr: &mut LFSR) {
+impl<const S: usize> Maze<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    // 4 bytes
+    fn set_cell(&mut self, x: usize, y: usize, data: usize) {
+        let offset = y * S + x;
+
+        self.walls[offset / CELLS_PER_IDX] ^=
+            data << (4 * (CELLS_PER_IDX - (offset % CELLS_PER_IDX) - 1));
+    }
+
+    pub fn get_cell(&self, x: usize, y: usize) -> MazeCell {
+        let offset = y * S + x;
+
+        MazeCell(
+            self.walls[offset / CELLS_PER_IDX]
+                >> (4 * (CELLS_PER_IDX - (offset % CELLS_PER_IDX) - 1))
+                & 0b1111,
+        )
+    }
+
+    fn set_cell_wall(&mut self, x: usize, y: usize, direction: Direction) {
+        self.set_cell(x, y, 1 << (3 - direction as usize));
+    }
+
+    fn random_walk(&mut self, x: usize, y: usize, visited: &mut [bool], lfsr: &mut LFSR) {
         let mut next = Some((x, y));
 
         while let Some((x, y)) = next {
-            visited.set(y * self.width + x, true);
+            visited[y * S + x] = true;
             next = None;
 
             for direction in lfsr.random_order() {
                 // right
-                if direction == 0 && x < self.width - 1 && !visited[y * self.width + x + 1] {
-                    self.walls.set((y * self.width + x) * 4 + 3, false);
-                    self.walls.set((y * self.width + x + 1) * 4 + 2, false);
+                if direction == 0 && x < S - 1 && !visited[y * S + x + 1] {
+                    self.set_cell_wall(x, y, Direction::Right);
+                    self.set_cell_wall(x + 1, y, Direction::Left);
                     next = Some((x + 1, y));
                 }
                 // left
-                else if direction == 1 && x > 0 && !visited[y * self.width + x - 1] {
-                    self.walls.set((y * self.width + x) * 4 + 2, false);
-                    self.walls.set((y * self.width + x - 1) * 4 + 3, false);
+                else if direction == 1 && x > 0 && !visited[y * S + x - 1] {
+                    self.set_cell_wall(x, y, Direction::Left);
+                    self.set_cell_wall(x - 1, y, Direction::Right);
                     next = Some((x - 1, y));
                 }
                 // up
-                else if direction == 2 && y > 0 && !visited[(y - 1) * self.width + x] {
-                    self.walls.set((y * self.width + x) * 4, false);
-                    self.walls.set(((y - 1) * self.width + x) * 4 + 1, false);
+                else if direction == 2 && y > 0 && !visited[(y - 1) * S + x] {
+                    self.set_cell_wall(x, y, Direction::Up);
+                    self.set_cell_wall(x, y - 1, Direction::Down);
                     next = Some((x, y - 1));
                 }
                 // down
-                else if direction == 3
-                    && y < self.height - 1
-                    && !visited[(y + 1) * self.width + x]
-                {
-                    self.walls.set((y * self.width + x) * 4 + 1, false);
-                    self.walls.set(((y + 1) * self.width + x) * 4, false);
+                else if direction == 3 && y < S - 1 && !visited[(y + 1) * S + x] {
+                    self.set_cell_wall(x, y, Direction::Down);
+                    self.set_cell_wall(x, y + 1, Direction::Up);
                     next = Some((x, y + 1));
                 }
 
@@ -138,45 +180,41 @@ impl Maze {
 
     pub fn generate(&mut self, lfsr: &mut LFSR) {
         // set all elements in vector to 1s
-        self.walls.set_elements(!0usize);
+        self.walls = [!0usize; _];
 
-        let mut visited = bitvec![0; self.width * self.height];
+        let mut visited = [false; S * S];
 
         self.random_walk(0, 0, &mut visited, lfsr);
 
-        for y in 0..self.height {
-            for x in 0..self.width {
-                if !visited[y * self.width + x] {
+        for y in 0..S {
+            for x in 0..S {
+                if !visited[y * S + x] {
                     for direction in [0, 1, 2, 3] {
-                        // rng.random_order() {
                         // right
-                        if direction == 0 && x < self.width - 1 && visited[y * self.width + x + 1] {
-                            self.walls.set((y * self.width + x) * 4 + 3, false);
-                            self.walls.set((y * self.width + x + 1) * 4 + 2, false);
+                        if direction == 0 && x < S - 1 && visited[y * S + x + 1] {
+                            self.set_cell_wall(x, y, Direction::Right);
+                            self.set_cell_wall(x + 1, y, Direction::Left);
                             self.random_walk(x, y, &mut visited, lfsr);
                             break;
                         }
                         // left
-                        else if direction == 1 && x > 0 && visited[y * self.width + x - 1] {
-                            self.walls.set((y * self.width + x) * 4 + 2, false);
-                            self.walls.set((y * self.width + x - 1) * 4 + 3, false);
+                        else if direction == 1 && x > 0 && visited[y * S + x - 1] {
+                            self.set_cell_wall(x, y, Direction::Left);
+                            self.set_cell_wall(x - 1, y, Direction::Right);
                             self.random_walk(x, y, &mut visited, lfsr);
                             break;
                         }
                         // up
-                        else if direction == 2 && y > 0 && visited[(y - 1) * self.width + x] {
-                            self.walls.set((y * self.width + x) * 4, false);
-                            self.walls.set(((y - 1) * self.width + x) * 4 + 1, false);
+                        else if direction == 2 && y > 0 && visited[(y - 1) * S + x] {
+                            self.set_cell_wall(x, y, Direction::Up);
+                            self.set_cell_wall(x, y - 1, Direction::Down);
                             self.random_walk(x, y, &mut visited, lfsr);
                             break;
                         }
                         // down
-                        else if direction == 3
-                            && y < self.height - 1
-                            && visited[(y + 1) * self.width + x]
-                        {
-                            self.walls.set((y * self.width + x) * 4 + 1, false);
-                            self.walls.set(((y + 1) * self.width + x) * 4, false);
+                        else if direction == 3 && y < S - 1 && visited[(y + 1) * S + x] {
+                            self.set_cell_wall(x, y, Direction::Down);
+                            self.set_cell_wall(x, y + 1, Direction::Up);
                             self.random_walk(x, y, &mut visited, lfsr);
                             break;
                         }
@@ -187,19 +225,19 @@ impl Maze {
     }
 
     pub fn draw_background(&self, image: &mut Image, bx: usize, by: usize) {
-        for y in 0..(self.height * 10) {
-            for x in 0..self.width {
-                let loc = 4 * ((y / 10) * self.width + x);
+        for y in 0..(S * 10) {
+            for x in 0..S {
+                let cell = self.get_cell(x, y / 10);
                 let px = ((by + y) * image.buffer_width + bx + (x * 10)) * 4;
 
                 // Checking the bottom wall is redundant
-                if y % 10 == 0 && self.walls[loc] {
+                if y % 10 == 0 && cell.has_wall(Direction::Up) {
                     for l in (px..(px + 4 * 10)).step_by(4) {
                         image.draw_pixel(l, SNAIL_FG);
                     }
                 } else {
                     // if left wall, checking right wall is redundant
-                    if self.walls[loc + 2] || y % 10 == 0 {
+                    if cell.has_wall(Direction::Left) || y % 10 == 0 {
                         image.draw_pixel(px, SNAIL_FG);
                     } else {
                         image.draw_pixel(px, SNAIL_BG);
@@ -212,12 +250,12 @@ impl Maze {
             }
 
             // fill end pixel
-            let px = 4 * ((by + y) * image.buffer_width + bx + self.width * 10);
+            let px = 4 * ((by + y) * image.buffer_width + bx + S * 10);
             image.draw_pixel(px, SNAIL_FG);
         }
 
-        let px = 4 * ((by + self.height * 10) * image.buffer_width + bx);
-        for l in (px..(px + 4 * (1 + 10 * self.width))).step_by(4) {
+        let px = 4 * ((by + S * 10) * image.buffer_width + bx);
+        for l in (px..(px + 4 * (1 + 10 * S))).step_by(4) {
             image.draw_pixel(l, SNAIL_FG);
         }
     }

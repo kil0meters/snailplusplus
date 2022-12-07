@@ -1,20 +1,27 @@
 use crate::{
     image::Image,
+    maze::CELLS_PER_IDX,
     utils::{discrete_lerp, Vec2},
 };
 
 use super::{direction::Direction, maze::Maze};
 
 #[derive(Clone)]
-pub struct Snail {
+pub struct Snail<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
     pub pos: Vec2,
     pub prev_pos: Vec2,
     pub direction: Direction,
     pub active: bool,
 }
 
-impl Snail {
-    pub fn new() -> Snail {
+impl<const S: usize> Snail<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    pub fn new() -> Snail<S> {
         Snail {
             pos: Vec2 { x: 0, y: 0 },
             prev_pos: Vec2 { x: 0, y: 0 },
@@ -108,38 +115,30 @@ impl Snail {
         }
     }
 
-    pub fn move_forward(&mut self, maze: &Maze) -> bool {
-        let coord = 4 * (self.pos.y * maze.width + self.pos.x);
+    pub fn move_forward(&mut self, maze: &Maze<S>) -> bool {
+        let cell = maze.get_cell(self.pos.x, self.pos.y);
         self.prev_pos = self.pos;
 
-        match self.direction {
-            Direction::Up => {
-                if !maze.walls[coord] {
+        if !cell.has_wall(self.direction) {
+            match self.direction {
+                Direction::Up => {
                     self.pos.y -= 1;
-                    return true;
                 }
-            }
-            Direction::Down => {
-                if !maze.walls[coord + 1] {
+                Direction::Down => {
                     self.pos.y += 1;
-                    return true;
                 }
-            }
-            Direction::Left => {
-                if !maze.walls[coord + 2] {
+                Direction::Left => {
                     self.pos.x -= 1;
-                    return true;
                 }
-            }
-            Direction::Right => {
-                if !maze.walls[coord + 3] {
+                Direction::Right => {
                     self.pos.x += 1;
-                    return true;
                 }
             }
-        }
 
-        return false;
+            true
+        } else {
+            false
+        }
     }
 
     pub fn reset(&mut self) {

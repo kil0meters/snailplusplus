@@ -1,31 +1,42 @@
+
+
 use crate::{
-    image::{self, Image},
+    image::Image,
     lfsr::LFSR,
-    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
 };
 
-pub struct Clones {
-    active_snails: Vec<Snail>,
-    inactive_snails: Vec<Snail>,
+pub struct Clones<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    active_snails: Vec<Snail<S>>,
+    inactive_snails: Vec<Snail<S>>,
 }
 
-impl Clones {
-    pub fn new(_upgrades: usize) -> Self {
-        Clones {
-            active_snails: vec![Snail::new()],
-            inactive_snails: vec![],
-        }
-    }
-
+impl<const S: usize> Clones<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
     fn reset(&mut self) {
         self.active_snails = vec![Snail::new()];
         self.inactive_snails = vec![]
     }
 }
 
-impl Solver for Clones {
+impl<const S: usize> Solver<S> for Clones<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    fn new() -> Self {
+        Clones {
+            active_snails: vec![Snail::new()],
+            inactive_snails: vec![],
+        }
+    }
+
     fn draw(
         &mut self,
         animation_cycle: bool,
@@ -58,27 +69,27 @@ impl Solver for Clones {
         }
     }
 
-    fn step(&mut self, maze: &Maze, _lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) -> bool {
         let mut new_snails = Vec::new();
 
         let mut i = 0;
         while i < self.active_snails.len() {
             let snail = &mut self.active_snails[i];
 
-            let coord = 4 * (snail.pos.y * maze.width + snail.pos.x);
+            let cell = maze.get_cell(snail.pos.x, snail.pos.y);
             let left = snail.direction.rotate_counter();
             let right = snail.direction.rotate();
 
             // if there's an option to the left, we create a new snail facing that direction and
             // move that direction
-            if !maze.walls[coord + left as usize] {
+            if !cell.has_wall(left) {
                 let mut new_snail = snail.clone();
                 new_snail.direction = left;
                 new_snails.push(new_snail);
             }
 
             // same for right
-            if !maze.walls[coord + right as usize] {
+            if !cell.has_wall(right) {
                 let mut new_snail = snail.clone();
                 new_snail.direction = right;
                 new_snails.push(new_snail);

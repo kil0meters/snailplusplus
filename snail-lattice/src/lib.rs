@@ -1,3 +1,5 @@
+#![feature(generic_const_exprs)]
+#![feature(generic_arg_infer)]
 #![feature(test)]
 
 extern crate test;
@@ -6,9 +8,9 @@ mod direction;
 mod image;
 pub mod lattice;
 mod lfsr;
-mod maze;
+pub mod maze;
 mod snail;
-mod solvers;
+pub mod solvers;
 mod utils;
 
 #[global_allocator]
@@ -16,12 +18,12 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[cfg(test)]
 mod tests {
-    use crate::{lattice::SnailLattice, maze::SNAIL_MOVEMENT_TIME};
+    use crate::{lattice::SnailLattice, maze::SNAIL_MOVEMENT_TIME, solvers::Clones};
     use test::Bencher;
 
     #[bench]
     fn cloning_snail_tick(b: &mut Bencher) {
-        let mut lattice = SnailLattice::new("clone", 10, 100, 100, 0xFEAD);
+        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 100, 0xFEAD);
 
         b.iter(|| {
             lattice.tick(SNAIL_MOVEMENT_TIME);
@@ -30,7 +32,7 @@ mod tests {
 
     #[bench]
     fn cloning_snail_render(b: &mut Bencher) {
-        let mut lattice = SnailLattice::new("clone", 10, 100, 100, 0xFEAD);
+        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 100, 0xFEAD);
         lattice.tick(100000);
 
         // 4 * (10)

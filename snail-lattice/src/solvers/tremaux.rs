@@ -4,7 +4,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
     utils::Vec2,
@@ -71,15 +71,31 @@ impl Default for Mark {
     }
 }
 
-pub struct Tremaux {
-    pub snail: Snail,
+pub struct Tremaux<const S: usize>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    pub snail: Snail<S>,
     pub visited: HashMap<Vec2, Mark>,
     movement_time: usize,
     pub finished: bool,
 }
 
-impl Tremaux {
-    pub fn new(_upgrades: usize) -> Self {
+impl<const S: usize> Tremaux<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    pub fn set_movement_time(mut self, movement_time: usize) -> Self {
+        self.movement_time = movement_time;
+        self
+    }
+}
+
+impl<const S: usize> Solver<S> for Tremaux<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    fn new() -> Self {
         Tremaux {
             snail: Snail::new(),
             visited: HashMap::new(),
@@ -88,13 +104,6 @@ impl Tremaux {
         }
     }
 
-    pub fn set_movement_time(mut self, movement_time: usize) -> Self {
-        self.movement_time = movement_time;
-        self
-    }
-}
-
-impl Solver for Tremaux {
     fn draw(
         &mut self,
         animation_cycle: bool,
@@ -118,22 +127,15 @@ impl Solver for Tremaux {
         );
     }
 
-    fn step(&mut self, maze: &Maze, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         if self.finished {
             self.snail.reset();
             self.visited.clear();
             self.finished = false;
         }
 
-        let coord = 4 * (self.snail.pos.y * maze.width + self.snail.pos.x);
-
-        let walls = &maze.walls[coord..(coord + 4)];
-
-        let valid_directions: Vec<Direction> = walls
-            .iter()
-            .enumerate()
-            .filter_map(|(i, has_wall)| (!has_wall).then(|| Direction::from_number(i)))
-            .collect();
+        let cell = maze.get_cell(self.snail.pos.x, self.snail.pos.y);
+        let valid_directions = cell.valid_directions();
 
         // if in junction
         if valid_directions.len() > 2 {
@@ -165,7 +167,7 @@ impl Solver for Tremaux {
                 let mut min_marks = u8::MAX;
 
                 for (direction, num_marks) in mark.directions.iter().enumerate() {
-                    if !walls[direction] && *num_marks < min_marks {
+                    if !cell.has_wall(Direction::from_number(direction)) && *num_marks < min_marks {
                         min_marks = *num_marks;
                     }
                 }
@@ -175,7 +177,8 @@ impl Solver for Tremaux {
                     .iter()
                     .enumerate()
                     .filter_map(|(direction, num_marks)| {
-                        (!walls[direction] && *num_marks == min_marks)
+                        (!cell.has_wall(Direction::from_number(direction))
+                            && *num_marks == min_marks)
                             .then(|| Direction::from_number(direction))
                     })
                     .collect();
