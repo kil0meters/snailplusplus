@@ -58,6 +58,7 @@ where
             maze: Maze::<S> {
                 end_pos: Vec2 { x: S - 1, y: S - 1 },
                 walls: [0; _],
+                visited: [false; _],
             },
         }
     }
@@ -110,6 +111,7 @@ where
 
     // each cell is 4 bits
     pub walls: [usize; (S * S) / CELLS_PER_IDX + 1],
+    visited: [bool; S * S],
 }
 
 impl<const S: usize> Maze<S>
@@ -138,34 +140,34 @@ where
         self.set_cell(x, y, 1 << (3 - direction as usize));
     }
 
-    fn random_walk(&mut self, x: usize, y: usize, visited: &mut [bool], lfsr: &mut LFSR) {
+    fn random_walk(&mut self, x: usize, y: usize, lfsr: &mut LFSR) {
         let mut next = Some((x, y));
 
         while let Some((x, y)) = next {
-            visited[y * S + x] = true;
+            self.visited[y * S + x] = true;
             next = None;
 
             for direction in lfsr.random_order() {
                 // right
-                if direction == 0 && x < S - 1 && !visited[y * S + x + 1] {
+                if direction == 0 && x < S - 1 && !self.visited[y * S + x + 1] {
                     self.set_cell_wall(x, y, Direction::Right);
                     self.set_cell_wall(x + 1, y, Direction::Left);
                     next = Some((x + 1, y));
                 }
                 // left
-                else if direction == 1 && x > 0 && !visited[y * S + x - 1] {
+                else if direction == 1 && x > 0 && !self.visited[y * S + x - 1] {
                     self.set_cell_wall(x, y, Direction::Left);
                     self.set_cell_wall(x - 1, y, Direction::Right);
                     next = Some((x - 1, y));
                 }
                 // up
-                else if direction == 2 && y > 0 && !visited[(y - 1) * S + x] {
+                else if direction == 2 && y > 0 && !self.visited[(y - 1) * S + x] {
                     self.set_cell_wall(x, y, Direction::Up);
                     self.set_cell_wall(x, y - 1, Direction::Down);
                     next = Some((x, y - 1));
                 }
                 // down
-                else if direction == 3 && y < S - 1 && !visited[(y + 1) * S + x] {
+                else if direction == 3 && y < S - 1 && !self.visited[(y + 1) * S + x] {
                     self.set_cell_wall(x, y, Direction::Down);
                     self.set_cell_wall(x, y + 1, Direction::Up);
                     next = Some((x, y + 1));
@@ -182,40 +184,40 @@ where
         // set all elements in vector to 1s
         self.walls = [!0usize; _];
 
-        let mut visited = [false; S * S];
+        self.visited = [false; S * S];
 
-        self.random_walk(0, 0, &mut visited, lfsr);
+        self.random_walk(0, 0, lfsr);
 
         for y in 0..S {
             for x in 0..S {
-                if !visited[y * S + x] {
+                if !self.visited[y * S + x] {
                     for direction in [0, 1, 2, 3] {
                         // right
-                        if direction == 0 && x < S - 1 && visited[y * S + x + 1] {
+                        if direction == 0 && x < S - 1 && self.visited[y * S + x + 1] {
                             self.set_cell_wall(x, y, Direction::Right);
                             self.set_cell_wall(x + 1, y, Direction::Left);
-                            self.random_walk(x, y, &mut visited, lfsr);
+                            self.random_walk(x, y, lfsr);
                             break;
                         }
                         // left
-                        else if direction == 1 && x > 0 && visited[y * S + x - 1] {
+                        else if direction == 1 && x > 0 && self.visited[y * S + x - 1] {
                             self.set_cell_wall(x, y, Direction::Left);
                             self.set_cell_wall(x - 1, y, Direction::Right);
-                            self.random_walk(x, y, &mut visited, lfsr);
+                            self.random_walk(x, y, lfsr);
                             break;
                         }
                         // up
-                        else if direction == 2 && y > 0 && visited[(y - 1) * S + x] {
+                        else if direction == 2 && y > 0 && self.visited[(y - 1) * S + x] {
                             self.set_cell_wall(x, y, Direction::Up);
                             self.set_cell_wall(x, y - 1, Direction::Down);
-                            self.random_walk(x, y, &mut visited, lfsr);
+                            self.random_walk(x, y, lfsr);
                             break;
                         }
                         // down
-                        else if direction == 3 && y < S - 1 && visited[(y + 1) * S + x] {
+                        else if direction == 3 && y < S - 1 && self.visited[(y + 1) * S + x] {
                             self.set_cell_wall(x, y, Direction::Down);
                             self.set_cell_wall(x, y + 1, Direction::Up);
-                            self.random_walk(x, y, &mut visited, lfsr);
+                            self.random_walk(x, y, lfsr);
                             break;
                         }
                     }
