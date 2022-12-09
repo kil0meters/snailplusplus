@@ -154,11 +154,10 @@ export class CloneLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.clonelattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.clonelattice_new(width, seed);
         return CloneLattice.__wrap(ret);
     }
     /**
@@ -204,6 +203,19 @@ export class CloneLattice {
     alter(difference) {
         wasm.clonelattice_alter(this.ptr, difference);
     }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.clonelattice_set_width(this.ptr, width);
+    }
 }
 /**
 */
@@ -229,11 +241,10 @@ export class HoldLeftLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.holdleftlattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.clonelattice_new(width, seed);
         return HoldLeftLattice.__wrap(ret);
     }
     /**
@@ -279,6 +290,19 @@ export class HoldLeftLattice {
     alter(difference) {
         wasm.holdleftlattice_alter(this.ptr, difference);
     }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.holdleftlattice_set_width(this.ptr, width);
+    }
 }
 /**
 */
@@ -304,11 +328,10 @@ export class RandomTeleportLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.randomteleportlattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.clonelattice_new(width, seed);
         return RandomTeleportLattice.__wrap(ret);
     }
     /**
@@ -354,6 +377,19 @@ export class RandomTeleportLattice {
     alter(difference) {
         wasm.randomteleportlattice_alter(this.ptr, difference);
     }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.randomteleportlattice_set_width(this.ptr, width);
+    }
 }
 /**
 */
@@ -379,11 +415,10 @@ export class RandomWalkLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.randomwalklattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.clonelattice_new(width, seed);
         return RandomWalkLattice.__wrap(ret);
     }
     /**
@@ -429,6 +464,19 @@ export class RandomWalkLattice {
     alter(difference) {
         wasm.randomwalklattice_alter(this.ptr, difference);
     }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.randomwalklattice_set_width(this.ptr, width);
+    }
 }
 /**
 */
@@ -454,11 +502,10 @@ export class TimeTravelLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.timetravellattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.timetravellattice_new(width, seed);
         return TimeTravelLattice.__wrap(ret);
     }
     /**
@@ -504,6 +551,19 @@ export class TimeTravelLattice {
     alter(difference) {
         wasm.timetravellattice_alter(this.ptr, difference);
     }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.timetravellattice_set_width(this.ptr, width);
+    }
 }
 /**
 */
@@ -529,11 +589,10 @@ export class TremauxLattice {
     }
     /**
     * @param {number} width
-    * @param {number} count
     * @param {number} seed
     */
-    constructor(width, count, seed) {
-        const ret = wasm.tremauxlattice_new(width, count, seed);
+    constructor(width, seed) {
+        const ret = wasm.timetravellattice_new(width, seed);
         return TremauxLattice.__wrap(ret);
     }
     /**
@@ -578,6 +637,19 @@ export class TremauxLattice {
     */
     alter(difference) {
         wasm.tremauxlattice_alter(this.ptr, difference);
+    }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.tremauxlattice_set_width(this.ptr, width);
     }
 }
 

@@ -15,7 +15,8 @@ fn run_bench<const S: usize, T: Solver<S>>(name: &str, multiplier: f64)
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    let mut lattice = SnailLattice::<S, T>::new(5, 100, 0xDEAD);
+    let mut lattice = SnailLattice::<S, T>::new(5, 0xDEAD);
+    lattice.alter(100);
 
     let fragments = (lattice.tick(TICK_AMOUNT) as f64 * multiplier).floor() as usize;
 

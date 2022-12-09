@@ -39,7 +39,7 @@ impl<const S: usize, T: Solver<S>> SnailLattice<S, T>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    pub fn new(width: usize, count: usize, seed: u16) -> SnailLattice<S, T> {
+    pub fn new(width: usize, seed: u16) -> SnailLattice<S, T> {
         #[cfg(feature = "console_error_panic_hook")]
         set_panic_hook();
 
@@ -51,15 +51,15 @@ where
             lfsr: LFSR::new(seed),
         };
 
-        lattice.alter(count as i32);
-
         for maze in lattice.mazes.iter_mut() {
             maze.maze.generate(&mut lattice.lfsr);
         }
 
-        lattice.draw_mazes();
-
         lattice
+    }
+
+    pub fn count(&self) -> usize {
+        self.mazes.len()
     }
 
     pub fn get_dimensions(&self) -> Vec<usize> {
@@ -79,6 +79,7 @@ where
         let width = dimensions[0];
         let height = dimensions[1];
 
+        self.bg_buffer.clear();
         self.bg_buffer.resize(width * height * 4, 0);
 
         // let maze_size = self.maze_size * 10 + 1;
@@ -154,6 +155,12 @@ where
         }
     }
 
+    pub fn set_width(&mut self, width: usize) {
+        self.width = width;
+
+        self.draw_mazes();
+    }
+
     // progresses all snails a certain number of microseconds
     // returns the number of maze framents accrued
     pub fn tick(&mut self, dt: usize) -> usize {
@@ -166,7 +173,6 @@ where
 
                 // mark that the current maze needs to be rerendered
                 self.render_marked.insert(i);
-                // queue
             }
         }
 
@@ -198,8 +204,8 @@ macro_rules! lattice_impl {
         #[wasm_bindgen]
         impl $name {
             #[wasm_bindgen(constructor)]
-            pub fn new(width: usize, count: usize, seed: u16) -> Self {
-                Self(SnailLattice::new(width, count, seed))
+            pub fn new(width: usize, seed: u16) -> Self {
+                Self(SnailLattice::new(width, seed))
             }
 
             #[wasm_bindgen]
@@ -220,6 +226,16 @@ macro_rules! lattice_impl {
             #[wasm_bindgen]
             pub fn alter(&mut self, difference: i32) {
                 self.0.alter(difference);
+            }
+
+            #[wasm_bindgen]
+            pub fn count(&self) -> usize {
+                self.0.mazes.len()
+            }
+
+            #[wasm_bindgen]
+            pub fn set_width(&mut self, width: usize) {
+                self.0.set_width(width);
             }
         }
     };

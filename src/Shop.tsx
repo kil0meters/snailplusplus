@@ -1,6 +1,7 @@
 import { Component, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
+import { LATTICE_STORE } from "./AutoMazes";
 import { ScoreContext } from "./ScoreProvider";
-import { shop, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
+import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
 
 const PRICE_SCALER = 1.15;
@@ -10,16 +11,19 @@ const ShopListingElement: Component<ShopListing> = (props) => {
   const [_shop, setShop] = useContext(ShopContext);
   const [hover, setHover] = createSignal(false);
 
-  const price = () => Math.floor(shop[props.key].price * Math.pow(PRICE_SCALER, props.count));
+  const price = () => Math.floor(SHOP[props.key].price * Math.pow(PRICE_SCALER, props.count));
 
   const buy = () => {
     if (score() >= price() || true) {
-      // setScore(score() - price());
+      LATTICE_STORE[props.key].push();
+
       setShop(
         (shopItem) => shopItem.key === props.key,
         "count",
         (count) => count + 1
       );
+
+      // setScore(score() - price());
     }
   };
 
@@ -30,13 +34,13 @@ const ShopListingElement: Component<ShopListing> = (props) => {
       onClick={buy}
       class='flex hover:bg-neutral-100 p-4 transition-colors text-left'>
       <div class='flex flex-col'>
-        <span class='text-2xl font-extrabold'>{shop[props.key].name}</span>
+        <span class='text-2xl font-extrabold'>{SHOP[props.key].name}</span>
         <span class=''>{price()} fragments</span>
       </div>
 
       {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
 
-      {hover() && <ShopDescription title={shop[props.key].name} description={shop[props.key].description} multiplier={shop[props.key].baseMultiplier} />}
+      {hover() && <ShopDescription title={SHOP[props.key].name} description={SHOP[props.key].description} multiplier={SHOP[props.key].baseMultiplier} />}
     </button>
   );
 }

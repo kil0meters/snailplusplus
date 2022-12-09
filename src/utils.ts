@@ -2,9 +2,9 @@ import { createEffect, createSignal, Signal } from "solid-js";
 import { createStore, SetStoreFunction, Store } from "solid-js/store";
 
 export function createStoredSignal<T>(
-   key: string,
-   defaultValue: T,
-   storage = localStorage
+  key: string,
+  defaultValue: T,
+  storage = localStorage
 ): Signal<T> {
 
   const initialValue = storage.getItem(key)
@@ -40,6 +40,7 @@ export function createLocalStore<T extends object>(
   const [state, setState] = createStore<T>(
     localState ? JSON.parse(localState) : init
   );
+
   createEffect(() => localStorage.setItem(name, JSON.stringify(state)));
   return [state, setState];
 }

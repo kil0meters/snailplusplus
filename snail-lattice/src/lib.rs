@@ -23,7 +23,8 @@ mod tests {
 
     #[bench]
     fn cloning_snail_tick(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 100, 0xFEAD);
+        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 0xFEAD);
+        lattice.alter(100);
 
         b.iter(|| {
             lattice.tick(SNAIL_MOVEMENT_TIME);
@@ -32,7 +33,8 @@ mod tests {
 
     #[bench]
     fn cloning_snail_render(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 100, 0xFEAD);
+        let mut lattice = SnailLattice::<100, Clones<100>>::new(10, 0xFEAD);
+        lattice.alter(100);
         lattice.tick(100000);
 
         // 4 * (10)

@@ -46,48 +46,47 @@ const shopListings: ShopListing[] = [
   }
 ];
 
-export const shop: { [key in ShopKey]: ShopItem } = {
+export const SHOP: { [key in ShopKey]: ShopItem } = {
   "random-walk": {
     "name": "Random Walk",
     "description": "Randomly walks around until it happens to stumble its way to the end",
     "price": 25,
-    "baseMultiplier": 1,
-    "latticeWidth": 8
+    "latticeWidth": 8,
   },
   "random-teleport": {
     "name": "Random Teleport",
     "description": "Randomly teleports to another location",
     "price": 100,
     "baseMultiplier": 1.5,
-    "latticeWidth": 5
+    "latticeWidth": 5,
   },
   "hold-left": {
     "name": "Hold Left Wall",
     "description": "At least it's not unbounded!",
     "price": 1000,
     "baseMultiplier": 1,
-    "latticeWidth": 4
+    "latticeWidth": 4,
   },
   "tremaux": {
     "name": "Segment Snail",
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
     "price": 5000,
     "baseMultiplier": 5,
-    "latticeWidth": 3
+    "latticeWidth": 3,
   },
   "time-travel": {
     "name": "Time Travel Snail",
     "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
     "price": 20000,
     "baseMultiplier": 9,
-    "latticeWidth": 3
+    "latticeWidth": 3,
   },
   "clone": {
     "name": "Cloning Snail",
     "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
     "price": 50000,
     "baseMultiplier": 20,
-    "latticeWidth": 2
+    "latticeWidth": 2,
   }
 };
 
