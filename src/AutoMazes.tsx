@@ -1,42 +1,31 @@
-import { Component, createEffect, createMemo, createSignal, For, onCleanup, onMount, untrack, useContext } from "solid-js";
-import { SHOP, ShopContext, ShopItem, ShopKey, ShopListing } from "./ShopProvider";
+import { Component, createEffect, createSignal, For, onCleanup, untrack, useContext } from "solid-js";
+import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
 import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
 
 // this saves an insane amount of gc time
-let reservedBuffers: Map<number, ImageData[]> = new Map();
+let CACHED_IMAGE: ImageData;
 
 function requestBuffer(width: number, height: number) {
-  let buffer = reservedBuffers.get(width << 32 + height)?.pop();
-
-  if (buffer) {
-    return buffer;
-  } else {
-    console.log(`creating new buffer of size ${width},${height}`);
-    return new ImageData(
+  if (!CACHED_IMAGE || CACHED_IMAGE.width != width || CACHED_IMAGE.height != height) {
+    CACHED_IMAGE = new ImageData(
       new Uint8ClampedArray(width * height * 4),
       width,
       height
     );
-  }
-}
 
-function reclaimBuffer(image: ImageData) {
-  let size = reservedBuffers.get(image.width << 32 + image.height);
-  if (size) {
-    size.push(image);
-  } else {
-    reservedBuffers.set(image.width << 32 + image.height, [image]);
   }
+
+  return CACHED_IMAGE
 }
 
 // see lattice.rs
 interface SnailLattice {
   alter: (size: number) => void;
   tick: (dt: number) => number;
-  render: (buffer: Uint8Array) => void;
+  render: (buffer: Uint8Array, index: number, count: number) => void;
   count: () => number;
-  get_dimensions: () => Uint32Array;
+  get_dimensions: (count: number) => Uint32Array;
   set_width: (width: number) => void;
 }
 
@@ -45,68 +34,38 @@ interface SnailLattice {
 // are in view, dynamically creating and removing canvases based on the
 // viewport.
 class LatticeList<T extends SnailLattice> {
-  store: T[];
-  latticeFactory: () => T;
-  baseWidth: number;
-  count: number;
+  lattice: T;
   baseMultiplier: number;
-  scale: number;
-
+  width: number;
   prevTick: number;
 
-  get width(): number {
-    return this.baseWidth * this.scale;
+  get count(): number {
+    return Math.ceil(this.lattice.count() / this.pageSize);
   }
 
-  get maxPerLattice(): number {
-    return this.baseWidth * 6;
+  get pageSize(): number {
+    return this.width * 4;
   }
 
-  constructor(latticeFactory: () => T, baseMultiplier: number, width: number) {
-    this.latticeFactory = latticeFactory;
-    this.store = [latticeFactory()];
-    this.baseWidth = width;
+  constructor(lattice: T, baseMultiplier: number, width: number) {
+    this.lattice = lattice;
+    this.width = width;
     this.prevTick = performance.now();
-    this.count = 1;
     this.baseMultiplier = baseMultiplier;
-    this.scale = 1;
   }
 
-  getDimensions(index: number): Uint32Array {
-    return this.store[index].get_dimensions();
+  getDimensions(): Uint32Array {
+    return this.lattice.get_dimensions(this.pageSize);
   }
 
   // add maze to lattice
-  push(): boolean {
-    let top = this.store[this.store.length - 1];
-
-    // we cap at 8 rows per lattice
-    if (top.count() < this.maxPerLattice) {
-      top.alter(1);
-
-      return false;
-    } else {
-      let newLattice = this.latticeFactory();
-      newLattice.set_width(this.width);
-      newLattice.alter(1);
-
-      this.store.push(newLattice);
-      this.count++;
-
-      return true;
-    }
+  push() {
+    this.lattice.alter(1);
   }
 
   // remove maze from lattice
   pop() {
-    let top = this.store[this.store.length - 1];
-
-    top.alter(-1);
-
-    if (top.count() == 0) {
-      this.store.pop();
-      this.count--;
-    }
+    this.lattice.alter(-1);
   }
 
   // tick everything
@@ -115,36 +74,26 @@ class LatticeList<T extends SnailLattice> {
     let dt = Math.floor((now - this.prevTick) * 1000);
     this.prevTick = performance.now();
 
-    let score = this.store
-      .map(lattice => Math.floor(lattice.tick(dt) * this.baseMultiplier))
-      .reduce((acc, curr) => acc + curr, 0);
-
-    return score;
+    return this.lattice.tick(dt);
   }
 
-  render(index: number, canvas: HTMLCanvasElement) {
+  render(page: number, canvas: HTMLCanvasElement) {
     if (!canvas) return;
-
-    let lattice = this.store[index];
-
-    if (!lattice) return;
 
     let ctx = canvas.getContext("2d", { alpha: true });
     let imageData = requestBuffer(canvas.width, canvas.height);
 
     // @ts-ignore -- wasm-bindgen limitation, can't specify uint8clamped array
     // in the type signature easily
-    lattice.render(imageData.data);
+    this.lattice.render(imageData.data, page * this.pageSize, this.pageSize);
 
     ctx.putImageData(imageData, 0, 0);
-
-    reclaimBuffer(imageData);
   }
 
   // fucks up if it doesn't divide evenly right now
-  setScale(scale: number) {
-    this.scale = scale;
-    this.store.forEach(lattice => lattice.set_width(this.width));
+  setWidth(width: number) {
+    this.width = width;
+    this.lattice.set_width(this.width);
   }
 };
 
@@ -163,7 +112,7 @@ function canvasElement(index: number, observer: IntersectionObserver): HTMLCanva
   return canvas;
 }
 
-const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) => {
+const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
   let container: HTMLDivElement;
   let visibleIndexes = new Set([]);
   const intersectionObserver = new IntersectionObserver(entries => {
@@ -194,30 +143,13 @@ const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) 
       // only render if we actually have to
       if (el?.height > 0) {
         lattice.tick();
-        lattice.render(i, elements()[i]);
+        lattice.render(i, el);
       }
     }
 
     if (visibleIndexes.size > 0)
       requestAnimationFrame(renderloop);
   };
-
-  // set width
-  createEffect(() => {
-    LATTICE_STORE[props.key].setScale(props.scale);
-
-    let store = LATTICE_STORE[props.key].store;
-    let canvases = untrack(elements);
-
-    // resize each lattice
-    for (let i = 0; i < canvases.length; i++) {
-      if (store[i]) {
-        let [width, height] = store[i].get_dimensions();
-        canvases[i].width = width;
-        canvases[i].height = height;
-      }
-    }
-  })
 
   const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
 
@@ -228,9 +160,20 @@ const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) 
 
     // update on key change
     let lattice = LATTICE_STORE[props.key];
+    // update on width change
+    LATTICE_STORE[props.key].setWidth(props.latticeWidth);
+
+    let canvases = untrack(elements);
 
     // clear elements
     let newElements = [...untrack(elements)];
+
+    let [width, height] = lattice.getDimensions();
+
+    for (let i = 0; i < canvases.length; i++) {
+      canvases[i].width = width;
+      canvases[i].height = height;
+    }
 
     // create the correct number of elements
     for (let i = 0; i < lattice.count; i++) {
@@ -242,8 +185,6 @@ const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) 
       } else {
         newElement = newElements[i];
       }
-
-      let [width, height] = lattice.getDimensions(i);
 
       newElement.width = width;
       newElement.height = height;
@@ -260,17 +201,15 @@ const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) 
 
     let latticeList = LATTICE_STORE[props.key];
 
-    // add elements
+    let [width, height] = latticeList.getDimensions();
 
     for (let i = prev.count; i < props.count; i++) {
       // returns true if new element is created
-      if ((i + 1) / latticeList.maxPerLattice > elements().length) {
+      if ((i + 1) / latticeList.pageSize > elements().length) {
         setElements([...elements(), canvasElement(elements().length, intersectionObserver)]);
       }
 
       // check to see if we need to resize the lattice
-      let lattice = latticeList.store[elements().length - 1];
-      let [width, height] = lattice.get_dimensions();
       let lastElement = elements()[elements().length - 1];
 
       lastElement.width = width;
@@ -278,7 +217,6 @@ const SnailLatticeElement: Component<ShopListing & { scale: number }> = (props) 
     }
 
     // remove elements
-
     for (let i = props.count; i < prev.count; i++) {
       latticeList.pop();
     }
@@ -303,12 +241,12 @@ const AutoMazes: Component = () => {
   // initialize lattice store
   init().then(() => {
     LATTICE_STORE = {
-      "random-walk": new LatticeList(() => new RandomWalkLattice(8, randomSeed()), 1, 8),
-      "random-teleport": new LatticeList(() => new RandomTeleportLattice(5, randomSeed()), 1, 5),
-      "hold-left": new LatticeList(() => new HoldLeftLattice(4, randomSeed()), 1, 4),
-      "tremaux": new LatticeList(() => new TremauxLattice(3, randomSeed()), 1, 3),
-      "time-travel": new LatticeList(() => new TimeTravelLattice(3, randomSeed()), 1, 3),
-      "clone": new LatticeList(() => new CloneLattice(2, randomSeed()), 1, 2),
+      "random-walk": new LatticeList(new RandomWalkLattice(8, randomSeed()), 1, 8),
+      "random-teleport": new LatticeList(new RandomTeleportLattice(5, randomSeed()), 1, 5),
+      "hold-left": new LatticeList(new HoldLeftLattice(4, randomSeed()), 1, 4),
+      "tremaux": new LatticeList(new TremauxLattice(3, randomSeed()), 1, 3),
+      "time-travel": new LatticeList(new TimeTravelLattice(3, randomSeed()), 1, 3),
+      "clone": new LatticeList(new CloneLattice(2, randomSeed()), 1, 2),
     };
 
     // add initial count to each elements
@@ -349,7 +287,7 @@ const AutoMazes: Component = () => {
   const [shownMazeType, setShownMazeType] = createSignal<ShopKey>("random-walk");
 
   const shownMazeItem = () => shop.find(el => el.key == shownMazeType());
-  const [latticeScale, setLatticeScale] = createSignal(1);
+  const [latticeWidth, setLatticeScale] = createSignal(SHOP["random-walk"].latticeWidth);
 
   const [fullscreen, setFullscreen] = createSignal(false);
 
@@ -357,7 +295,7 @@ const AutoMazes: Component = () => {
     <div class="w-full flex flex-col" ref={mazeDisplay}>
       <div class="p-8 bg-black text-white font-pixelated flex">
         <select class="bg-black text-xl hover:bg-white hover:text-black transition-colors" onChange={(e) => {
-          setLatticeScale(1);
+          setLatticeScale(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
           setShownMazeType(e.currentTarget.value as ShopKey);
         }}>
           <For each={shop}>
@@ -367,8 +305,8 @@ const AutoMazes: Component = () => {
 
         <div class="text-center ml-auto flex">
           <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeScale(x => Math.max(x - 1, 1))}>-</button>
-          <p class="bg-white text-black p-2">{latticeScale()}</p>
-          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeScale(x => Math.min(x + 1, 3))}>+</button>
+          <p class="bg-white text-black p-2">{latticeWidth()}</p>
+          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeScale(x => Math.min(x + 1, 12))}>+</button>
 
           {fullscreen() ?
             <button class="ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {
@@ -384,7 +322,7 @@ const AutoMazes: Component = () => {
 
       {initialized() &&
         <div class="p-2 overflow-auto h-full w-full bg-[#068fef]">
-          <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} scale={latticeScale()} />
+          <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} latticeWidth={latticeWidth()} />
         </div>
       }
     </div>

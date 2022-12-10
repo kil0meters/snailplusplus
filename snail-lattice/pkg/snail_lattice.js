@@ -161,12 +161,13 @@ export class CloneLattice {
         return CloneLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_dimensions(retptr, this.ptr);
+            wasm.clonelattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -178,12 +179,14 @@ export class CloneLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.clonelattice_render(this.ptr, ptr0, len0);
+            wasm.clonelattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -248,12 +251,13 @@ export class HoldLeftLattice {
         return HoldLeftLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.holdleftlattice_get_dimensions(retptr, this.ptr);
+            wasm.holdleftlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -265,12 +269,14 @@ export class HoldLeftLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.holdleftlattice_render(this.ptr, ptr0, len0);
+            wasm.holdleftlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -301,7 +307,7 @@ export class HoldLeftLattice {
     * @param {number} width
     */
     set_width(width) {
-        wasm.holdleftlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -335,12 +341,13 @@ export class RandomTeleportLattice {
         return RandomTeleportLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.randomteleportlattice_get_dimensions(retptr, this.ptr);
+            wasm.randomteleportlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -352,12 +359,14 @@ export class RandomTeleportLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.randomteleportlattice_render(this.ptr, ptr0, len0);
+            wasm.randomteleportlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -388,7 +397,7 @@ export class RandomTeleportLattice {
     * @param {number} width
     */
     set_width(width) {
-        wasm.randomteleportlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -422,12 +431,13 @@ export class RandomWalkLattice {
         return RandomWalkLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.randomwalklattice_get_dimensions(retptr, this.ptr);
+            wasm.randomwalklattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -439,12 +449,14 @@ export class RandomWalkLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.randomwalklattice_render(this.ptr, ptr0, len0);
+            wasm.randomwalklattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -475,7 +487,7 @@ export class RandomWalkLattice {
     * @param {number} width
     */
     set_width(width) {
-        wasm.randomwalklattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -509,12 +521,13 @@ export class TimeTravelLattice {
         return TimeTravelLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.timetravellattice_get_dimensions(retptr, this.ptr);
+            wasm.timetravellattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -526,12 +539,14 @@ export class TimeTravelLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.timetravellattice_render(this.ptr, ptr0, len0);
+            wasm.timetravellattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -562,7 +577,7 @@ export class TimeTravelLattice {
     * @param {number} width
     */
     set_width(width) {
-        wasm.timetravellattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -596,12 +611,13 @@ export class TremauxLattice {
         return TremauxLattice.__wrap(ret);
     }
     /**
+    * @param {number} count
     * @returns {Uint32Array}
     */
-    get_dimensions() {
+    get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.tremauxlattice_get_dimensions(retptr, this.ptr);
+            wasm.tremauxlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -613,12 +629,14 @@ export class TremauxLattice {
     }
     /**
     * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
     */
-    render(buffer) {
+    render(buffer, index, count) {
         try {
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            wasm.tremauxlattice_render(this.ptr, ptr0, len0);
+            wasm.tremauxlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);
@@ -649,7 +667,7 @@ export class TremauxLattice {
     * @param {number} width
     */
     set_width(width) {
-        wasm.tremauxlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 

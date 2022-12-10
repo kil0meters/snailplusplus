@@ -7,7 +7,7 @@ use crate::{
     lfsr::LFSR,
     maze::{AutoMaze, CELLS_PER_IDX},
     solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux},
-    utils::set_panic_hook,
+    utils::{console_log, set_panic_hook},
 };
 
 #[derive(Clone, Copy)]
@@ -26,12 +26,6 @@ where
 {
     width: usize,
     mazes: Vec<AutoMaze<S, T>>,
-
-    // stores the indexes of mazes which need to be rerendered
-    render_marked: HashSet<usize>,
-
-    bg_buffer: Vec<u8>,
-
     lfsr: LFSR,
 }
 
@@ -46,8 +40,6 @@ where
         let mut lattice = SnailLattice {
             width,
             mazes: Vec::new(),
-            render_marked: HashSet::new(),
-            bg_buffer: Vec::new(),
             lfsr: LFSR::new(seed),
         };
 
@@ -62,77 +54,29 @@ where
         self.mazes.len()
     }
 
-    pub fn get_dimensions(&self) -> Vec<usize> {
+    pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
         // ceiling division -> count / width
-        let height = (self.mazes.len() + self.width - 1) / self.width;
+        let height = (count + self.width - 1) / self.width;
 
-        // let height_px = (self.maze_size * 10 + 1) * height;
         let height_px = (S * 10 + 1) * height;
-        // let width_px = (self.maze_size * 10 + 1) * self.width;
         let width_px = (S * 10 + 1) * self.width;
 
         vec![width_px, height_px]
     }
 
-    fn draw_mazes(&mut self) {
-        let dimensions = self.get_dimensions();
-        let width = dimensions[0];
-        let height = dimensions[1];
-
-        self.bg_buffer.clear();
-        self.bg_buffer.resize(width * height * 4, 0);
-
-        // let maze_size = self.maze_size * 10 + 1;
-        let maze_size = S * 10 + 1;
-
-        let mut cx = 0;
-        let mut cy = 0;
-
-        let mut bg_image = Image {
-            buffer: &mut self.bg_buffer,
-            buffer_width: width,
-        };
-
-        for maze in self.mazes.iter_mut() {
-            maze.maze.draw_background(&mut bg_image, cx, cy);
-
-            cx += maze_size;
-            if cx >= width {
-                cx = 0;
-                cy += maze_size;
-            }
-        }
-    }
-
     // renders to a buffer of size 4*self.get_dimensions()
-    pub fn render(&mut self, buffer: &mut [u8]) {
+    pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
+        let dimensions = self.get_dimensions(count);
+
         // just so we don't panic in case the javascript code messes up
-        if self.bg_buffer.len() != buffer.len() {
+        if buffer.len() != 4 * dimensions[0] * dimensions[1] {
             return;
         }
 
         let maze_size = S * 10 + 1;
         let width = maze_size * self.width;
 
-        if !self.render_marked.is_empty() {
-            let mut bg_image = Image {
-                buffer_width: width,
-                buffer: &mut self.bg_buffer,
-            };
-
-            // render all things necessary
-            for &i in self.render_marked.iter() {
-                self.mazes[i].maze.draw_background(
-                    &mut bg_image,
-                    maze_size * (i % self.width),
-                    maze_size * (i / self.width),
-                );
-            }
-
-            self.render_marked.clear();
-        }
-
-        buffer.copy_from_slice(&self.bg_buffer);
+        buffer.fill(0);
 
         let mut cx = 0;
         let mut cy = 0;
@@ -142,12 +86,11 @@ where
             buffer_width: width,
         };
 
-        // render foreground of each maze into framebuffer
-        // also updates mazes if necessary
-        for maze in self.mazes.iter_mut() {
+        for maze in self.mazes.iter_mut().skip(index).take(count) {
+            maze.maze.draw_background(&mut image, cx, cy);
             maze.draw(&mut self.lfsr, &mut image, cx, cy);
 
-            cx += maze_size; // maze_size;
+            cx += maze_size;
             if cx >= width {
                 cx = 0;
                 cy += maze_size;
@@ -157,8 +100,6 @@ where
 
     pub fn set_width(&mut self, width: usize) {
         self.width = width;
-
-        self.draw_mazes();
     }
 
     // progresses all snails a certain number of microseconds
@@ -166,13 +107,10 @@ where
     pub fn tick(&mut self, dt: usize) -> usize {
         let mut total = 0;
 
-        for (i, maze) in self.mazes.iter_mut().enumerate() {
+        for maze in self.mazes.iter_mut() {
             let fragments = maze.tick(dt, &mut self.lfsr);
             if fragments != 0 {
                 total += fragments;
-
-                // mark that the current maze needs to be rerendered
-                self.render_marked.insert(i);
             }
         }
 
@@ -191,8 +129,6 @@ where
                 self.mazes.push(new_maze);
             }
         }
-
-        self.draw_mazes();
     }
 }
 
@@ -209,13 +145,13 @@ macro_rules! lattice_impl {
             }
 
             #[wasm_bindgen]
-            pub fn get_dimensions(&self) -> Vec<usize> {
-                self.0.get_dimensions()
+            pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
+                self.0.get_dimensions(count)
             }
 
             #[wasm_bindgen]
-            pub fn render(&mut self, buffer: &mut [u8]) {
-                self.0.render(buffer);
+            pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
+                self.0.render(buffer, index, count);
             }
 
             #[wasm_bindgen]

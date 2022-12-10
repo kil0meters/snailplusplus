@@ -38,11 +38,12 @@ mod tests {
         lattice.tick(100000);
 
         // 4 * (10)
-        let dimensions = lattice.get_dimensions();
+        let dimensions = lattice.get_dimensions(100);
+
         let mut buffer = vec![0; 4 * dimensions[0] * dimensions[1]];
 
         b.iter(|| {
-            lattice.render(&mut buffer);
+            lattice.render(&mut buffer, 0, 100);
         });
     }
 }

@@ -1,6 +1,12 @@
 use std::mem::size_of;
 
-use crate::{direction::Direction, image::Image, lfsr::LFSR, solvers::Solver, utils::Vec2};
+use crate::{
+    direction::Direction,
+    image::Image,
+    lfsr::LFSR,
+    solvers::Solver,
+    utils::{console_log, Vec2},
+};
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
@@ -59,6 +65,8 @@ where
                 end_pos: Vec2 { x: S - 1, y: S - 1 },
                 walls: [0; _],
                 visited: [false; _],
+                buffer: vec![],
+                maze_updated: true,
             },
         }
     }
@@ -112,6 +120,11 @@ where
     // each cell is 4 bits
     pub walls: [usize; (S * S) / CELLS_PER_IDX + 1],
     visited: [bool; S * S],
+
+    // we use a vec here instead of a slice because we don't want to allocate memory for thousands
+    // of mazes. only a few will ever be rendered
+    buffer: Vec<u8>,
+    maze_updated: bool,
 }
 
 impl<const S: usize> Maze<S>
@@ -181,6 +194,8 @@ where
     }
 
     pub fn generate(&mut self, lfsr: &mut LFSR) {
+        self.maze_updated = true;
+
         // set all elements in vector to 1s
         self.walls = [!0usize; _];
 
@@ -226,39 +241,77 @@ where
         }
     }
 
-    pub fn draw_background(&self, image: &mut Image, bx: usize, by: usize) {
+    fn update_background(&mut self) {
+        self.maze_updated = false;
+
+        self.buffer.resize((S * 10 + 1) * (S * 10 + 1) * 4, 0);
+
         for y in 0..(S * 10) {
             for x in 0..S {
                 let cell = self.get_cell(x, y / 10);
-                let px = ((by + y) * image.buffer_width + bx + (x * 10)) * 4;
+
+                let px = 4 * (y * S * 10 + x * 10);
 
                 // Checking the bottom wall is redundant
                 if y % 10 == 0 && cell.has_wall(Direction::Up) {
                     for l in (px..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, SNAIL_FG);
+                        self.buffer[l] = SNAIL_FG[0];
+                        self.buffer[l + 1] = SNAIL_FG[1];
+                        self.buffer[l + 2] = SNAIL_FG[2];
+                        self.buffer[l + 3] = 0xFF;
                     }
                 } else {
                     // if left wall, checking right wall is redundant
                     if cell.has_wall(Direction::Left) || y % 10 == 0 {
-                        image.draw_pixel(px, SNAIL_FG);
+                        self.buffer[px] = SNAIL_FG[0];
+                        self.buffer[px + 1] = SNAIL_FG[1];
+                        self.buffer[px + 2] = SNAIL_FG[2];
+                        self.buffer[px + 3] = 0xFF;
                     } else {
-                        image.draw_pixel(px, SNAIL_BG);
+                        self.buffer[px] = SNAIL_BG[0];
+                        self.buffer[px + 1] = SNAIL_BG[1];
+                        self.buffer[px + 2] = SNAIL_BG[2];
+                        self.buffer[px + 3] = 0xFF;
                     }
 
                     for l in ((px + 4)..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, SNAIL_BG);
+                        self.buffer[l] = SNAIL_BG[0];
+                        self.buffer[l + 1] = SNAIL_BG[1];
+                        self.buffer[l + 2] = SNAIL_BG[2];
+                        self.buffer[l + 3] = 0xFF;
                     }
                 }
             }
 
             // fill end pixel
-            let px = 4 * ((by + y) * image.buffer_width + bx + S * 10);
-            image.draw_pixel(px, SNAIL_FG);
+            let px = 4 * (y * S * 10 + S * 10);
+            self.buffer[px] = SNAIL_FG[0];
+            self.buffer[px + 1] = SNAIL_FG[1];
+            self.buffer[px + 2] = SNAIL_FG[2];
+            self.buffer[px + 3] = 0xFF;
         }
 
-        let px = 4 * ((by + S * 10) * image.buffer_width + bx);
+        let px = 4 * S * 10 * S * 10;
         for l in (px..(px + 4 * (1 + 10 * S))).step_by(4) {
-            image.draw_pixel(l, SNAIL_FG);
+            self.buffer[l] = SNAIL_FG[0];
+            self.buffer[l + 1] = SNAIL_FG[1];
+            self.buffer[l + 2] = SNAIL_FG[2];
+            self.buffer[l + 3] = 0xFF;
+        }
+    }
+
+    pub fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
+        if self.maze_updated {
+            self.update_background();
+        }
+
+        let row_length = 4 * (S * 10 + 1);
+
+        for y in 0..=(S * 10) {
+            let px = 4 * ((by + y) * image.buffer_width + bx);
+
+            image.buffer[px..(px + row_length)]
+                .copy_from_slice(&self.buffer[(y * S * 10 * 4)..(y * S * 10 * 4 + row_length)])
         }
     }
 

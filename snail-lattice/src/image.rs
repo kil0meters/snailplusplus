@@ -4,6 +4,7 @@ pub struct Image<'a> {
 }
 
 impl<'a> Image<'a> {
+    #[inline(always)]
     pub fn draw_pixel(&mut self, index: usize, pixel: [u8; 3]) {
         self.buffer[index] = pixel[0];
         self.buffer[index + 1] = pixel[1];
