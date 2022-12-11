@@ -1,6 +1,9 @@
+#![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(generic_arg_infer)]
 #![feature(test)]
+
+// HashMap/BTreeSet: 29
 
 extern crate test;
 

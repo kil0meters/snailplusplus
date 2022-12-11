@@ -5,7 +5,6 @@ import { ScoreContext } from "./ScoreProvider";
 
 // this saves an insane amount of gc time
 let CACHED_IMAGE: ImageData;
-
 function requestBuffer(width: number, height: number) {
   if (!CACHED_IMAGE || CACHED_IMAGE.width != width || CACHED_IMAGE.height != height) {
     CACHED_IMAGE = new ImageData(
@@ -80,6 +79,8 @@ class LatticeList<T extends SnailLattice> {
   render(page: number, canvas: HTMLCanvasElement) {
     if (!canvas) return;
 
+    console.log(page * this.pageSize, this.pageSize);
+
     let ctx = canvas.getContext("2d", { alpha: true });
     let imageData = requestBuffer(canvas.width, canvas.height);
 
@@ -140,11 +141,8 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     for (let i of visibleIndexes) {
       let el = elements()[i];
 
-      // only render if we actually have to
-      if (el?.height > 0) {
-        lattice.tick();
-        lattice.render(i, el);
-      }
+      lattice.tick();
+      lattice.render(i, el);
     }
 
     if (visibleIndexes.size > 0)
@@ -160,6 +158,7 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
 
     // update on key change
     let lattice = LATTICE_STORE[props.key];
+
     // update on width change
     LATTICE_STORE[props.key].setWidth(props.latticeWidth);
 
@@ -200,6 +199,8 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     if (prev.key != props.key || !LATTICE_STORE) return { ...props };
 
     let latticeList = LATTICE_STORE[props.key];
+
+    console.log(props.count);
 
     let [width, height] = latticeList.getDimensions();
 

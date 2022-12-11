@@ -51,8 +51,10 @@ extern "C" {
     pub fn log(s: &str);
 }
 
+#[allow(unused_macros)]
 macro_rules! console_log {
     ($($t:tt)*) => (crate::utils::log(&format_args!($($t)*).to_string()))
 }
 
+#[allow(unused_imports)]
 pub(crate) use console_log;
