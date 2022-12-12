@@ -83,8 +83,6 @@ class LatticeList<T extends SnailLattice> {
     let ctx = canvas.getContext("2d", { alpha: true });
     let imageData = requestBuffer(canvas.width, canvas.height);
 
-    console.log("imageData size: " + canvas.width * canvas.height * 4);
-
     // @ts-ignore -- wasm-bindgen limitation, can't specify uint8clamped array
     // in the type signature easily
     this.lattice.render(imageData.data, page * this.pageSize, this.pageSize);
