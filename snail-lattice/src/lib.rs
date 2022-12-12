@@ -3,8 +3,6 @@
 #![feature(generic_arg_infer)]
 #![feature(test)]
 
-// HashMap/BTreeSet: 29
-
 extern crate test;
 
 mod direction;
@@ -15,9 +13,6 @@ pub mod maze;
 mod snail;
 pub mod solvers;
 mod utils;
-
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[cfg(test)]
 mod tests {
@@ -40,7 +35,6 @@ mod tests {
         lattice.alter(100);
         lattice.tick(100000);
 
-        // 4 * (10)
         let dimensions = lattice.get_dimensions(100);
 
         let mut buffer = vec![0; 4 * dimensions[0] * dimensions[1]];
