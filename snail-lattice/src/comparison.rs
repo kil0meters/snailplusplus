@@ -29,8 +29,8 @@ where
 fn main() {
     run_bench::<5, RandomWalk<5>>("random-walk", 1.0);
     run_bench::<7, RandomTeleport<7>>("random-teleport", 1.5);
-    run_bench::<9, HoldLeft<9>>("hold-left", 1.0);
-    run_bench::<9, Learning<9>>("learning", 21.0);
+    run_bench::<9, Learning<9>>("learning", 5.0);
+    run_bench::<9, HoldLeft<9>>("hold-left", 5.0);
     run_bench::<11, Tremaux<11>>("tremaux", 22.0);
     run_bench::<13, TimeTravel<13>>("time-travel", 50.0);
     run_bench::<20, Clones<20>>("clone", 100.0);

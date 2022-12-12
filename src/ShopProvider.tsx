@@ -29,6 +29,10 @@ const shopListings: ShopListing[] = [
     count: 0
   },
   {
+    key: "learning",
+    count: 0,
+  },
+  {
     key: "hold-left",
     count: 0
   },
@@ -39,10 +43,6 @@ const shopListings: ShopListing[] = [
   {
     key: "time-travel",
     count: 0
-  },
-  {
-    key: "learning",
-    count: 0,
   },
   {
     key: "clone",
@@ -65,25 +65,25 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "baseMultiplier": 1.5,
     "latticeWidth": 5,
   },
-  "hold-left": {
-    "name": "Left Handed Snail",
-    "description": "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
-    "price": 1_000,
-    "baseMultiplier": 1,
-    "latticeWidth": 4,
-  },
   "learning": {
     "name": "Learning Snail",
     "description": "Learns how to solve the maze",
     "price": 40_000,
-    "baseMultiplier": 21,
+    "baseMultiplier": 5,
     "latticeWidth": 3,
+  },
+  "hold-left": {
+    "name": "Left Handed Snail",
+    "description": "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
+    "price": 1_000,
+    "baseMultiplier": 5,
+    "latticeWidth": 4,
   },
   "tremaux": {
     "name": "Segment Snail",
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
     "price": 200_000,
-    "baseMultiplier": 22,
+    "baseMultiplier": 24,
     "latticeWidth": 3,
   },
   "time-travel": {

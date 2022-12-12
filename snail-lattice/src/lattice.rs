@@ -9,7 +9,7 @@ use crate::{
     solvers::{
         Clones, HoldLeft, Learning, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux,
     },
-    utils::{console_log, set_panic_hook},
+    utils::{set_panic_hook},
 };
 
 #[derive(Clone, Copy)]
@@ -257,4 +257,4 @@ lattice_impl!(LearningLattice, 9, Learning<9>);
 lattice_impl!(HoldLeftLattice, 9, HoldLeft<9>);
 lattice_impl!(TremauxLattice, 11, Tremaux<11>);
 lattice_impl!(TimeTravelLattice, 13, TimeTravel<13>);
-lattice_impl!(CloneLattice, 100, Clones<100>);
+lattice_impl!(CloneLattice, 20, Clones<20>);

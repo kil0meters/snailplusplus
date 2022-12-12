@@ -1,6 +1,5 @@
 use std::{
     cmp::Ordering,
-    collections::{BTreeMap, BTreeSet},
 };
 
 use crate::{
@@ -10,7 +9,6 @@ use crate::{
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::console_log,
 };
 
 const POPULATION_COUNT: usize = 16;

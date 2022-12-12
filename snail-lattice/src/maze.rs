@@ -1,5 +1,5 @@
 use std::{
-    collections::{BTreeMap, VecDeque},
+    collections::{VecDeque},
     mem::size_of,
 };
 
@@ -8,7 +8,7 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     solvers::Solver,
-    utils::{console_log, Vec2},
+    utils::{Vec2},
 };
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];

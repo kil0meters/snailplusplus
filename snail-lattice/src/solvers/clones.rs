@@ -1,4 +1,4 @@
-use std::mem::size_of;
+
 
 use crate::{
     image::Image,
@@ -6,7 +6,6 @@ use crate::{
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::Snail,
     solvers::Solver,
-    utils::console_log,
 };
 
 pub struct Clones<const S: usize>
@@ -47,11 +46,6 @@ where
         bx: usize,
         by: usize,
     ) {
-        console_log!(
-            "{}",
-            size_of::<Snail<S>>() * (self.active_snails.len() + self.inactive_snails.len())
-        );
-
         for snail in self.inactive_snails.iter() {
             snail.draw(
                 animation_cycle,
