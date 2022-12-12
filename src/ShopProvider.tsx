@@ -4,7 +4,7 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 
-export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone" | "time-travel";
+export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone" | "time-travel" | "learning";
 
 export interface ShopItem {
   name: string;
@@ -41,6 +41,10 @@ const shopListings: ShopListing[] = [
     count: 0
   },
   {
+    key: "learning",
+    count: 0,
+  },
+  {
     key: "clone",
     count: 0
   }
@@ -48,44 +52,52 @@ const shopListings: ShopListing[] = [
 
 export const SHOP: { [key in ShopKey]: ShopItem } = {
   "random-walk": {
-    "name": "Random Walk",
+    "name": "Random Walk Snail",
     "description": "Randomly walks around until it happens to stumble its way to the end",
     "price": 25,
+    "baseMultiplier": 1,
     "latticeWidth": 8,
   },
   "random-teleport": {
-    "name": "Random Teleport",
+    "name": "Random Teleport Snail",
     "description": "Randomly teleports to another location",
     "price": 100,
     "baseMultiplier": 1.5,
     "latticeWidth": 5,
   },
   "hold-left": {
-    "name": "Hold Left Wall",
-    "description": "At least it's not unbounded!",
-    "price": 1000,
+    "name": "Left Handed Snail",
+    "description": "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
+    "price": 1_000,
     "baseMultiplier": 1,
     "latticeWidth": 4,
+  },
+  "learning": {
+    "name": "Learning Snail",
+    "description": "Learns how to solve the maze",
+    "price": 40_000,
+    "baseMultiplier": 21,
+    "latticeWidth": 3,
   },
   "tremaux": {
     "name": "Segment Snail",
     "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
-    "price": 5000,
-    "baseMultiplier": 5,
+    "price": 200_000,
+    "baseMultiplier": 22,
     "latticeWidth": 3,
   },
   "time-travel": {
     "name": "Time Travel Snail",
     "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
-    "price": 20000,
-    "baseMultiplier": 9,
+    "price": 1_000_000,
+    "baseMultiplier": 50,
     "latticeWidth": 3,
   },
   "clone": {
     "name": "Cloning Snail",
     "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
-    "price": 50000,
-    "baseMultiplier": 20,
+    "price": 10_000_000,
+    "baseMultiplier": 100,
     "latticeWidth": 2,
   }
 };

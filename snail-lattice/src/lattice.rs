@@ -6,8 +6,10 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{AutoMaze, CELLS_PER_IDX},
-    solvers::{Clones, HoldLeft, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux},
-    utils::set_panic_hook,
+    solvers::{
+        Clones, HoldLeft, Learning, RandomTeleport, RandomWalk, Solver, TimeTravel, Tremaux,
+    },
+    utils::{console_log, set_panic_hook},
 };
 
 #[derive(Clone, Copy)]
@@ -186,12 +188,19 @@ where
             self.bg_buffers.clear();
             self.render_marked.clear();
         } else {
+            let mut time_offset = 0;
+
             for _ in 0..difference {
                 let mut new_maze = AutoMaze::<S, T>::new(T::new());
                 new_maze.maze.generate(&mut self.lfsr);
 
+                // offset time slightly
+                new_maze.tick(time_offset, &mut self.lfsr);
+
                 self.render_marked.insert(self.mazes.len());
                 self.mazes.push(new_maze);
+
+                time_offset += 100000;
             }
         }
     }
@@ -244,7 +253,8 @@ macro_rules! lattice_impl {
 
 lattice_impl!(RandomWalkLattice, 5, RandomWalk<5>);
 lattice_impl!(RandomTeleportLattice, 7, RandomTeleport<7>);
+lattice_impl!(LearningLattice, 9, Learning<9>);
 lattice_impl!(HoldLeftLattice, 9, HoldLeft<9>);
 lattice_impl!(TremauxLattice, 11, Tremaux<11>);
 lattice_impl!(TimeTravelLattice, 13, TimeTravel<13>);
-lattice_impl!(CloneLattice, 20, Clones<20>);
+lattice_impl!(CloneLattice, 100, Clones<100>);

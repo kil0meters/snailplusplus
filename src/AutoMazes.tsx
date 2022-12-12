@@ -1,7 +1,8 @@
 import { Component, createEffect, createSignal, For, onCleanup, untrack, useContext } from "solid-js";
 import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
-import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice } from "snail-lattice";
+import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice, LearningLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
+import { createStoredSignal } from "./utils";
 
 // this saves an insane amount of gc time
 let CACHED_IMAGE: ImageData;
@@ -79,10 +80,10 @@ class LatticeList<T extends SnailLattice> {
   render(page: number, canvas: HTMLCanvasElement) {
     if (!canvas) return;
 
-    console.log(page * this.pageSize, this.pageSize);
-
     let ctx = canvas.getContext("2d", { alpha: true });
     let imageData = requestBuffer(canvas.width, canvas.height);
+
+    console.log("imageData size: " + canvas.width * canvas.height * 4);
 
     // @ts-ignore -- wasm-bindgen limitation, can't specify uint8clamped array
     // in the type signature easily
@@ -200,8 +201,6 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
 
     let latticeList = LATTICE_STORE[props.key];
 
-    console.log(props.count);
-
     let [width, height] = latticeList.getDimensions();
 
     for (let i = prev.count; i < props.count; i++) {
@@ -247,6 +246,7 @@ const AutoMazes: Component = () => {
       "hold-left": new LatticeList(new HoldLeftLattice(4, randomSeed()), 1, 4),
       "tremaux": new LatticeList(new TremauxLattice(3, randomSeed()), 1, 3),
       "time-travel": new LatticeList(new TimeTravelLattice(3, randomSeed()), 1, 3),
+      "learning": new LatticeList(new LearningLattice(3, randomSeed()), 1, 3),
       "clone": new LatticeList(new CloneLattice(2, randomSeed()), 1, 2),
     };
 
@@ -254,10 +254,7 @@ const AutoMazes: Component = () => {
     for (let [key, lattice] of Object.entries(LATTICE_STORE)) {
       let count = shop.find(x => x.key == key).count;
 
-      for (let i = 0; i < count; i++) {
-        // this is blocking which is kinda bad
-        lattice.push();
-      }
+      lattice.lattice.alter(count);
     }
 
     setInitialized(true);
@@ -285,29 +282,31 @@ const AutoMazes: Component = () => {
   });
 
   let mazeDisplay: HTMLDivElement;
-  const [shownMazeType, setShownMazeType] = createSignal<ShopKey>("random-walk");
+  const [shownMazeType, setShownMazeType] = createStoredSignal<ShopKey>("shown-maze", "random-walk");
 
   const shownMazeItem = () => shop.find(el => el.key == shownMazeType());
-  const [latticeWidth, setLatticeScale] = createSignal(SHOP["random-walk"].latticeWidth);
+
+  const [latticeWidth, setLatticeWidth] = createSignal(SHOP[shownMazeType()].latticeWidth);
 
   const [fullscreen, setFullscreen] = createSignal(false);
 
   return (
     <div class="w-full flex flex-col" ref={mazeDisplay}>
       <div class="p-8 bg-black text-white font-pixelated flex">
-        <select class="bg-black text-xl hover:bg-white hover:text-black transition-colors" onChange={(e) => {
-          setLatticeScale(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
-          setShownMazeType(e.currentTarget.value as ShopKey);
-        }}>
+        <select class="bg-black text-xl hover:bg-white hover:text-black transition-colors"
+          onChange={(e) => {
+            setLatticeWidth(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
+            setShownMazeType(e.currentTarget.value as ShopKey);
+          }}>
           <For each={shop}>
-            {item => <option value={item.key} class="py-4 bg-white text-black">{SHOP[item.key].name}</option>}
+            {item => <option selected={item.key == shownMazeType()} value={item.key} class="py-4 bg-white text-black">{SHOP[item.key].name}</option>}
           </For>
         </select>
 
         <div class="text-center ml-auto flex">
-          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeScale(x => Math.max(x - 1, 1))}>-</button>
+          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>
           <p class="bg-white text-black p-2">{latticeWidth()}</p>
-          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeScale(x => Math.min(x + 1, 12))}>+</button>
+          <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.min(x + 1, 12))}>+</button>
 
           {fullscreen() ?
             <button class="ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {

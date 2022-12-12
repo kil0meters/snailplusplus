@@ -1,6 +1,15 @@
-use std::mem::size_of;
+use std::{
+    collections::{BTreeMap, VecDeque},
+    mem::size_of,
+};
 
-use crate::{direction::Direction, image::Image, lfsr::LFSR, solvers::Solver, utils::Vec2};
+use crate::{
+    direction::Direction,
+    image::Image,
+    lfsr::LFSR,
+    solvers::Solver,
+    utils::{console_log, Vec2},
+};
 
 pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
 pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
@@ -178,6 +187,96 @@ where
                 }
             }
         }
+    }
+
+    pub fn get_distances(&self, x: usize, y: usize, distances: &mut [usize; S * S]) {
+        let mut queue = VecDeque::new();
+        *distances = [0; S * S];
+
+        queue.push_back((x, y));
+
+        while let Some((x, y)) = queue.pop_front() {
+            let cell = self.get_cell(x, y);
+            let distance = distances[y * S + x];
+
+            if !cell.has_wall(Direction::Up) && distances[(y - 1) * S + x] == 0 {
+                queue.push_back((x, y - 1));
+                distances[(y - 1) * S + x] = distance + 1;
+            }
+
+            if !cell.has_wall(Direction::Down) && distances[(y + 1) * S + x] == 0 {
+                queue.push_back((x, y + 1));
+                distances[(y + 1) * S + x] = distance + 1;
+            }
+
+            if !cell.has_wall(Direction::Left) && distances[y * S + x - 1] == 0 {
+                queue.push_back((x - 1, y));
+                distances[y * S + x - 1] = distance + 1;
+            }
+
+            if !cell.has_wall(Direction::Right) && distances[y * S + x + 1] == 0 {
+                queue.push_back((x + 1, y));
+                distances[y * S + x + 1] = distance + 1;
+            }
+        }
+    }
+
+    pub fn get_solve_sequence(&self, x: usize, y: usize) -> Vec<Direction> {
+        let mut queue = VecDeque::new();
+        let mut visited = [None; S * S];
+
+        queue.push_back((self.end_pos.x, self.end_pos.y));
+
+        while let Some((x, y)) = queue.pop_front() {
+            let cell = self.get_cell(x, y);
+            if !cell.has_wall(Direction::Up) && visited[(y - 1) * S + x].is_none() {
+                queue.push_back((x, y - 1));
+                visited[(y - 1) * S + x] = Some(Direction::Up);
+            }
+
+            if !cell.has_wall(Direction::Down) && visited[(y + 1) * S + x].is_none() {
+                queue.push_back((x, y + 1));
+                visited[(y + 1) * S + x] = Some(Direction::Down);
+            }
+
+            if !cell.has_wall(Direction::Left) && visited[y * S + x - 1].is_none() {
+                queue.push_back((x - 1, y));
+                visited[y * S + x - 1] = Some(Direction::Left);
+            }
+
+            if !cell.has_wall(Direction::Right) && visited[y * S + x + 1].is_none() {
+                queue.push_back((x + 1, y));
+                visited[y * S + x + 1] = Some(Direction::Right);
+            }
+        }
+
+        let mut pos = Vec2 { x, y };
+
+        let mut moves = vec![];
+
+        while pos != self.end_pos {
+            match visited[pos.y * S + pos.x] {
+                Some(Direction::Up) => {
+                    pos.y += 1;
+                    moves.push(Direction::Down);
+                }
+                Some(Direction::Down) => {
+                    pos.y -= 1;
+                    moves.push(Direction::Up);
+                }
+                Some(Direction::Left) => {
+                    pos.x += 1;
+                    moves.push(Direction::Right);
+                }
+                Some(Direction::Right) => {
+                    pos.x -= 1;
+                    moves.push(Direction::Left);
+                }
+                None => unreachable!(),
+            }
+        }
+
+        moves
     }
 
     pub fn generate(&mut self, lfsr: &mut LFSR) {

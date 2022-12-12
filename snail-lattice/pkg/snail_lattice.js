@@ -312,6 +312,96 @@ export class HoldLeftLattice {
 }
 /**
 */
+export class LearningLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(LearningLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_learninglattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} seed
+    */
+    constructor(width, seed) {
+        const ret = wasm.clonelattice_new(width, seed);
+        return LearningLattice.__wrap(ret);
+    }
+    /**
+    * @param {number} count
+    * @returns {Uint32Array}
+    */
+    get_dimensions(count) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.holdleftlattice_get_dimensions(retptr, this.ptr, count);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
+    */
+    render(buffer, index, count) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.learninglattice_render(this.ptr, ptr0, len0, index, count);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.learninglattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.learninglattice_alter(this.ptr, difference);
+    }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.clonelattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.clonelattice_set_width(this.ptr, width);
+    }
+}
+/**
+*/
 export class RandomTeleportLattice {
 
     static __wrap(ptr) {
@@ -705,6 +795,9 @@ async function load(module, imports) {
 function getImports() {
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbg_log_f6e6d0459bd5408c = function(arg0, arg1) {
+        console.log(getStringFromWasm0(arg0, arg1));
+    };
     imports.wbg.__wbg_new_abda76e883ba8a5f = function() {
         const ret = new Error();
         return addHeapObject(ret);

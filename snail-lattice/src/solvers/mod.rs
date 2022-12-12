@@ -6,6 +6,7 @@ use crate::{
 
 mod clones;
 mod hold_left;
+mod learning;
 mod random_teleport;
 mod random_walk;
 mod time_travel;
@@ -13,6 +14,7 @@ mod tremaux;
 
 pub use clones::Clones;
 pub use hold_left::HoldLeft;
+pub use learning::Learning;
 pub use random_teleport::RandomTeleport;
 pub use random_walk::RandomWalk;
 pub use time_travel::TimeTravel;
@@ -20,7 +22,7 @@ pub use tremaux::Tremaux;
 
 pub trait Solver<const S: usize>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     fn new() -> Self;
 

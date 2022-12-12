@@ -1,5 +1,3 @@
-
-
 use crate::{
     direction::Direction,
     image::Image,
@@ -11,14 +9,14 @@ use crate::{
 
 pub struct RandomWalk<const S: usize>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
 }
 
 impl<const S: usize> Solver<S> for RandomWalk<S>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     fn new() -> Self {
         RandomWalk {
