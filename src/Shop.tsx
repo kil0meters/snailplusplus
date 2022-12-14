@@ -1,5 +1,5 @@
 import { Component, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
-import { LATTICE_STORE } from "./AutoMazes";
+import { LATTICE_WORKER_STORE } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
 import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
@@ -15,13 +15,17 @@ const ShopListingElement: Component<ShopListing> = (props) => {
 
   const buy = () => {
     if (score() >= price() || true) {
-      LATTICE_STORE[props.key].push();
+      // LATTICE_STORE[props.key].push();
 
+      // for (let i = 0; i < 1000; i++) {
       setShop(
         (shopItem) => shopItem.key === props.key,
         "count",
         (count) => count + 1
       );
+
+      LATTICE_WORKER_STORE[props.key].postMessage({ type: "alter", diff: 1 });
+      // }
 
       // setScore(score() - price());
     }
@@ -144,6 +148,10 @@ const Shop: Component = () => {
   const reset = () => {
     setShop(() => true, "count", () => 0);
     setScore(0);
+
+    shop.forEach(({ key }) => {
+      LATTICE_WORKER_STORE[key].postMessage({ type: "reset" });
+    });
   };
 
   return (

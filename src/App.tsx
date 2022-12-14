@@ -1,60 +1,15 @@
-import { Component, createEffect, createSignal, onCleanup, useContext, For } from 'solid-js';
+import { Component, createSignal, onCleanup } from 'solid-js';
 import music from '../assets/gameplay.mp3';
-import ScoreProvider, { ScoreContext } from './ScoreProvider';
-import ShopProvider, { ShopContext, ShopItem } from './ShopProvider';
+import ScoreProvider from './ScoreProvider';
+import ShopProvider, { ShopKey } from './ShopProvider';
 import "../assets/font.woff2";
-import UpgradesProvider, { Upgrade, UpgradesContext } from './UpgradesProvider';
-import { createStoredSignal } from './utils';
-import AutoMazes from './AutoMazes';
-import SnailMaze from './SnailMaze';
-import Shop from './Shop';
-
-const Game: Component = () => {
-  const [score, setScore] = useContext(ScoreContext);
-  const updateScore = (newScore: number) => setScore(score() + newScore);
-  const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 5);
-
-  const [displayedScore, setDisplayedScore] = createSignal(score());
-
-  createEffect(() => {
-    let difference = score() - displayedScore();
-    let prev = new Date();
-
-    if (difference < 0) {
-      setDisplayedScore(score());
-      return;
-    }
-
-    const animate = () => {
-      let now = new Date();
-      let dt = now.valueOf() - prev.valueOf();
-      setDisplayedScore(Math.min(displayedScore() + difference * dt / 1000, score()));
-
-      if (displayedScore() != score()) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  });
-
-  return (
-    <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
-      <div class='flex flex-col gap-8 h-full overflow-auto pb-16'>
-        <div class='p-8 bg-black flex justify-center'>
-          <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} fragments</span>
-        </div>
-        <SnailMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score) => { updateScore(score) }} />
-        <AutoMazes />
-      </div>
-      <Shop />
-    </div>
-  );
-};
+import UpgradesProvider from './UpgradesProvider';
+import Game from './Game';
 
 const App: Component = () => {
   let audio;
   const [gameStarted, setGameStarted] = createSignal(true);
+
 
   const startGame = () => {
     setGameStarted(true);

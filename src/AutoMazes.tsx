@@ -1,107 +1,37 @@
-import { Component, createEffect, createSignal, For, onCleanup, untrack, useContext } from "solid-js";
+import { Component, createEffect, createSignal, For, onCleanup, onMount, untrack, useContext } from "solid-js";
 import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
-import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice, LearningLattice } from "snail-lattice";
 import { ScoreContext } from "./ScoreProvider";
 import { createStoredSignal } from "./utils";
+import { latticePostMessage, LATTICE_WORKER_STORE } from "./Game";
+import { LatticeWorkerResponse } from "./latticeWorker";
 
 // this saves an insane amount of gc time
-let CACHED_IMAGE: ImageData;
+let CACHED_BUFFERS: Uint8ClampedArray[] = [];
+let cachedImageWidth = 0;
+let cachedImageHeight = 0;
+
+let reclaimStatus = 0;
+
 function requestBuffer(width: number, height: number) {
-  if (!CACHED_IMAGE || CACHED_IMAGE.width != width || CACHED_IMAGE.height != height) {
-    CACHED_IMAGE = new ImageData(
-      new Uint8ClampedArray(width * height * 4),
-      width,
-      height
-    );
+  if (CACHED_BUFFERS.length == 0 || cachedImageWidth != width || cachedImageHeight != height) {
+    cachedImageWidth = width;
+    cachedImageHeight = height;
 
+    reclaimStatus += 1;
+
+    return new Uint8ClampedArray(width * height * 4);
   }
 
-  return CACHED_IMAGE
+  // console.log(`cachedImageHeight: ${cachedImageHeight}, cachedImageWidth: ${cachedImageWidth}, reclaimStatus: ${reclaimStatus}`);
+
+  return CACHED_BUFFERS.pop();
 }
 
-// see lattice.rs
-interface SnailLattice {
-  alter: (size: number) => void;
-  tick: (dt: number) => number;
-  render: (buffer: Uint8Array, index: number, count: number) => void;
-  count: () => number;
-  get_dimensions: (count: number) => Uint32Array;
-  set_width: (width: number) => void;
+function reclaimBuffer(buffer: Uint8ClampedArray, width: number, height: number) {
+  if (width == cachedImageWidth && height == cachedImageHeight) {
+    CACHED_BUFFERS.push(buffer);
+  }
 }
-
-// This class stores an array of SnailLattices, and manages the web worker
-// threads therein. Using intersection observers we can only render mazes that
-// are in view, dynamically creating and removing canvases based on the
-// viewport.
-class LatticeList<T extends SnailLattice> {
-  lattice: T;
-  baseMultiplier: number;
-  width: number;
-  prevTick: number;
-
-  get count(): number {
-    return Math.ceil(this.lattice.count() / this.pageSize);
-  }
-
-  get pageSize(): number {
-    return this.width * 4;
-  }
-
-  constructor(lattice: T, baseMultiplier: number, width: number) {
-    this.lattice = lattice;
-    this.width = width;
-    this.prevTick = performance.now();
-    this.baseMultiplier = baseMultiplier;
-  }
-
-  getDimensions(): Uint32Array {
-    return this.lattice.get_dimensions(this.pageSize);
-  }
-
-  // add maze to lattice
-  push() {
-    this.lattice.alter(1);
-  }
-
-  // remove maze from lattice
-  pop() {
-    this.lattice.alter(-1);
-  }
-
-  // tick everything
-  tick(): number {
-    let now = performance.now();
-    let dt = Math.floor((now - this.prevTick) * 1000);
-    this.prevTick = performance.now();
-
-    return this.lattice.tick(dt);
-  }
-
-  render(page: number, canvas: HTMLCanvasElement) {
-    if (!canvas) return;
-
-    let ctx = canvas.getContext("2d", { alpha: true });
-    let imageData = requestBuffer(canvas.width, canvas.height);
-
-    // @ts-ignore -- wasm-bindgen limitation, can't specify uint8clamped array
-    // in the type signature easily
-    this.lattice.render(imageData.data, page * this.pageSize, this.pageSize);
-
-    ctx.putImageData(imageData, 0, 0);
-  }
-
-  // fucks up if it doesn't divide evenly right now
-  setWidth(width: number) {
-    this.width = width;
-    this.lattice.set_width(this.width);
-  }
-};
-
-function randomSeed(): number {
-  return self.crypto.getRandomValues(new Uint16Array(1))[0];
-}
-
-export let LATTICE_STORE: { [key in ShopKey]: LatticeList<SnailLattice> } | undefined;
 
 function canvasElement(index: number, observer: IntersectionObserver): HTMLCanvasElement {
   let canvas = document.createElement("canvas");
@@ -115,6 +45,10 @@ function canvasElement(index: number, observer: IntersectionObserver): HTMLCanva
 const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
   let container: HTMLDivElement;
   let visibleIndexes = new Set([]);
+  let worker = LATTICE_WORKER_STORE[props.key];
+  let bufferDimensions = { width: 0, height: 0 };
+  let latticeCount = 0;
+
   const intersectionObserver = new IntersectionObserver(entries => {
     let previouslyHadNoVisible = visibleIndexes.size == 0;
 
@@ -134,93 +68,95 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     });
   });
 
+  const workerOnMessage = (msg: MessageEvent<LatticeWorkerResponse>) => {
+    if (msg.data.type == "render") {
+      if (visibleIndexes.size > 0)
+        requestAnimationFrame(renderloop);
+
+      for (let page of msg.data.pages) {
+        let target = elements()[page.page];
+
+        if (page.buffer.length != 4 * target.width * target.height) {
+          console.log(page.buffer.length, target.width, target.height);
+          break;
+        }
+
+        let ctx = target.getContext("2d");
+
+        let imageData = new ImageData(
+          page.buffer,
+          target.width,
+          target.height,
+        );
+
+        ctx.putImageData(imageData, 0, 0);
+
+        reclaimBuffer(imageData.data, target.width, target.height);
+      }
+
+    } else if (msg.data.type == "lattice-updated") {
+      const { height, width, latticeCount: newLatticeCount } = msg.data;
+
+      bufferDimensions.width = width;
+      bufferDimensions.height = height;
+
+      let canvases = elements();
+
+      // copy list so it will update properly
+      let newElements = [...canvases];
+
+      for (let i = 0; i < canvases.length; i++) {
+        canvases[i].width = width;
+        canvases[i].height = height;
+      }
+
+      // create the correct number of elements
+      for (let i = latticeCount; i < newLatticeCount; i++) {
+        let newElement: HTMLCanvasElement;
+
+        if (!newElements[i]) {
+          newElement = canvasElement(i, intersectionObserver);
+          newElements.push(newElement);
+        } else {
+          newElement = newElements[i];
+        }
+
+        newElement.width = width;
+        newElement.height = height;
+      }
+
+      // remove excess elements
+      while (newElements.length > newLatticeCount) newElements.pop();
+
+      setElements(newElements);
+    }
+  };
+
   const renderloop = () => {
-    let lattice = LATTICE_STORE[props.key];
+    let pages = [];
+    let buffers = [];
 
     for (let i of visibleIndexes) {
-      let el = elements()[i];
-
-      lattice.tick();
-      lattice.render(i, el);
+      let arr = requestBuffer(bufferDimensions.width, bufferDimensions.height);
+      pages.push({ page: i, buffer: arr });
+      buffers.push(arr.buffer);
     }
 
-    if (visibleIndexes.size > 0)
-      requestAnimationFrame(renderloop);
+    worker.postMessage({ type: "render", pages }, buffers);
   };
 
   const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
 
   createEffect(() => {
-    // required to get hot reload to work, but not strictly necessary
-    if (!LATTICE_STORE)
-      return;
+    worker.removeEventListener("message", workerOnMessage);
 
     // update on key change
-    let lattice = LATTICE_STORE[props.key];
+    worker = LATTICE_WORKER_STORE[props.key];
+    worker.addEventListener("message", workerOnMessage);
 
     // update on width change
-    LATTICE_STORE[props.key].setWidth(props.latticeWidth);
-
-    let canvases = untrack(elements);
-
-    // clear elements
-    let newElements = [...untrack(elements)];
-
-    let [width, height] = lattice.getDimensions();
-
-    for (let i = 0; i < canvases.length; i++) {
-      canvases[i].width = width;
-      canvases[i].height = height;
-    }
-
-    // create the correct number of elements
-    for (let i = 0; i < lattice.count; i++) {
-      let newElement: HTMLCanvasElement;
-
-      if (!newElements[i]) {
-        newElement = canvasElement(i, intersectionObserver);
-        newElements.push(newElement);
-      } else {
-        newElement = newElements[i];
-      }
-
-      newElement.width = width;
-      newElement.height = height;
-    }
-
-    // remove excess elements
-    while (newElements.length > lattice.count) newElements.pop();
-
-    setElements(newElements);
+    worker.postMessage({ type: "set-width", width: props.latticeWidth });
   });
-
-  createEffect((prev: ShopListing) => {
-    if (prev.key != props.key || !LATTICE_STORE) return { ...props };
-
-    let latticeList = LATTICE_STORE[props.key];
-
-    let [width, height] = latticeList.getDimensions();
-
-    for (let i = prev.count; i < props.count; i++) {
-      // returns true if new element is created
-      if ((i + 1) / latticeList.pageSize > elements().length) {
-        setElements([...elements(), canvasElement(elements().length, intersectionObserver)]);
-      }
-
-      // check to see if we need to resize the lattice
-      let lastElement = elements()[elements().length - 1];
-
-      lastElement.width = width;
-      lastElement.height = height;
-    }
-
-    // remove elements
-    for (let i = props.count; i < prev.count; i++) {
-      latticeList.pop();
-    }
-
-    return { ...props };
-  }, { ...props });
 
   return (
     <div ref={container} class={`flex items-center justify-center w-full flex-col`}>
@@ -231,42 +167,9 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
 
 const AutoMazes: Component = () => {
   const [shop, _setShop] = useContext(ShopContext);
-  const [initialized, setInitialized] = createSignal(false);
   const [score, setScore] = useContext(ScoreContext);
 
   let intervalId: number;
-
-  // initialize lattice store
-  init().then(() => {
-    LATTICE_STORE = {
-      "random-walk": new LatticeList(new RandomWalkLattice(8, randomSeed()), 1, 8),
-      "random-teleport": new LatticeList(new RandomTeleportLattice(5, randomSeed()), 1, 5),
-      "hold-left": new LatticeList(new HoldLeftLattice(4, randomSeed()), 1, 4),
-      "tremaux": new LatticeList(new TremauxLattice(3, randomSeed()), 1, 3),
-      "time-travel": new LatticeList(new TimeTravelLattice(3, randomSeed()), 1, 3),
-      "learning": new LatticeList(new LearningLattice(3, randomSeed()), 1, 3),
-      "clone": new LatticeList(new CloneLattice(2, randomSeed()), 1, 2),
-    };
-
-    // add initial count to each elements
-    for (let [key, lattice] of Object.entries(LATTICE_STORE)) {
-      let count = shop.find(x => x.key == key).count;
-
-      lattice.lattice.alter(count);
-    }
-
-    setInitialized(true);
-
-    // tick every 100 milliseconds
-    intervalId = setInterval(() => {
-      let newScore = 0;
-      for (let [_, lattice] of Object.entries(LATTICE_STORE)) {
-        newScore += lattice.tick();
-
-        setScore(score() + newScore);
-      }
-    }, 100);
-  });
 
   const togglefullscreen = () => {
     setFullscreen(f => !f);
@@ -318,7 +221,7 @@ const AutoMazes: Component = () => {
         </div>
       </div>
 
-      {initialized() &&
+      {
         <div class="p-2 overflow-auto h-full w-full bg-[#068fef]">
           <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} latticeWidth={latticeWidth()} />
         </div>

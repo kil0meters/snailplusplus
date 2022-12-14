@@ -31,7 +31,7 @@ fn main() {
     run_bench::<7, RandomTeleport<7>>("random-teleport", 1.5);
     run_bench::<9, Learning<9>>("learning", 5.0);
     run_bench::<9, HoldLeft<9>>("hold-left", 5.0);
-    run_bench::<11, Tremaux<11>>("tremaux", 22.0);
+    run_bench::<11, Tremaux<11>>("tremaux", 24.0);
     run_bench::<13, TimeTravel<13>>("time-travel", 50.0);
     run_bench::<20, Clones<20>>("clone", 100.0);
 }
