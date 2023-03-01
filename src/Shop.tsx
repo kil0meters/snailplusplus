@@ -191,6 +191,10 @@ const Shop: Component = () => {
             <button onClick={reset} class="bg-red-700 p-4 hover text-red-50 hover:bg-red-600 transition-colors">
                 Reset
             </button>
+
+            <div class="text-center text-sm text-gray-500 mt-8">
+                Made with 🐌 · <a class="hover:underline text-blue-600" href="https://github.com/kil0meters/snailplusplus" target="_blank">Star on GitHub</a>
+            </div>
         </div>
     );
 }
