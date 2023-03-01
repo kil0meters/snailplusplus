@@ -169,7 +169,7 @@ const Shop: Component = () => {
     return (
         <div
             id="shop-sidebar"
-            class="bg-white overflow-hidden flex flex-col shadow-lg border-l-4 border-black font-display">
+            class="bg-white overflow-x-hidden overflow-y-auto flex flex-col shadow-lg border-l-4 border-black font-display">
             {/*<div class='border-b-4 border-black p-4'>
                 <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
 
