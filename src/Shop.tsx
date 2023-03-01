@@ -17,6 +17,10 @@ const ShopListingElement: Component<ShopListing> = (props) => {
 
     const buy = () => {
         if (score() >= price() || document["devmode"]) {
+            if (!document["devmode"]) {
+                setScore(score() - price());
+            }
+
             setShop(
                 (shopItem) => shopItem.key === props.key,
                 "count",
@@ -24,10 +28,6 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             );
 
             LATTICE_WORKER_STORE[props.key].postMessage({ type: "alter", diff: 1 });
-
-            if (!document["devmode"]) {
-                setScore(score() - price());
-            }
         }
     };
 
