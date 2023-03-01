@@ -1,11 +1,9 @@
-
-
 use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::Snail,
+    snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
     utils::Vec2,
 };
@@ -167,7 +165,7 @@ enum TimeTravelState {
 
 pub struct TimeTravel<const S: usize>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
     state: TimeTravelState,
@@ -180,7 +178,7 @@ where
 
 impl<const S: usize> Solver<S> for TimeTravel<S>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     fn new() -> Self {
         let mut path_drawer = Snail::new();
@@ -307,7 +305,15 @@ where
     ) {
         match self.state {
             TimeTravelState::TimeTraveling => {
-                self.snail.draw(true, 0, SNAIL_MOVEMENT_TIME, image, bx, by);
+                self.snail.draw(
+                    GRAYSCALE_PALETTE,
+                    true,
+                    0,
+                    SNAIL_MOVEMENT_TIME,
+                    image,
+                    bx,
+                    by,
+                );
 
                 self.time_traveler
                     .draw(animation_cycle, movement_timer, lfsr, image, bx, by);
@@ -317,9 +323,18 @@ where
                     tile.draw(lfsr, image, bx, by);
                 }
 
-                self.snail.draw(true, 0, SNAIL_MOVEMENT_TIME, image, bx, by);
+                self.snail.draw(
+                    GRAYSCALE_PALETTE,
+                    true,
+                    0,
+                    SNAIL_MOVEMENT_TIME,
+                    image,
+                    bx,
+                    by,
+                );
 
                 self.path_drawer.draw(
+                    DEFAULT_PALETTE,
                     animation_cycle,
                     movement_timer,
                     self.movement_time(),
@@ -334,6 +349,7 @@ where
                 }
 
                 self.snail.draw(
+                    DEFAULT_PALETTE,
                     animation_cycle,
                     movement_timer + TIME_TRAVEL_MOVEMENT_TIME * self.time_dilation_timer,
                     SNAIL_MOVEMENT_TIME,

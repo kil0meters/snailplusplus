@@ -1,18 +1,10 @@
-use std::{
-    collections::{VecDeque},
-    mem::size_of,
-};
+use std::{collections::VecDeque, mem::size_of};
 
 use crate::{
-    direction::Direction,
-    image::Image,
-    lfsr::LFSR,
-    solvers::Solver,
-    utils::{Vec2},
+    direction::Direction, image::Image, lattice::TilableMaze, lfsr::LFSR, solvers::Solver,
+    utils::Vec2,
 };
 
-pub const SNAIL_BG: [u8; 3] = [0x11, 0x0A, 0xEF];
-pub const SNAIL_FG: [u8; 3] = [0x06, 0x8F, 0xEF];
 pub const SNAIL_MOVEMENT_TIME: usize = 250000;
 pub const ANIMATION_TIME: usize = 500000;
 
@@ -54,13 +46,15 @@ where
     pub maze: Maze<S>,
 }
 
-impl<const S: usize, T: Solver<S>> AutoMaze<S, T>
+impl<const S: usize, T: Solver<S>> TilableMaze for AutoMaze<S, T>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    pub fn new(solver: T) -> AutoMaze<S, T> {
+    const SIZE: usize = S;
+
+    fn new() -> AutoMaze<S, T> {
         AutoMaze {
-            solver,
+            solver: T::new(),
             clock: 0,
             movement_timer: 0,
 
@@ -75,7 +69,7 @@ where
     // progresses time a certain number of microseconds
     // notably, no rendering happens when we tick the time
     // returns true if the tick results in a new maze to be generated
-    pub fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
+    fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
         let prev = self.clock;
         let now = self.clock + dt;
         self.clock = now;
@@ -101,13 +95,23 @@ where
         total
     }
 
-    pub fn draw(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
+    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
         let animation_cycle = (self.clock / ANIMATION_TIME) % 2 == 0;
 
         // draw "snail"
         self.solver
             .draw(animation_cycle, self.movement_timer, lfsr, image, bx, by);
-        self.maze.draw_foreground(animation_cycle, image, bx, by);
+        self.maze
+            .draw_foreground(T::palette()[0], animation_cycle, image, bx, by);
+    }
+
+    fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
+        self.maze
+            .draw_background(T::palette()[4], T::palette()[5], image, bx, by);
+    }
+
+    fn generate(&mut self, lfsr: &mut LFSR) {
+        self.maze.generate(lfsr);
     }
 }
 
@@ -221,7 +225,7 @@ where
         }
     }
 
-    pub fn get_solve_sequence(&self, x: usize, y: usize) -> Vec<Direction> {
+    pub fn get_solve_sequence(&self, x: usize, y: usize, target: Vec2) -> Vec<Direction> {
         let mut queue = VecDeque::new();
         let mut visited = [None; S * S];
 
@@ -254,7 +258,7 @@ where
 
         let mut moves = vec![];
 
-        while pos != self.end_pos {
+        while pos != target {
             match visited[pos.y * S + pos.x] {
                 Some(Direction::Up) => {
                     pos.y += 1;
@@ -325,7 +329,14 @@ where
         }
     }
 
-    pub fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
+    pub fn draw_background(
+        &mut self,
+        fg_color: [u8; 3],
+        bg_color: [u8; 3],
+        image: &mut Image,
+        bx: usize,
+        by: usize,
+    ) {
         for y in 0..(S * 10) {
             for x in 0..S {
                 let cell = self.get_cell(x, y / 10);
@@ -334,34 +345,41 @@ where
                 // Checking the bottom wall is redundant
                 if y % 10 == 0 && cell.has_wall(Direction::Up) {
                     for l in (px..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, SNAIL_FG);
+                        image.draw_pixel(l, fg_color);
                     }
                 } else {
                     // if left wall, checking right wall is redundant
                     if cell.has_wall(Direction::Left) || y % 10 == 0 {
-                        image.draw_pixel(px, SNAIL_FG);
+                        image.draw_pixel(px, fg_color);
                     } else {
-                        image.draw_pixel(px, SNAIL_BG);
+                        image.draw_pixel(px, bg_color);
                     }
 
                     for l in ((px + 4)..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, SNAIL_BG);
+                        image.draw_pixel(l, bg_color);
                     }
                 }
             }
 
             // fill end pixel
             let px = 4 * ((by + y) * image.buffer_width + bx + S * 10);
-            image.draw_pixel(px, SNAIL_FG);
+            image.draw_pixel(px, fg_color);
         }
 
         let px = 4 * ((by + S * 10) * image.buffer_width + bx);
         for l in (px..(px + 4 * (1 + 10 * S))).step_by(4) {
-            image.draw_pixel(l, SNAIL_FG);
+            image.draw_pixel(l, fg_color);
         }
     }
 
-    fn draw_foreground(&self, animation_cycle: bool, image: &mut Image, bx: usize, by: usize) {
+    fn draw_foreground(
+        &self,
+        goal_color: [u8; 3],
+        animation_cycle: bool,
+        image: &mut Image,
+        bx: usize,
+        by: usize,
+    ) {
         // draw goal
         if animation_cycle {
             const GOAL_IMAGE_SIZE: usize = 7;
@@ -370,7 +388,7 @@ where
 
             for y in 0..GOAL_IMAGE_SIZE {
                 for x in 0..GOAL_IMAGE_SIZE {
-                    let goal_px = 4 * (y * GOAL_IMAGE_SIZE + x);
+                    let goal_px = y * GOAL_IMAGE_SIZE + x;
                     let px = 4
                         * ((by + x + self.end_pos.y * 10 + 2) * image.buffer_width
                             + bx
@@ -378,10 +396,11 @@ where
                             + self.end_pos.x * 10
                             + 2);
 
-                    if goal_image[goal_px + 3] != 0 {
-                        image.buffer[px] = goal_image[goal_px];
-                        image.buffer[px + 1] = goal_image[goal_px + 1];
-                        image.buffer[px + 2] = goal_image[goal_px + 2];
+                    // not transparent
+                    if goal_image[goal_px] != 255 {
+                        image.buffer[px] = goal_color[0];
+                        image.buffer[px + 1] = goal_color[1];
+                        image.buffer[px + 2] = goal_color[2];
                     }
                 }
             }

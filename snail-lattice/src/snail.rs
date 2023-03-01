@@ -6,6 +6,33 @@ use crate::{
 
 use super::{direction::Direction, maze::Maze};
 
+pub const DEFAULT_PALETTE: [[u8; 3]; 6] = [
+    [0xf8, 0xfc, 0x00], // yellow
+    [0xa8, 0x54, 0x50], // purple
+    [0xf8, 0x54, 0x00], // orange
+    [0xff, 0xff, 0xff], // white
+    [0x06, 0x8F, 0xEF], // light blue
+    [0x11, 0x0A, 0xEF], // dark blue
+];
+
+pub const INVERTED_PALETTE: [[u8; 3]; 6] = [
+    [0x07, 0x03, 0xff], // blue
+    [0x57, 0xab, 0xaf], // cyan?
+    [0x07, 0xab, 0xff], // light blue
+    [0x00, 0x00, 0x00], // black
+    [0xf9, 0x70, 0x10], // orange
+    [0xee, 0xf5, 0x10], // yellow
+];
+
+pub const GRAYSCALE_PALETTE: [[u8; 3]; 6] = [
+    [0xdf, 0xdf, 0xdf], // yellow
+    [0x6c, 0x6c, 0x6c], // purple
+    [0x7b, 0x7b, 0x7b], // orange
+    [0xff, 0xff, 0xff], // white
+    [0x00, 0x00, 0x00], // so far not relevant
+    [0x00, 0x00, 0x00], // so far not relevant
+];
+
 #[derive(Clone)]
 pub struct Snail<const S: usize>
 where
@@ -33,6 +60,8 @@ where
 
     pub fn draw(
         &self,
+        palette: [[u8; 3]; 6],
+
         animation_cycle: bool,
         movement_timer: usize,
         movement_time: usize,
@@ -41,14 +70,10 @@ where
         bx: usize,
         by: usize,
     ) {
-        let snail_image = if self.active {
-            if animation_cycle {
-                include_bytes!("../../assets/snail1_8x8.bin")
-            } else {
-                include_bytes!("../../assets/snail2_8x8.bin")
-            }
+        let snail_image = if animation_cycle || !self.active {
+            include_bytes!("../../assets/snail1_8x8.bin")
         } else {
-            include_bytes!("../../assets/snail1_grayscale_8x8.bin")
+            include_bytes!("../../assets/snail2_8x8.bin")
         };
 
         let offset_y = if self.prev_pos.y != self.pos.y {
@@ -78,9 +103,9 @@ where
         // draw goal
         for y in 0..SNAIL_IMAGE_SIZE {
             for x in 0..SNAIL_IMAGE_SIZE {
-                let snail_px = 4 * (y * SNAIL_IMAGE_SIZE + x);
+                let snail_px = y * SNAIL_IMAGE_SIZE + x;
                 // only draw if not transparent
-                if snail_image[snail_px + 3] != 0 {
+                if snail_image[snail_px] != 255 {
                     // I'm so, so, sorry.
                     let px = match self.direction {
                         Direction::Up => {
@@ -107,9 +132,11 @@ where
                         }
                     };
 
-                    image.buffer[px] = snail_image[snail_px];
-                    image.buffer[px + 1] = snail_image[snail_px + 1];
-                    image.buffer[px + 2] = snail_image[snail_px + 2];
+                    let col = palette[snail_image[snail_px] as usize];
+
+                    image.buffer[px] = col[0];
+                    image.buffer[px + 1] = col[1];
+                    image.buffer[px + 2] = col[2];
                 }
             }
         }

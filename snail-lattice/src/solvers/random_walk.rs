@@ -3,7 +3,7 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::Snail,
+    snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
 };
 
@@ -34,6 +34,7 @@ where
         by: usize,
     ) {
         self.snail.draw(
+            DEFAULT_PALETTE,
             animation_cycle,
             movement_timer,
             self.movement_time(),

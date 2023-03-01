@@ -1,10 +1,8 @@
-
-
 use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::Snail,
+    snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
 };
 
@@ -48,6 +46,7 @@ where
     ) {
         for snail in self.inactive_snails.iter() {
             snail.draw(
+                GRAYSCALE_PALETTE,
                 animation_cycle,
                 movement_timer,
                 self.movement_time(),
@@ -59,6 +58,7 @@ where
 
         for snail in self.active_snails.iter() {
             snail.draw(
+                DEFAULT_PALETTE,
                 animation_cycle,
                 movement_timer,
                 self.movement_time(),

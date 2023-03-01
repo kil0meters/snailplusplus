@@ -2,7 +2,7 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::Snail,
+    snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
     utils::discrete_lerp,
 };
@@ -11,7 +11,7 @@ const TELEPORTATION_TIME: usize = 6;
 
 pub struct RandomTeleport<const S: usize>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
     teleport_timer: usize,
@@ -19,7 +19,7 @@ where
 
 impl<const S: usize> Solver<S> for RandomTeleport<S>
 where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     fn new() -> Self {
         RandomTeleport {
@@ -40,6 +40,7 @@ where
         let movement_time = self.movement_time();
 
         self.snail.draw(
+            DEFAULT_PALETTE,
             animation_cycle,
             movement_timer,
             movement_time,

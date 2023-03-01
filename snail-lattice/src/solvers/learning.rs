@@ -1,13 +1,11 @@
-use std::{
-    cmp::Ordering,
-};
+use std::cmp::Ordering;
 
 use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::Snail,
+    snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
 };
 
@@ -149,6 +147,7 @@ where
 
         for snail in self.population.iter() {
             snail.snail.draw(
+                DEFAULT_PALETTE,
                 animation_cycle,
                 movement_timer,
                 self.movement_time(),
@@ -162,7 +161,7 @@ where
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         if self.new_maze {
             maze.get_distances(maze.end_pos.x, maze.end_pos.y, &mut self.distances);
-            self.solve_sequence = maze.get_solve_sequence(0, 0);
+            self.solve_sequence = maze.get_solve_sequence(0, 0, maze.end_pos);
 
             for snail in self.population.iter_mut() {
                 snail.reset();
