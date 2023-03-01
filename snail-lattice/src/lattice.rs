@@ -10,7 +10,7 @@ use crate::{
         Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, Solver, TimeTravel,
         Tremaux,
     },
-    utils::set_panic_hook,
+    utils::{console_log, set_panic_hook},
 };
 
 #[derive(Clone, Copy)]
@@ -96,7 +96,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         let maze_size = LatticeElement::SIZE * 10 + 1;
         let width = maze_size * self.width;
 
-        let bg_buffer = match self.bg_buffers.get_mut(&(index << 16 + count)) {
+        let bg_buffer = match self.bg_buffers.get_mut(&((index << 16) + count)) {
             Some(buffer) => {
                 let mut bg_image = Image {
                     buffer,
@@ -137,8 +137,8 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
                     );
                 }
 
-                self.bg_buffers.insert(index << 16 + count, bg_buffer);
-                self.bg_buffers.get_mut(&(index << 16 + count)).unwrap()
+                self.bg_buffers.insert((index << 16) + count, bg_buffer);
+                self.bg_buffers.get_mut(&((index << 16) + count)).unwrap()
             }
         };
 
@@ -267,9 +267,10 @@ impl TilableMaze for MetaMaze {
         self.hold_left.draw_foreground(lfsr, image, bx, by + 70);
         self.inverted.draw_foreground(lfsr, image, bx + 70, by + 70);
         self.tremaux.draw_foreground(lfsr, image, bx + 140, by + 70);
-        self.time_travel.draw_foreground(lfsr, image, bx, by + 140);
-        self.clone.draw_foreground(lfsr, image, bx + 70, by + 140);
-        self.rpg.draw_foreground(lfsr, image, bx + 140, by + 140);
+        self.rpg.draw_foreground(lfsr, image, bx, by + 140);
+        self.time_travel
+            .draw_foreground(lfsr, image, bx + 70, by + 140);
+        self.clone.draw_foreground(lfsr, image, bx + 140, by + 140);
     }
 
     fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
@@ -279,9 +280,9 @@ impl TilableMaze for MetaMaze {
         self.hold_left.draw_background(image, bx, by + 70);
         self.inverted.draw_background(image, bx + 70, by + 70);
         self.tremaux.draw_background(image, bx + 140, by + 70);
-        self.time_travel.draw_background(image, bx, by + 140);
-        self.clone.draw_background(image, bx + 70, by + 140);
-        self.rpg.draw_background(image, bx + 140, by + 140);
+        self.rpg.draw_background(image, bx, by + 140);
+        self.time_travel.draw_background(image, bx + 70, by + 140);
+        self.clone.draw_background(image, bx + 140, by + 140);
     }
 
     fn generate(&mut self, lfsr: &mut LFSR) {
@@ -291,9 +292,9 @@ impl TilableMaze for MetaMaze {
         self.hold_left.generate(lfsr);
         self.inverted.generate(lfsr);
         self.tremaux.generate(lfsr);
+        self.rpg.generate(lfsr);
         self.time_travel.generate(lfsr);
         self.clone.generate(lfsr);
-        self.rpg.generate(lfsr);
     }
 }
 
@@ -402,7 +403,7 @@ lattice_impl!(LearningLattice, AutoMaze<9, Learning<9>>);
 lattice_impl!(HoldLeftLattice, AutoMaze<9, HoldLeft<9>>);
 lattice_impl!(InvertedLattice, AutoMaze<9, Inverted<9>>);
 lattice_impl!(TremauxLattice, AutoMaze<11, Tremaux<11>>);
+lattice_impl!(RpgLattice, AutoMaze<11, Rpg<11>>);
 lattice_impl!(TimeTravelLattice, AutoMaze<13, TimeTravel<13>>);
 lattice_impl!(CloneLattice, AutoMaze<20, Clones<20>>);
-lattice_impl!(RpgLattice, AutoMaze<7, Rpg<7>>);
 lattice_impl!(MetaLattice, MetaMaze);

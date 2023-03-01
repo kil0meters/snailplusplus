@@ -229,7 +229,7 @@ where
         let mut queue = VecDeque::new();
         let mut visited = [None; S * S];
 
-        queue.push_back((self.end_pos.x, self.end_pos.y));
+        queue.push_back((target.x, target.y));
 
         while let Some((x, y)) = queue.pop_front() {
             let cell = self.get_cell(x, y);
