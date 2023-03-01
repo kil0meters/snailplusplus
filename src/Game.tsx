@@ -2,11 +2,11 @@ import { createStoredSignal } from './utils';
 import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
 import Shop from './Shop';
-import { Component, createEffect, createSignal, onCleanup, onMount, useContext } from 'solid-js';
+import { Component, createEffect, createSignal, onCleanup, onMount, untrack, useContext } from 'solid-js';
 import { ScoreContext } from './ScoreProvider';
 import { LatticeWorkerMessage, LatticeWorkerResponse } from './latticeWorker';
 import LatticeWorker from './latticeWorker.ts?worker';
-import { ShopContext, ShopKey, SHOP_KEYS } from './ShopProvider';
+import { SHOP, ShopContext, ShopKey, SHOP_KEYS } from './ShopProvider';
 
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
 
@@ -34,7 +34,7 @@ const Game: Component = () => {
     const setScoreListener = (event: MessageEvent<LatticeWorkerResponse>) => {
         let msg = event.data;
         if (msg.type == "score") {
-            setScore(oldScore => oldScore + msg.score);
+            setScore(oldScore => oldScore + (SHOP[msg.mazeType].baseMultiplier * msg.score));
         }
     };
 
@@ -54,7 +54,7 @@ const Game: Component = () => {
     })
 
     createEffect(() => {
-        let difference = score() - displayedScore();
+        let difference = score() - untrack(displayedScore);
         let prev = new Date();
 
         if (difference < 0) {
@@ -75,11 +75,14 @@ const Game: Component = () => {
         requestAnimationFrame(animate);
     });
 
+    const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
+    const formattedScore = () => fmt.format(displayedScore());
+
     return (
         <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
             <div class='flex flex-col gap-8 h-full overflow-auto pb-16'>
                 <div class='p-8 bg-black flex justify-center'>
-                    <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{Math.floor(displayedScore())} fragments</span>
+                    <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{formattedScore()} fragments</span>
                 </div>
                 <SnailMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score) => { updateScore(score) }} />
                 <AutoMazes />

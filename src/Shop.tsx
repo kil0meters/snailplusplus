@@ -6,6 +6,8 @@ import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
 
 const PRICE_SCALER = 1.15;
 
+document["devmode"] = false;
+
 const ShopListingElement: Component<ShopListing> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
     const [_shop, setShop] = useContext(ShopContext);
@@ -14,10 +16,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
     const price = () => Math.floor(SHOP[props.key].price * Math.pow(PRICE_SCALER, props.count));
 
     const buy = () => {
-        if (score() >= price() || true) {
-            // LATTICE_STORE[props.key].push();
-
-            // for (let i = 0; i < 1000; i++) {
+        if (score() >= price() || document["devmode"]) {
             setShop(
                 (shopItem) => shopItem.key === props.key,
                 "count",
@@ -25,11 +24,15 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             );
 
             LATTICE_WORKER_STORE[props.key].postMessage({ type: "alter", diff: 1 });
-            // }
 
-            // setScore(score() - price());
+            if (!document["devmode"]) {
+                setScore(score() - price());
+            }
         }
     };
+
+    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
+    const formattedPrice = () => fmt.format(price());
 
     return (
         <button
@@ -39,12 +42,12 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             class='flex hover:bg-neutral-100 p-4 transition-colors text-left'>
             <div class='flex flex-col'>
                 <span class='text-2xl font-extrabold'>{SHOP[props.key].name}</span>
-                <span class=''>{price()} fragments</span>
+                <span class=''>{formattedPrice()} fragments</span>
             </div>
 
             {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
 
-            {hover() && <ShopDescription onMouseEnter={() => setHover(false)} title={SHOP[props.key].name} description={SHOP[props.key].description} multiplier={SHOP[props.key].baseMultiplier} />}
+            {hover() && <ShopDescription onMouseEnter={() => setHover(false)} title={SHOP[props.key].name} description={SHOP[props.key].description} fragmentsPerSecond={SHOP[props.key].fragmentsPerSecond} />}
         </button>
     );
 }
@@ -97,7 +100,7 @@ const ShopDescription: Component<{
     onMouseEnter: () => void,
     title: string,
     description: string,
-    multiplier?: number
+    fragmentsPerSecond?: number
 }> = (props) => {
     let hoverContainer: HTMLDivElement;
     let onResize: () => void;
@@ -113,7 +116,8 @@ const ShopDescription: Component<{
         };
 
         onMouseMove = (event: MouseEvent) => {
-            hoverContainer.style.top = `${event.clientY - hoverContainer.clientHeight / 2}px`;
+            let top = Math.max(0, event.clientY - hoverContainer.clientHeight / 2);
+            hoverContainer.style.top = `${top}px`;
         };
 
         addEventListener("resize", onResize);
@@ -125,19 +129,23 @@ const ShopDescription: Component<{
         removeEventListener("resize", onMouseMove);
     })
 
+    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
+    const formattedFragments = () => fmt.format(props.fragmentsPerSecond);
+
     return (
         <div
             onMouseEnter={props.onMouseEnter}
             ref={hoverContainer}
-            class="absolute bg-white p-4 border-4 border-black flex flex-col gap justify-left text-left w-96"
+            class="absolute bg-white p-4 border-4 border-black flex flex-col justify-left text-left w-96"
         >
             <h1 class="font-extrabold text-lg">{props.title}</h1>
-            <span>{props.description}</span>
 
-            {props.multiplier && <div>
-                <span class="font-bold">Multiplier: </span>
-                <span>{props.multiplier}x</span>
+            {props.fragmentsPerSecond && <div class="mb-2">
+                <span class="text-sm">{formattedFragments()} </span>
+                <span class="text-sm">fragments/second</span>
             </div>}
+
+            <span>{props.description}</span>
         </div>
     );
 };
@@ -148,12 +156,14 @@ const Shop: Component = () => {
     const [upgrades, _setUpgrades] = useContext(UpgradesContext);
 
     const reset = () => {
-        setShop(() => true, "count", () => 0);
-        setScore(0);
+        if (window.confirm("This will cause you to lose all of your progress. Are you sure?")) {
+            setShop(() => true, "count", () => 0);
+            setScore(0);
 
-        shop.forEach(({ key }) => {
-            LATTICE_WORKER_STORE[key].postMessage({ type: "reset" });
-        });
+            shop.forEach(({ key }) => {
+                LATTICE_WORKER_STORE[key].postMessage({ type: "reset" });
+            });
+        }
     };
 
     return (
