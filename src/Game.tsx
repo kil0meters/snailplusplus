@@ -131,9 +131,10 @@ const Game: Component = () => {
     const formattedScore = () => fmt.format(displayedScore());
 
     return <>
+        <Determination />
         <div class='grid grid-rows-2 md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] overflow-hidden bg-[#068fef]'>
-            <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]  gap-8 lg:gap-0 h-full overflow-auto pb-16 lg:pb-0'>
-                <div class='md:border-r-2 border-black'>
+            <div class='flex max-h-full flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]  gap-8 lg:gap-0 h-full overflow-auto pb-16 lg:pb-0'>
+                <div class='md:border-r-2 max-h-full border-black'>
                     <div class='p-8 bg-black flex justify-center h-[128px] content-center'>
                         <span class='text-2xl text-center font-extrabold font-pixelated text-white my-auto'>{formattedScore()} fragments</span>
                     </div>

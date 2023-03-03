@@ -141,8 +141,7 @@ const ShopDescription: Component<{
             <h1 class="font-extrabold text-lg">{props.title}</h1>
 
             {props.fragmentsPerSecond && <div class="mb-2">
-                <span class="text-sm">{formattedFragments()} </span>
-                <span class="text-sm">fragments/second</span>
+                <span class="text-sm">avg. {formattedFragments()} fragments/second</span>
             </div>}
 
             <span>{props.description}</span>

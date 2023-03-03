@@ -203,7 +203,7 @@ const AutoMazes: Component = () => {
     const [fullscreen, setFullscreen] = createSignal(false);
 
     return (
-        <div class="w-full flex flex-col" ref={mazeDisplay}>
+        <div class="md:max-h-screen w-full flex flex-col" ref={mazeDisplay}>
             <div class="p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated">
                 <select class="bg-black text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold"
                     onChange={(e) => {
