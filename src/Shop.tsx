@@ -169,7 +169,7 @@ const Shop: Component = () => {
     return (
         <div
             id="shop-sidebar"
-            class="bg-white overflow-x-hidden overflow-y-auto flex flex-col shadow-lg border-l-4 border-black font-display">
+            class="bg-white overflow-x-hidden overflow-y-auto flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display">
             {/*<div class='border-b-4 border-black p-4'>
                 <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
 
@@ -192,7 +192,7 @@ const Shop: Component = () => {
                 Reset
             </button>
 
-            <div class="text-center text-sm text-gray-500 mt-8">
+            <div class="text-center text-sm text-gray-500 my-8">
                 Made with 🐌 · <a class="hover:underline text-blue-600" href="https://github.com/kil0meters/snailplusplus" target="_blank">Star on GitHub</a>
             </div>
         </div>

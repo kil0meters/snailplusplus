@@ -130,37 +130,38 @@ const Game: Component = () => {
     const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
     const formattedScore = () => fmt.format(displayedScore());
 
-    return (
-        <div class='grid grid-cols-[minmax(0,5fr)_minmax(0,3fr)] overflow-hidden bg-[#068fef]'>
-            <Determination />
-            <div class='flex flex-col gap-8 h-full overflow-auto pb-16'>
-                <div class='p-8 bg-black flex justify-center'>
-                    <span class='text-4xl text-center font-extrabold font-pixelated text-white'>{formattedScore()} fragments</span>
+    return <>
+        <div class='grid grid-rows-2 md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] overflow-hidden bg-[#068fef]'>
+            <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]  gap-8 lg:gap-0 h-full overflow-auto pb-16 lg:pb-0'>
+                <div class='md:border-r-2 border-black'>
+                    <div class='p-8 bg-black flex justify-center h-[128px] content-center'>
+                        <span class='text-2xl text-center font-extrabold font-pixelated text-white my-auto'>{formattedScore()} fragments</span>
+                    </div>
+                    <SnailMaze class='w-full aspect-square' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
+                        updateScore(score);
+                        setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
+
+                        if (isSpecial) {
+                            let calculatedBoost = Math.floor(Math.sqrt(Math.random() * 100));
+                            let boostDuration = Math.floor(Math.sqrt(Math.random() * 1000));
+                            let start = new Date();
+                            let end = new Date(start);
+                            end.setSeconds(end.getSeconds() + boostDuration);
+
+                            setPowerup({
+                                active: true,
+                                start,
+                                end,
+                                multiplier: calculatedBoost,
+                            });
+                        }
+                    }} />
                 </div>
-                <SnailMaze class='min-h-[70vh] h-full' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
-                    updateScore(score);
-                    setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
-
-                    if (isSpecial) {
-                        let calculatedBoost = Math.floor(Math.sqrt(Math.random() * 100));
-                        let boostDuration = Math.floor(Math.sqrt(Math.random() * 1000));
-                        let start = new Date();
-                        let end = new Date(start);
-                        end.setSeconds(end.getSeconds() + boostDuration);
-
-                        setPowerup({
-                            active: true,
-                            start,
-                            end,
-                            multiplier: calculatedBoost,
-                        });
-                    }
-                }} />
                 <AutoMazes />
             </div>
             <Shop />
         </div>
-    );
+    </>;
 };
 
 export default Game;

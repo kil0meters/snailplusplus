@@ -204,8 +204,8 @@ const AutoMazes: Component = () => {
 
     return (
         <div class="w-full flex flex-col" ref={mazeDisplay}>
-            <div class="p-8 bg-black text-white font-pixelated flex">
-                <select class="bg-black text-xl hover:bg-white hover:text-black transition-colors"
+            <div class="p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated">
+                <select class="bg-black text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold"
                     onChange={(e) => {
                         setLatticeWidth(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
                         setShownMazeType(e.currentTarget.value as ShopKey);
@@ -215,7 +215,7 @@ const AutoMazes: Component = () => {
                     </For>
                 </select>
 
-                <div class="text-center ml-auto flex">
+                <div class="text-center ml-auto flex my-auto">
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>
                     <p class="bg-white text-black p-2">{latticeWidth()}</p>
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.min(x + 1, 12))}>+</button>
@@ -223,11 +223,18 @@ const AutoMazes: Component = () => {
                     {fullscreen() ?
                         <button class="ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {
                             document.exitFullscreen();
-                        }}>fullscreen</button>
+                        }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-fullscreen-exit" viewBox="0 0 16 16">
+                                <path d="M5.5 0a.5.5 0 0 1 .5.5v4A1.5 1.5 0 0 1 4.5 6h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5zm5 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 10 4.5v-4a.5.5 0 0 1 .5-.5zM0 10.5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 6 11.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5zm10 1a1.5 1.5 0 0 1 1.5-1.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4z" />
+                            </svg>
+                        </button>
                         :
                         <button class="ml-4 hover:bg-white hover:text-black transition-all p-2" onClick={() => {
                             mazeDisplay.requestFullscreen();
-                        }}>fullscreen</button>
+                        }}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z" />
+                            </svg>
+                        </button>
                     }
                 </div>
             </div>
