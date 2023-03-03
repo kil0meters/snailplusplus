@@ -116,7 +116,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "rpg": {
         "name": "RPG Snail",
         "description": "It's dangerous to go alone, go that way.",
-        "price": 15_000_000,
+        "price": 10_000_000,
         "baseMultiplier": 1_000,
         "latticeWidth": 3,
         "fragmentsPerSecond": 2800,
@@ -124,7 +124,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "time-travel": {
         "name": "Time Travel Snail",
         "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
-        "price": 100_000_000,
+        "price": 50_000_000,
         "baseMultiplier": 1_500,
         "latticeWidth": 3,
         "fragmentsPerSecond": 13_000,
@@ -132,7 +132,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "clone": {
         "name": "Cloning Snail",
         "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
-        "price": 1_000_000_000,
+        "price": 800_000_000,
         "baseMultiplier": 4_000,
         "latticeWidth": 2,
         "fragmentsPerSecond": 80_000,
@@ -140,7 +140,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "meta": {
         "name": "Meta Snail",
         "description": "All the snails that came before.",
-        "price": 30_000_000_000,
+        "price": 10_000_000_000,
         "baseMultiplier": 14_000,
         "latticeWidth": 2,
         "fragmentsPerSecond": 500_000,

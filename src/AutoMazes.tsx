@@ -232,11 +232,9 @@ const AutoMazes: Component = () => {
                 </div>
             </div>
 
-            {
-                <div class="p-2 overflow-auto h-full w-full bg-[#068fef]">
-                    <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} latticeWidth={latticeWidth()} />
-                </div>
-            }
+            <div class="p-2 overflow-auto h-full w-full bg-[#068fef]">
+                <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} latticeWidth={latticeWidth()} />
+            </div>
         </div>
     )
 };

@@ -21,6 +21,7 @@ class LatticeList<T extends SnailLattice> {
     baseMultiplier: number;
     width: number;
     prevTick: number;
+    tickRate: number = 1;
     score: number;
 
     get latticeCount(): number {
@@ -39,6 +40,10 @@ class LatticeList<T extends SnailLattice> {
         this.baseMultiplier = baseMultiplier;
     }
 
+    setTickRate(rate: number) {
+        this.tickRate = rate;
+    }
+
     getDimensions(): Uint32Array {
         return this.lattice.get_dimensions(this.pageSize);
     }
@@ -49,7 +54,7 @@ class LatticeList<T extends SnailLattice> {
         let dt = Math.round((now - this.prevTick) * 1000);
         this.prevTick = performance.now();
 
-        return this.lattice.tick(dt);
+        return this.lattice.tick(dt * this.tickRate);
     }
 
     render(pages: { page: number, buffer: Uint8ClampedArray }[]) {
@@ -99,6 +104,7 @@ class LatticeList<T extends SnailLattice> {
 export type LatticeWorkerMessage =
     | { type: "setup", mazeType: ShopKey }
     | { type: "set-width", width: number }
+    | { type: "set-tick-rate", rate: number }
     | { type: "render", pages: { page: number, buffer: Uint8ClampedArray }[] }
     | { type: "reset" }
     | { type: "alter", diff: number }
@@ -188,6 +194,10 @@ function processMessage(msg: LatticeWorkerMessage) {
                 LATTICE.setWidth(msg.width);
                 LATTICE.update();
             }
+            break;
+        case "set-tick-rate":
+            if (!LATTICE) messageQueue.push(msg);
+            else LATTICE.setTickRate(msg.rate);
             break;
         case "alter":
             if (!LATTICE) messageQueue.push(msg);
