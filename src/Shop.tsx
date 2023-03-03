@@ -149,7 +149,7 @@ const ShopDescription: Component<{
     );
 };
 
-const Shop: Component = () => {
+const Shop: Component<{ class?: string }> = (props) => {
     const [shop, setShop] = useContext(ShopContext);
     const [_score, setScore] = useContext(ScoreContext);
     const [upgrades, _setUpgrades] = useContext(UpgradesContext);
@@ -168,7 +168,7 @@ const Shop: Component = () => {
     return (
         <div
             id="shop-sidebar"
-            class="bg-white overflow-x-hidden overflow-y-auto flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display">
+            class={`${props.class} bg-white overflow-x-hidden overflow-y-auto absolute top-[30%] bottom-0 left-0 right-0 md:static flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display`}>
             {/*<div class='border-b-4 border-black p-4'>
                 <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
 

@@ -36,21 +36,25 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             case 'w':
             case 'W':
             case 'ArrowUp':
+                e.preventDefault();
                 movement.unshift(8);
                 break;
             case 'a':
             case 'A':
             case 'ArrowLeft':
+                e.preventDefault();
                 movement.unshift(2);
                 break;
             case 's':
             case 'S':
             case 'ArrowDown':
+                e.preventDefault();
                 movement.unshift(4);
                 break;
             case 'd':
             case 'D':
             case 'ArrowRight':
+                e.preventDefault();
                 movement.unshift(1);
                 break;
         }
@@ -63,21 +67,25 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             case 'w':
             case 'W':
             case 'ArrowUp':
+                e.preventDefault();
                 movement = movement.filter(x => x != 8);
                 break;
             case 'a':
             case 'A':
             case 'ArrowLeft':
+                e.preventDefault();
                 movement = movement.filter(x => x != 2);
                 break;
             case 's':
             case 'S':
             case 'ArrowDown':
+                e.preventDefault();
                 movement = movement.filter(x => x != 4);
                 break;
             case 'd':
             case 'D':
             case 'ArrowRight':
+                e.preventDefault();
                 movement = movement.filter(x => x != 1);
                 break;
         }
@@ -282,8 +290,10 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
     const updateScale = () => {
         const scaleX = container.clientWidth / canvas.width;
-        const scaleY = container.clientHeight / canvas.height;
-        setScale(Math.floor(Math.min(scaleX, scaleY)));
+        // const scaleY = container.clientHeight / canvas.height;
+        // setScale(Math.floor(Math.min(scaleX, scaleY)));
+        // console.log(scaleX);
+        setScale(Math.floor(scaleX));
     }
 
     createEffect(() => {
@@ -317,15 +327,62 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         <div
             tabindex={-1}
             ref={container}
-            class={`flex items-center justify-center outline-0 ${props.class}`}
+            class={`flex items-center content-center justify-center outline-0 ${props.class}`}
         >
+            <div class="grid grid-cols-3 grid-rows-3 absolute md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70">
+                <button
+                    class="col-start-2 row-start-1 bg-white active:bg-neutral-200"
+                    onmousedown={(e: any) => {
+                        e.key = 'ArrowUp';
+                        keyPressed(e);
+                    }}
+                    onmouseup={(e: any) => {
+                        e.key = 'ArrowUp';
+                        keyReleased(e);
+                    }}
+                >↑</button>
+                <button
+                    class="col-start-2 row-start-3 bg-white active:bg-neutral-200"
+                    onmousedown={(e: any) => {
+                        e.key = 'ArrowDown';
+                        keyPressed(e);
+                    }}
+                    onmouseup={(e: any) => {
+                        e.key = 'ArrowDown';
+                        keyReleased(e);
+                    }}
+                >↓</button>
+                <button
+                    class="col-start-1 row-start-2 bg-white active:bg-neutral-200"
+                    onmousedown={(e: any) => {
+                        e.key = 'ArrowLeft';
+                        keyPressed(e);
+                    }}
+                    onmouseup={(e: any) => {
+                        e.key = 'ArrowLeft';
+                        keyReleased(e);
+                    }}
+                >←</button>
+                <button
+                    class="col-start-3 row-start-2 bg-white active:bg-neutral-200"
+                    onmousedown={(e: any) => {
+                        e.key = 'ArrowRight';
+                        keyPressed(e);
+                    }}
+                    onmouseup={(e: any) => {
+                        e.key = 'ArrowRight';
+                        keyReleased(e);
+                    }}
+                >→</button>
+            </div>
             <canvas
                 ref={canvas}
                 width={props.width * 10 + 1}
                 height={props.height * 10 + 1}
                 style={{
                     "image-rendering": "pixelated",
-                    transform: `scale(${scale()})`
+                    "width": `${(props.width * 10 + 1) * scale()}px`,
+                    "height": `${(props.width * 10 + 1) * scale()}px`
                 }}
             >
             </canvas>

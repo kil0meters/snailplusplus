@@ -79,7 +79,7 @@ const Game: Component = () => {
     const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 5);
     const [shop, _] = useContext(ShopContext);
     const [powerup, setPowerup] = useContext(PowerupContext);
-    const [shown, setShown] = createSignal(false);
+    const [menuShown, setMenuShown] = createSignal(false);
 
     const [displayedScore, setDisplayedScore] = createSignal(score());
 
@@ -132,13 +132,17 @@ const Game: Component = () => {
 
     return <>
         <Determination />
-        <div class='grid grid-rows-2 md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] overflow-hidden bg-[#068fef]'>
-            <div class='flex max-h-full flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]  gap-8 lg:gap-0 h-full overflow-auto pb-16 lg:pb-0'>
-                <div class='md:border-r-2 max-h-full border-black'>
+        <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] overflow-hidden bg-[#068fef]'>
+            <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]  gap-8 lg:gap-0 h-full overflow-auto pb-16 lg:pb-0'>
+                <div class='md:border-r-2 border-black flex flex-col'>
                     <div class='p-8 bg-black flex justify-center h-[128px] content-center'>
                         <span class='text-2xl text-center font-extrabold font-pixelated text-white my-auto'>{formattedScore()} fragments</span>
+                        <button
+                            class='font-display font-bold bg-white absolute md:hidden right-5 my-auto mt-2 px-4 py-2 rounded-md shadow-md border-2 border-black hover:bg-neutral-200 transition-colors'
+                            onclick={() => setMenuShown((shown) => !shown)}
+                        >menu</button>
                     </div>
-                    <SnailMaze class='w-full aspect-square' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
+                    <SnailMaze class='my-auto' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
                         updateScore(score);
                         setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
 
@@ -160,7 +164,7 @@ const Game: Component = () => {
                 </div>
                 <AutoMazes />
             </div>
-            <Shop />
+            <Shop class={`md:flex ${menuShown() ? '' : 'hidden'}`} />
         </div>
     </>;
 };
