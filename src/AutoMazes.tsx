@@ -7,42 +7,42 @@ import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
 
 // this saves an insane amount of gc time
-let CACHED_BUFFERS: Uint8ClampedArray[] = [];
-let cachedImageWidth = 0;
-let cachedImageHeight = 0;
-
-function requestBuffer(width: number, height: number) {
-    if (CACHED_BUFFERS.length == 0 || cachedImageWidth != width || cachedImageHeight != height) {
-        cachedImageWidth = width;
-        cachedImageHeight = height;
-
-        return new Uint8ClampedArray(width * height * 4);
-    }
-
-    return CACHED_BUFFERS.pop();
-}
-
-function reclaimBuffer(buffer: Uint8ClampedArray, width: number, height: number) {
-    if (width == cachedImageWidth && height == cachedImageHeight) {
-        CACHED_BUFFERS.push(buffer);
-    }
-}
-
-function canvasElement(index: number, observer: IntersectionObserver): HTMLCanvasElement {
-    let canvas = document.createElement("canvas");
-    canvas.setAttribute("index", index.toString());
-    canvas.style.width = "100%";
-    canvas.style.imageRendering = "pixelated";
-    observer.observe(canvas);
-    return canvas;
-}
-
 const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
     let container: HTMLDivElement;
     let visibleIndexes = new Set([]);
     let worker = LATTICE_WORKER_STORE[props.key];
     let bufferDimensions = { width: 0, height: 0 };
     let workerMessageQueue: LatticeWorkerResponse[] = [];
+
+    let CACHED_BUFFERS: Uint8ClampedArray[] = [];
+    let cachedImageWidth = 0;
+    let cachedImageHeight = 0;
+
+    function requestBuffer(width: number, height: number) {
+        if (CACHED_BUFFERS.length == 0 || cachedImageWidth != width || cachedImageHeight != height) {
+            cachedImageWidth = width;
+            cachedImageHeight = height;
+
+            return new Uint8ClampedArray(width * height * 4);
+        }
+
+        return CACHED_BUFFERS.pop();
+    }
+
+    function reclaimBuffer(buffer: Uint8ClampedArray, width: number, height: number) {
+        if (width == cachedImageWidth && height == cachedImageHeight) {
+            CACHED_BUFFERS.push(buffer);
+        }
+    }
+
+    function canvasElement(index: number, observer: IntersectionObserver): HTMLCanvasElement {
+        let canvas = document.createElement("canvas");
+        canvas.setAttribute("index", index.toString());
+        canvas.style.width = "100%";
+        canvas.style.imageRendering = "pixelated";
+        observer.observe(canvas);
+        return canvas;
+    }
 
     const intersectionObserver = new IntersectionObserver(entries => {
         // let previouslyHadNoVisible = visibleIndexes.size == 0;
@@ -156,6 +156,8 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
 
     createEffect(() => {
+        props.latticeWidth;
+
         worker.removeEventListener("message", workerOnMessage);
 
         // update on key change
@@ -176,12 +178,13 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     );
 }
 
-const AutoMazes: Component = () => {
-    const [shop, _setShop] = useContext(ShopContext);
-    const [score, setScore] = useContext(ScoreContext);
+const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
+    let mazeDisplay: HTMLDivElement;
+    const [latticeWidth, setLatticeWidth] = createSignal(SHOP[props.key].latticeWidth);
 
     let intervalId: number;
 
+    const [fullscreen, setFullscreen] = createSignal(false);
     const togglefullscreen = () => {
         setFullscreen(f => !f);
     };
@@ -193,27 +196,13 @@ const AutoMazes: Component = () => {
         removeEventListener('fullscreenchange', togglefullscreen);
     });
 
-    let mazeDisplay: HTMLDivElement;
-    const [shownMazeType, setShownMazeType] = createStoredSignal<ShopKey>("shown-maze", "random-walk");
-
-    const shownMazeItem = () => shop.find(el => el.key == shownMazeType());
-
-    const [latticeWidth, setLatticeWidth] = createSignal(SHOP[shownMazeType()].latticeWidth);
-
-    const [fullscreen, setFullscreen] = createSignal(false);
 
     return (
-        <div class="md:max-h-screen w-full flex flex-col" ref={mazeDisplay}>
-            <div class="p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-auto">
-                <select class="bg-black text-lg md:text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold"
-                    onChange={(e) => {
-                        setLatticeWidth(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
-                        setShownMazeType(e.currentTarget.value as ShopKey);
-                    }}>
-                    <For each={shop}>
-                        {item => <option selected={item.key == shownMazeType()} value={item.key} class="py-4 bg-white text-black">{SHOP[item.key].name}</option>}
-                    </For>
-                </select>
+        <div class="w-full" ref={mazeDisplay}>
+            <dt class="sticky z-10 top-0 p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-x-auto">
+                <span class="bg-black text-lg md:text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold">
+                    {SHOP[props.key].name}
+                </span>
 
                 <div class="text-center ml-auto flex my-auto">
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>
@@ -237,12 +226,24 @@ const AutoMazes: Component = () => {
                         </button>
                     }
                 </div>
-            </div>
+            </dt>
 
-            <div class="p-2 overflow-auto h-full w-full bg-[#068fef]">
-                <SnailLatticeElement key={shownMazeItem().key} count={shownMazeItem().count} latticeWidth={latticeWidth()} />
-            </div>
-        </div>
+            <dd class="p-2 h-full w-full bg-[#068fef]">
+                <SnailLatticeElement key={props.key} count={props.count} latticeWidth={latticeWidth()} />
+            </dd>
+        </div >
+    );
+}
+
+const AutoMazes: Component = () => {
+    const [shop, _setShop] = useContext(ShopContext);
+
+    return (
+        <dl class="xl:max-h-screen xl:overflow-auto">
+            <For each={shop.filter((item) => item.count > 0)}>
+                {item => <AutoMazeDisplay key={item.key} count={item.count} />}
+            </For>
+        </dl>
     )
 };
 

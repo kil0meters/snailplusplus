@@ -329,7 +329,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             ref={container}
             class={`flex items-center content-center justify-center outline-0 ${props.class}`}
         >
-            <div class="grid grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
+            <div class="grid z-20 grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
                 <button
                     class="col-start-2 row-start-1 bg-white active:bg-neutral-200"
                     onmousedown={(e: any) => {
