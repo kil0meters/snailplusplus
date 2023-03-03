@@ -204,8 +204,8 @@ const AutoMazes: Component = () => {
 
     return (
         <div class="md:max-h-screen w-full flex flex-col" ref={mazeDisplay}>
-            <div class="p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated">
-                <select class="bg-black text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold"
+            <div class="p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-auto">
+                <select class="bg-black text-lg md:text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold"
                     onChange={(e) => {
                         setLatticeWidth(SHOP[e.currentTarget.value as ShopKey].latticeWidth);
                         setShownMazeType(e.currentTarget.value as ShopKey);
@@ -221,7 +221,7 @@ const AutoMazes: Component = () => {
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.min(x + 1, 12))}>+</button>
 
                     {fullscreen() ?
-                        <button class="ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {
+                        <button class="hidden md:block ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {
                             document.exitFullscreen();
                         }}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-fullscreen-exit" viewBox="0 0 16 16">
@@ -229,7 +229,7 @@ const AutoMazes: Component = () => {
                             </svg>
                         </button>
                         :
-                        <button class="ml-4 hover:bg-white hover:text-black transition-all p-2" onClick={() => {
+                        <button class="hidden md:block ml-4 hover:bg-white hover:text-black transition-all p-2" onClick={() => {
                             mazeDisplay.requestFullscreen();
                         }}><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrows-fullscreen" viewBox="0 0 16 16">
                                 <path fill-rule="evenodd" d="M5.828 10.172a.5.5 0 0 0-.707 0l-4.096 4.096V11.5a.5.5 0 0 0-1 0v3.975a.5.5 0 0 0 .5.5H4.5a.5.5 0 0 0 0-1H1.732l4.096-4.096a.5.5 0 0 0 0-.707zm4.344 0a.5.5 0 0 1 .707 0l4.096 4.096V11.5a.5.5 0 1 1 1 0v3.975a.5.5 0 0 1-.5.5H11.5a.5.5 0 0 1 0-1h2.768l-4.096-4.096a.5.5 0 0 1 0-.707zm0-4.344a.5.5 0 0 0 .707 0l4.096-4.096V4.5a.5.5 0 1 0 1 0V.525a.5.5 0 0 0-.5-.5H11.5a.5.5 0 0 0 0 1h2.768l-4.096 4.096a.5.5 0 0 0 0 .707zm-4.344 0a.5.5 0 0 1-.707 0L1.025 1.732V4.5a.5.5 0 0 1-1 0V.525a.5.5 0 0 1 .5-.5H4.5a.5.5 0 0 1 0 1H1.732l4.096 4.096a.5.5 0 0 1 0 .707z" />
