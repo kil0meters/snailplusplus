@@ -329,7 +329,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             ref={container}
             class={`flex items-center content-center justify-center outline-0 ${props.class}`}
         >
-            <div class="grid grid-cols-3 grid-rows-3 absolute md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70">
+            <div class="grid grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
                 <button
                     class="col-start-2 row-start-1 bg-white active:bg-neutral-200"
                     onmousedown={(e: any) => {
@@ -337,6 +337,14 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                         keyPressed(e);
                     }}
                     onmouseup={(e: any) => {
+                        e.key = 'ArrowUp';
+                        keyReleased(e);
+                    }}
+                    ontouchstart={(e: any) => {
+                        e.key = 'ArrowUp';
+                        keyPressed(e);
+                    }}
+                    ontouchend={(e: any) => {
                         e.key = 'ArrowUp';
                         keyReleased(e);
                     }}
@@ -351,6 +359,14 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                         e.key = 'ArrowDown';
                         keyReleased(e);
                     }}
+                    ontouchstart={(e: any) => {
+                        e.key = 'ArrowDown';
+                        keyPressed(e);
+                    }}
+                    ontouchend={(e: any) => {
+                        e.key = 'ArrowDown';
+                        keyReleased(e);
+                    }}
                 >↓</button>
                 <button
                     class="col-start-1 row-start-2 bg-white active:bg-neutral-200"
@@ -362,6 +378,14 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                         e.key = 'ArrowLeft';
                         keyReleased(e);
                     }}
+                    ontouchstart={(e: any) => {
+                        e.key = 'ArrowLeft';
+                        keyPressed(e);
+                    }}
+                    ontouchend={(e: any) => {
+                        e.key = 'ArrowLeft';
+                        keyReleased(e);
+                    }}
                 >←</button>
                 <button
                     class="col-start-3 row-start-2 bg-white active:bg-neutral-200"
@@ -370,6 +394,14 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                         keyPressed(e);
                     }}
                     onmouseup={(e: any) => {
+                        e.key = 'ArrowRight';
+                        keyReleased(e);
+                    }}
+                    ontouchstart={(e: any) => {
+                        e.key = 'ArrowRight';
+                        keyPressed(e);
+                    }}
+                    ontouchend={(e: any) => {
                         e.key = 'ArrowRight';
                         keyReleased(e);
                     }}

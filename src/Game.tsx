@@ -138,7 +138,7 @@ const Game: Component = () => {
                     <div class='p-8 bg-black flex justify-center h-[128px] content-center'>
                         <span class='text-2xl text-center font-extrabold font-pixelated text-white my-auto'>{formattedScore()} fragments</span>
                         <button
-                            class='font-display font-bold bg-white absolute md:hidden right-5 my-auto mt-2 px-4 py-2 rounded-md shadow-md border-2 border-black hover:bg-neutral-200 transition-colors'
+                            class='font-display select-none font-bold bg-white fixed md:hidden right-5 my-auto mt-2 px-4 py-2 rounded-md shadow-md border-2 border-black hover:bg-neutral-200 transition-colors'
                             onclick={() => setMenuShown((shown) => !shown)}
                         >menu</button>
                     </div>
