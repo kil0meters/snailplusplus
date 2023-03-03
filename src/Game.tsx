@@ -61,7 +61,7 @@ const Determination: Component = () => {
 
     return <>
         {powerup.active ?
-            <div class='flex flex-col gap-4 shadow-md absolute text-white font-pixelated bg-black border-4 border-white top-4 max-w-md left-0 right-0 mx-auto z-10 p-4'>
+            <div class='z-50 flex flex-col gap-4 shadow-md absolute text-white font-pixelated bg-black border-4 border-white top-4 max-w-md left-0 right-0 mx-auto p-4'>
                 <span>
                     Your snails are filled with determination. They move {powerup.multiplier}x faster for {Math.floor((powerup.end.getTime() - powerup.start.getTime()) / 1000)} seconds.
                 </span>
@@ -147,8 +147,8 @@ const Game: Component = () => {
                         setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
 
                         if (isSpecial) {
-                            let calculatedBoost = Math.floor(Math.sqrt(Math.random() * 100));
-                            let boostDuration = Math.floor(Math.sqrt(Math.random() * 1000));
+                            let calculatedBoost = Math.max(Math.floor(Math.sqrt(Math.random() * 100)), 2);
+                            let boostDuration = Math.max(Math.floor(Math.sqrt(Math.random() * 1000)), 4);
                             let start = new Date();
                             let end = new Date(start);
                             end.setSeconds(end.getSeconds() + boostDuration);
