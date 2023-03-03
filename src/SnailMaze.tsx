@@ -35,18 +35,22 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         switch (e.key) {
             case 'w':
             case 'W':
+            case 'ArrowUp':
                 movement.unshift(8);
                 break;
             case 'a':
             case 'A':
+            case 'ArrowLeft':
                 movement.unshift(2);
                 break;
             case 's':
             case 'S':
+            case 'ArrowDown':
                 movement.unshift(4);
                 break;
             case 'd':
             case 'D':
+            case 'ArrowRight':
                 movement.unshift(1);
                 break;
         }
@@ -58,18 +62,22 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         switch (e.key) {
             case 'w':
             case 'W':
+            case 'ArrowUp':
                 movement = movement.filter(x => x != 8);
                 break;
             case 'a':
             case 'A':
+            case 'ArrowLeft':
                 movement = movement.filter(x => x != 2);
                 break;
             case 's':
             case 'S':
+            case 'ArrowDown':
                 movement = movement.filter(x => x != 4);
                 break;
             case 'd':
             case 'D':
+            case 'ArrowRight':
                 movement = movement.filter(x => x != 1);
                 break;
         }
