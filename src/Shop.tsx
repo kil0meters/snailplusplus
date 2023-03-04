@@ -1,7 +1,9 @@
 import { Component, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
-import { LATTICE_WORKER_STORE } from "./Game";
+import { produce } from 'solid-js/store';
+import { LATTICE_WORKER_STORE, NAMES } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
 import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
+import { SnailInfoContext } from "./SnailInfoProvider";
 import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
 
 const PRICE_SCALER = 1.15;
@@ -11,6 +13,7 @@ document["devmode"] = false;
 const ShopListingElement: Component<ShopListing> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
     const [_shop, setShop] = useContext(ShopContext);
+    const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
     const [hover, setHover] = createSignal(false);
 
     const price = () => Math.floor(SHOP[props.key].price * Math.pow(PRICE_SCALER, props.count));
@@ -24,7 +27,21 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             setShop(
                 (shopItem) => shopItem.key === props.key,
                 "count",
-                (count) => count + 1
+                (count) => {
+                    setSnailInfo(
+                        (info) => info.key == props.key,
+                        produce((info) => {
+                            while (info.names.length < count + 1) {
+                                info.names.push(NAMES[Math.floor(Math.random() * NAMES.length)]);
+                                info.createdAts.push(Math.floor(Date.now() / 1000));
+                                info.solvedCounts.push(0);
+                            }
+                        })
+                    );
+
+
+                    return count + 1;
+                }
             );
 
             LATTICE_WORKER_STORE[props.key].postMessage({ type: "alter", diff: 1 });

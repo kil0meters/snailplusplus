@@ -8,6 +8,7 @@ interface SnailLattice {
     render: (buffer: Uint8Array, index: number, count: number) => void;
     count: () => number;
     get_dimensions: (count: number) => Uint32Array;
+    get_solve_count: () => Uint32Array;
     set_width: (width: number) => void;
 }
 
@@ -46,6 +47,10 @@ class LatticeList<T extends SnailLattice> {
 
     getDimensions(): Uint32Array {
         return this.lattice.get_dimensions(this.pageSize);
+    }
+
+    getSolveCount(): Uint32Array {
+        return this.lattice.get_solve_count();
     }
 
     // tick everything
@@ -108,12 +113,12 @@ export type LatticeWorkerMessage =
     | { type: "render", pages: { page: number, buffer: Uint8ClampedArray }[] }
     | { type: "reset" }
     | { type: "alter", diff: number }
-    | { type: "get-count" }
+    | { type: "get-count" };
 
 export type LatticeWorkerResponse =
-    | { type: "score", score: number, mazeType: ShopKey }
+    | { type: "score", score: number, solves: Uint32Array, mazeType: ShopKey }
     | { type: "render", pages: { page: number, buffer: Uint8ClampedArray }[], mazeType: ShopKey }
-    | { type: "lattice-updated", width: number, height: number, latticeCount: number }
+    | { type: "lattice-updated", width: number, height: number, latticeCount: number };
 
 let LATTICE: LatticeList<SnailLattice>;
 
@@ -158,13 +163,15 @@ function setupLattice(mazeType: ShopKey) {
 
         setInterval(() => {
             let score = LATTICE.tick() + LATTICE.score;
+            let solves = LATTICE.getSolveCount();
             LATTICE.score = 0;
 
             if (score > 0) {
                 postMessage({
                     type: "score",
-                    score: score,
-                    mazeType: mazeType,
+                    score,
+                    solves,
+                    mazeType,
                 })
             }
         }, 100)

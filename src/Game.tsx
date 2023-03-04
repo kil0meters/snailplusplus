@@ -3,12 +3,15 @@ import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
 import Shop from './Shop';
 import { Component, createEffect, createSignal, onCleanup, onMount, untrack, useContext } from 'solid-js';
+import { produce } from 'solid-js/store';
 import { ScoreContext } from './ScoreProvider';
 import { LatticeWorkerMessage, LatticeWorkerResponse } from './latticeWorker';
 import LatticeWorker from './latticeWorker.ts?worker';
 import { SHOP, ShopContext, ShopKey, SHOP_KEYS } from './ShopProvider';
 import { PowerupContext } from './App';
+import { SnailInfoContext } from './SnailInfoProvider';
 
+export const NAMES: string[] = await (await fetch('/assets/names.json')).json();
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
 
 export const LATTICE_WORKER_STORE: { [key in ShopKey]: Worker } = {
@@ -75,6 +78,7 @@ const Determination: Component = () => {
 
 const Game: Component = () => {
     const [score, setScore] = useContext(ScoreContext);
+    const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
     const updateScore = (newScore: number) => setScore(score() + newScore);
     const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 5);
     const [shop, _] = useContext(ShopContext);
@@ -85,8 +89,16 @@ const Game: Component = () => {
 
     const setScoreListener = (event: MessageEvent<LatticeWorkerResponse>) => {
         let msg = event.data;
-        if (msg.type == "score") {
+        if (msg.type === "score") { // idk why type inferrence doesn't work here
             setScore(oldScore => oldScore + (SHOP[msg.mazeType].baseMultiplier * msg.score));
+            setSnailInfo(
+                (info) => info.key == msg.mazeType,
+                produce((info) => {
+                    for (let i = 0; i < msg.solves.length; i += 2) {
+                        info.solvedCounts[msg.solves[i]] += msg.solves[i + 1];
+                    }
+                })
+            );
         }
     };
 
@@ -96,6 +108,18 @@ const Game: Component = () => {
             LATTICE_WORKER_STORE[key].postMessage({ type: "setup", mazeType: key });
             LATTICE_WORKER_STORE[key].postMessage({ type: "alter", diff: count });
             LATTICE_WORKER_STORE[key].addEventListener("message", setScoreListener)
+
+            // initialize each snail info with the correct amount of data if it doesn't already exist
+            setSnailInfo(
+                (info) => info.key == key,
+                produce((info) => {
+                    while (info.names.length < count) {
+                        info.names.push(NAMES[Math.floor(Math.random() * NAMES.length)]);
+                        info.createdAts.push(Math.floor(Date.now() / 1000));
+                        info.solvedCounts.push(0);
+                    }
+                })
+            );
         });
     });
 

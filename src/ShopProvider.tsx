@@ -4,7 +4,8 @@ import { createLocalStore } from "./utils";
 
 export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 
-export type ShopKey = "random-walk" | "random-teleport" | "hold-left" | "tremaux" | "clone" | "time-travel" | "learning" | "rpg" | "meta" | "inverted";
+export const SHOP_KEYS = ["random-walk", "random-teleport", "hold-left", "tremaux", "clone", "time-travel", "learning", "rpg", "meta", "inverted"] as const;
+export type ShopKey = typeof SHOP_KEYS[number];
 
 export interface ShopItem {
     name: string;
@@ -20,49 +21,9 @@ export interface ShopListing {
     count: number;
 };
 
-const shopListings: ShopListing[] = [
-    {
-        key: "random-walk",
-        count: 0
-    },
-    {
-        key: "random-teleport",
-        count: 0
-    },
-    {
-        key: "learning",
-        count: 0,
-    },
-    {
-        key: "hold-left",
-        count: 0
-    },
-    {
-        key: "inverted",
-        count: 0
-    },
-    {
-        key: "tremaux",
-        count: 0
-    },
-    {
-        key: "rpg",
-        count: 0
-    },
-    {
-        key: "time-travel",
-        count: 0
-    },
-    {
-        key: "clone",
-        count: 0
-    },
-    {
-        key: "meta",
-        count: 0
-    },
-];
-
+const SHOP_LISTINGS_DEFAULT: ShopListing[] = SHOP_KEYS.map((key) => {
+    return { key, count: 0 };
+});
 
 export const SHOP: { [key in ShopKey]: ShopItem } = {
     "random-walk": {
@@ -148,12 +109,12 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
 };
 
 const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
-    const [shop, setShop] = createLocalStore<ShopListing[]>("shop", shopListings);
+    const [shop, setShop] = createLocalStore<ShopListing[]>("shop", SHOP_LISTINGS_DEFAULT);
 
     // add new things to local shop if key is missing, only run at start
-    for (let listing of shopListings) {
+    for (let listing of SHOP_LISTINGS_DEFAULT) {
         if (!shop.find(x => x.key == listing.key)) {
-            setShop([...shopListings]);
+            setShop([...shop, listing]);
             break;
         }
     }

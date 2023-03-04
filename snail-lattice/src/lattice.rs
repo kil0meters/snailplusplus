@@ -41,6 +41,9 @@ where
     mazes: Vec<LatticeElement>,
     lfsr: LFSR,
 
+    // stores the number of mazes solved by a given maze since the last query
+    solve_count: Vec<u32>,
+
     // assumes non-overlapping ranges, and assumes maxes out the index at 2^16.
     // should be fine for now. if not we can always change to a tuple later
     // we're also always going to be dealing with a very small amount of buffers so using a
@@ -58,6 +61,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             width,
             mazes: Vec::new(),
             lfsr: LFSR::new(seed),
+            solve_count: Vec::new(),
             bg_buffers: BTreeMap::new(),
             render_marked: BTreeSet::new(),
         };
@@ -170,6 +174,21 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         self.bg_buffers.clear();
     }
 
+    // returns the index, then the number of solves for mazes this is better than the sparse
+    // representation we store internally because it minimizes gc time in js land
+    pub fn get_solve_count(&mut self) -> Vec<u32> {
+        let mut solves = Vec::new();
+
+        for (i, value) in self.solve_count.iter_mut().enumerate() {
+            solves.push(i as u32);
+            solves.push(*value);
+
+            *value = 0;
+        }
+
+        solves
+    }
+
     // progresses all snails a certain number of microseconds
     // returns the number of maze framents accrued
     pub fn tick(&mut self, dt: usize) -> usize {
@@ -179,6 +198,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             let fragments = maze.tick(dt, &mut self.lfsr);
             if fragments != 0 {
                 total += fragments;
+                self.solve_count[i] += 1;
                 self.render_marked.insert(i);
             }
         }
@@ -190,6 +210,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         if difference < 0 {
             for _ in 0..difference.abs() {
                 self.mazes.pop();
+                self.solve_count.pop();
             }
 
             self.bg_buffers.clear();
@@ -206,6 +227,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
                 self.render_marked.insert(self.mazes.len());
                 self.mazes.push(new_maze);
+                self.solve_count.push(0);
 
                 time_offset += 100000;
             }
@@ -298,60 +320,6 @@ impl TilableMaze for MetaMaze {
     }
 }
 
-//
-// #[wasm_bindgen]
-// impl MetaLattice {
-//     #[wasm_bindgen(constructor)]
-//     pub fn new(width: usize, seed: u16) -> MetaLattice {
-//         MetaLattice {
-//             width,
-//             lfsr: LFSR::new(seed),
-//
-//             random_walk_mazes: vec![],
-//             random_teleport: vec![],
-//             learning: vec![],
-//             hold_left: vec![],
-//             tremaux: vec![],
-//             time_travel: vec![],
-//             clone: vec![],
-//             rpg: vec![],
-//
-//             bg_buffers: BTreeMap::new(),
-//             render_marked: BTreeSet::new(),
-//         }
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
-//         self.0.get_dimensions(count)
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
-//         self.0.render(buffer, index, count);
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn tick(&mut self, dt: usize) -> usize {
-//         self.0.tick(dt)
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn alter(&mut self, difference: i32) {
-//         self.0.alter(difference);
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn count(&self) -> usize {
-//         self.0.mazes.len()
-//     }
-//
-//     #[wasm_bindgen]
-//     pub fn set_width(&mut self, width: usize) {
-//         self.0.set_width(width);
-//     }
-// }
-
 macro_rules! lattice_impl {
     ($name:tt, $tile:ty) => {
         #[wasm_bindgen]
@@ -367,6 +335,11 @@ macro_rules! lattice_impl {
             #[wasm_bindgen]
             pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
                 self.0.get_dimensions(count)
+            }
+
+            #[wasm_bindgen]
+            pub fn get_solve_count(&mut self) -> Vec<u32> {
+                self.0.get_solve_count()
             }
 
             #[wasm_bindgen]

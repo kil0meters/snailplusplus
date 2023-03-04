@@ -5,6 +5,7 @@ import { createStoredSignal } from "./utils";
 import { latticePostMessage, LATTICE_WORKER_STORE } from "./Game";
 import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
+import { SnailInfoContext } from "./SnailInfoProvider";
 
 // this saves an insane amount of gc time
 const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
@@ -13,6 +14,7 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     let worker = LATTICE_WORKER_STORE[props.key];
     let bufferDimensions = { width: 0, height: 0 };
     let workerMessageQueue: LatticeWorkerResponse[] = [];
+    const [focusedIndex, setFocusedIndex] = createSignal<number | null>(null);
 
     let CACHED_BUFFERS: Uint8ClampedArray[] = [];
     let cachedImageWidth = 0;
@@ -148,12 +150,29 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     };
 
     let firstRender = true;
+    const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
+
+    const mousemove = (e) => {
+        let rect = container.getBoundingClientRect();
+        let x = e.clientX - rect.left;
+        let y = e.clientY - rect.top;
+
+        let mazeSize = rect.width / props.latticeWidth
+        let mazeX = Math.floor(x / mazeSize);
+        let mazeY = Math.floor(y / mazeSize);
+        let index = mazeY * props.latticeWidth + mazeX;
+
+        if (mazeY >= 0 && mazeX >= 0 && mazeX < props.latticeWidth && index < props.count) {
+            setFocusedIndex(index);
+        } else {
+            setFocusedIndex(null);
+        }
+    };
 
     onMount(() => {
         renderloop();
+        document.addEventListener("mousemove", mousemove);
     });
-
-    const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
 
     createEffect(() => {
         props.latticeWidth;
@@ -171,8 +190,29 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
         }
     });
 
+    const mazeSize = () => container.getBoundingClientRect().width / props.latticeWidth;
+    const [snailInfo, setSnailInfo] = useContext(SnailInfoContext)
+
+    // surely linearly searching ~10 elements 4 times isn't a big deal
+    const thisSnailInfo = () => snailInfo.find((x) => x.key == props.key);
+
+    const dateFormatter = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
+    const snailDate = () => {
+        let date = new Date(thisSnailInfo().createdAts[focusedIndex()] * 1000);
+        return dateFormatter.format(date);
+    };
+
     return (
         <div ref={container} class={`flex items-center justify-center w-full flex-col`}>
+            {focusedIndex() !== null && <div class="z-50 flex flex-col bg-black p-4 border-2 border-white shadow-md absolute text-white font-display" style={{
+                top: `${(1 + Math.floor(focusedIndex() / props.latticeWidth)) * mazeSize() + 4 + container.getBoundingClientRect().top}px`,
+                left: `${(focusedIndex() % props.latticeWidth + 0.5) * mazeSize() + container.getBoundingClientRect().left}px`,
+                transform: "translateX(-50%)"
+            }}>
+                <b>{thisSnailInfo().names[focusedIndex()]}</b>
+                <span>solved {thisSnailInfo().solvedCounts[focusedIndex()]} mazes</span>
+                <span>purchased {snailDate()}</span>
+            </div>}
             {elements()}
         </div>
     );
