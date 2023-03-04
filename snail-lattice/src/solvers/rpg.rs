@@ -107,7 +107,7 @@ where
             self.current_sequence.reverse();
         }
 
-        let is_done = match self.current_sequence.pop() {
+        match self.current_sequence.pop() {
             Some(mut next_move) => {
                 let tmp = next_move;
                 next_move = self.party[0].direction;
@@ -130,6 +130,15 @@ where
                         self.party.push(new_follower);
                     } else if !self.party.is_empty() {
                         self.party.remove(0);
+                    }
+                }
+
+                for (i, lost) in self.lost.iter().enumerate() {
+                    if self.party[0].pos == lost.pos {
+                        let mut new_follower = self.lost.remove(i);
+                        new_follower.pos = self.party[0].prev_pos;
+                        self.party.push(new_follower);
+                        break;
                     }
                 }
             }

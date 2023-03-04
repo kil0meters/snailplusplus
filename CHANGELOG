@@ -1,2 +1,3 @@
 next:
 - Snails now have names, and track how many mazes they've solved
+- RPG snail now picks up any snail it runs into
