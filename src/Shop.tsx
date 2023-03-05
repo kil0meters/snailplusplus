@@ -181,11 +181,12 @@ const ShopDescription: Component<{
 const Shop: Component<{ class?: string }> = (props) => {
     const [shop, setShop] = useContext(ShopContext);
     const [_score, setScore] = useContext(ScoreContext);
-    const [upgrades, _setUpgrades] = useContext(UpgradesContext);
+    const [upgrades, setUpgrades] = useContext(UpgradesContext);
 
     const reset = () => {
         if (window.confirm("This will cause you to lose all of your progress. Are you sure?")) {
             setShop(() => true, "count", () => 0);
+            setUpgrades(() => true, "owned", () => false);
             setScore(0);
 
             shop.forEach(({ key }) => {

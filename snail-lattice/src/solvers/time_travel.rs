@@ -10,9 +10,6 @@ use crate::{
 
 use super::Tremaux;
 
-const TIME_TRAVEL_SPEED_FACTOR: usize = 8;
-const TIME_TRAVEL_MOVEMENT_TIME: usize = SNAIL_MOVEMENT_TIME / TIME_TRAVEL_SPEED_FACTOR;
-
 fn random_color(lfsr: &mut LFSR) -> [u8; 3] {
     if lfsr.next() == 3 {
         [0xFF, 0x00, 0x00]
@@ -174,8 +171,12 @@ where
 
     path_drawer: Snail<S>,
     time_traveler: Tremaux<S>,
-    time_dilation_timer: usize,
 }
+
+// Time Travel Snail Upgrades:
+// - Forward Time Travel: Move 50% faster in the present
+// - Improved Time Relay: Move 50% faster in the past
+// - Time Warp:           Backtrack Instnatly
 
 impl<const S: usize> Solver<S> for TimeTravel<S>
 where
@@ -185,7 +186,7 @@ where
         let mut path_drawer = Snail::new();
         path_drawer.active = false;
 
-        let mut time_traveler = Tremaux::new().set_movement_time(TIME_TRAVEL_MOVEMENT_TIME);
+        let mut time_traveler = Tremaux::new();
         time_traveler.snail.active = false;
 
         TimeTravel {
@@ -196,12 +197,20 @@ where
 
             path_drawer,
             time_traveler,
-            time_dilation_timer: 0,
         }
     }
 
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
+    }
+
+    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {
+        self.state = TimeTravelState::TimeTraveling;
+        self.time_traveler.set_movement_time(self.movement_time());
+        self.snail.reset();
+        self.path.clear();
+        self.path_drawer.reset();
+        self.time_traveler.setup(_maze, _lfsr);
     }
 
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
@@ -215,84 +224,82 @@ where
                 }
             }
             TimeTravelState::DrawingPath => {
-                let cell = maze.get_cell(self.path_drawer.pos.x, self.path_drawer.pos.y);
-                let valid_directions = cell.valid_directions();
+                loop {
+                    let cell = maze.get_cell(self.path_drawer.pos.x, self.path_drawer.pos.y);
+                    let valid_directions = cell.valid_directions();
 
-                // if in junction
-                if valid_directions.len() > 2 {
-                    let mark = self
-                        .time_traveler
-                        .visited
-                        .entry(self.path_drawer.pos)
-                        .or_default();
-                    let back_direction = self.path_drawer.direction.flip();
+                    // if in junction
+                    if valid_directions.len() > 2 {
+                        let mark = self
+                            .time_traveler
+                            .visited
+                            .entry(self.path_drawer.pos)
+                            .or_default();
+                        let back_direction = self.path_drawer.direction.flip();
 
-                    let direction = valid_directions
-                        .iter()
-                        .filter(|direction| {
-                            **direction != back_direction
-                                && mark.directions[**direction as usize] == 1
-                        })
-                        .next()
-                        .unwrap();
+                        let direction = valid_directions
+                            .iter()
+                            .filter(|direction| {
+                                **direction != back_direction
+                                    && mark.directions[**direction as usize] == 1
+                            })
+                            .next()
+                            .unwrap();
 
-                    self.path_drawer.direction = *direction;
-                }
-                // if in corridor, keep along
-                else if valid_directions.len() == 2 && cell.has_wall(self.path_drawer.direction) {
-                    // make the path_drawer continue along the corridor
-                    if self.path_drawer.direction.flip() == valid_directions[0] {
-                        self.path_drawer.direction = valid_directions[1];
-                    } else {
-                        self.path_drawer.direction = valid_directions[0]
+                        self.path_drawer.direction = *direction;
                     }
-                }
-
-                // draw path
-                if let Some(prev) = self.path.last_mut() {
-                    prev.directions[self.path_drawer.direction as usize] = true;
-                }
-
-                assert!(self.path_drawer.move_forward(maze));
-
-                self.path.push(PathTile::new(
-                    self.path_drawer.pos,
-                    self.path_drawer.direction.flip(),
-                ));
-
-                if self.path_drawer.pos.x == 0 && self.path_drawer.pos.y == 0 {
-                    self.state = TimeTravelState::Normal;
-                }
-            }
-            TimeTravelState::Normal => {
-                self.time_dilation_timer += 1;
-
-                if self.time_dilation_timer % TIME_TRAVEL_SPEED_FACTOR == 0 {
-                    self.time_dilation_timer = 0;
-
-                    // just follow the path corridor
-                    if let Some(tile) = self.path.pop() {
-                        if !tile.directions[self.snail.direction as usize] {
-                            let right_rotate = self.snail.direction.rotate();
-                            let left_rotate = self.snail.direction.rotate_counter();
-                            if tile.directions[right_rotate as usize] {
-                                self.snail.direction = right_rotate;
-                            } else if tile.directions[left_rotate as usize] {
-                                self.snail.direction = left_rotate;
-                            }
+                    // if in corridor, keep along
+                    else if valid_directions.len() == 2
+                        && cell.has_wall(self.path_drawer.direction)
+                    {
+                        // make the path_drawer continue along the corridor
+                        if self.path_drawer.direction.flip() == valid_directions[0] {
+                            self.path_drawer.direction = valid_directions[1];
+                        } else {
+                            self.path_drawer.direction = valid_directions[0]
                         }
                     }
 
-                    assert!(self.snail.move_forward(maze));
-
-                    if self.snail.pos == maze.end_pos {
-                        self.state = TimeTravelState::TimeTraveling;
-                        self.time_traveler.visited.clear();
-                        self.snail.reset();
-                        self.path_drawer.reset();
-
-                        return true;
+                    // draw path
+                    if let Some(prev) = self.path.last_mut() {
+                        prev.directions[self.path_drawer.direction as usize] = true;
                     }
+
+                    assert!(self.path_drawer.move_forward(maze));
+
+                    self.path.push(PathTile::new(
+                        self.path_drawer.pos,
+                        self.path_drawer.direction.flip(),
+                    ));
+
+                    if self.path_drawer.pos.x == 0 && self.path_drawer.pos.y == 0 {
+                        self.state = TimeTravelState::Normal;
+                        break;
+                    }
+
+                    if (self.upgrades & 0b100) == 0 {
+                        break;
+                    }
+                }
+            }
+            TimeTravelState::Normal => {
+                // just follow the path corridor
+                if let Some(tile) = self.path.pop() {
+                    if !tile.directions[self.snail.direction as usize] {
+                        let right_rotate = self.snail.direction.rotate();
+                        let left_rotate = self.snail.direction.rotate_counter();
+                        if tile.directions[right_rotate as usize] {
+                            self.snail.direction = right_rotate;
+                        } else if tile.directions[left_rotate as usize] {
+                            self.snail.direction = left_rotate;
+                        }
+                    }
+                }
+
+                assert!(self.snail.move_forward(maze));
+
+                if self.snail.pos == maze.end_pos {
+                    return true;
                 }
             }
         }
@@ -315,7 +322,7 @@ where
                     GRAYSCALE_PALETTE,
                     true,
                     0,
-                    SNAIL_MOVEMENT_TIME,
+                    self.movement_time(),
                     image,
                     bx,
                     by,
@@ -333,7 +340,7 @@ where
                     GRAYSCALE_PALETTE,
                     true,
                     0,
-                    SNAIL_MOVEMENT_TIME,
+                    self.movement_time(),
                     image,
                     bx,
                     by,
@@ -357,8 +364,8 @@ where
                 self.snail.draw(
                     DEFAULT_PALETTE,
                     animation_cycle,
-                    movement_timer + TIME_TRAVEL_MOVEMENT_TIME * self.time_dilation_timer,
-                    SNAIL_MOVEMENT_TIME,
+                    movement_timer,
+                    self.movement_time(),
                     image,
                     bx,
                     by,
@@ -368,6 +375,24 @@ where
     }
 
     fn movement_time(&self) -> usize {
-        TIME_TRAVEL_MOVEMENT_TIME
+        match self.state {
+            TimeTravelState::Normal => {
+                // forward time travel
+                if (self.upgrades & 0b1) != 0 {
+                    SNAIL_MOVEMENT_TIME * 2 / 3
+                } else {
+                    SNAIL_MOVEMENT_TIME
+                }
+            }
+            TimeTravelState::TimeTraveling => {
+                // improved time relay
+                if (self.upgrades & 0b10) != 0 {
+                    (SNAIL_MOVEMENT_TIME / 8) * 2 / 3
+                } else {
+                    SNAIL_MOVEMENT_TIME / 8
+                }
+            }
+            TimeTravelState::DrawingPath => SNAIL_MOVEMENT_TIME / 8,
+        }
     }
 }

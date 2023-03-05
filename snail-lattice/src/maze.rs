@@ -1,12 +1,8 @@
 use std::{collections::VecDeque, mem::size_of};
 
 use crate::{
-    direction::Direction,
-    image::Image,
-    lattice::TilableMaze,
-    lfsr::LFSR,
-    solvers::Solver,
-    utils::{console_log, Vec2},
+    direction::Direction, image::Image, lattice::TilableMaze, lfsr::LFSR, solvers::Solver,
+    utils::Vec2,
 };
 
 pub const SNAIL_MOVEMENT_TIME: usize = 250000;
@@ -82,8 +78,8 @@ where
         let mut num_movements = (now - prev) / movement_time;
         self.movement_timer += (now - prev) % movement_time;
         if self.movement_timer > movement_time {
-            self.movement_timer -= movement_time;
-            num_movements += 1;
+            num_movements += self.movement_timer / movement_time;
+            self.movement_timer %= movement_time;
         }
 
         let mut total = 0;

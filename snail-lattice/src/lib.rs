@@ -1,4 +1,5 @@
 #![allow(incomplete_features)]
+#![feature(drain_filter)]
 #![feature(generic_const_exprs)]
 #![feature(generic_arg_infer)]
 #![feature(test)]

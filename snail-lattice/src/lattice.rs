@@ -5,12 +5,11 @@ use wasm_bindgen::prelude::*;
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::{AutoMaze, CELLS_PER_IDX},
+    maze::AutoMaze,
     solvers::{
-        Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, Solver, TimeTravel,
-        Tremaux,
+        Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, TimeTravel, Tremaux,
     },
-    utils::{console_log, set_panic_hook},
+    utils::set_panic_hook,
 };
 
 #[derive(Clone, Copy)]

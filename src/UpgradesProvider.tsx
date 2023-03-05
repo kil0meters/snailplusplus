@@ -14,7 +14,22 @@ const UPGRADE_KEYS = [
     "advanced-homing-beacon",
     "population-boom",
     "uranium",
-    "radium"
+    "radium",
+    "left-glove",
+    "right-handed-snail",
+    "right-glove",
+    "left-handed-snail",
+    "compass",
+    "electromagnet",
+    "breadcrumbs",
+    "comradery",
+    "sidequests",
+    "recruitment",
+    "forward-time-travel",
+    "improved-time-relay",
+    "time-warp",
+    "self-improvement",
+    "singularity"
 ] as const;
 export type UpgradeKey = typeof UPGRADE_KEYS[number];
 
@@ -49,17 +64,17 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     "rabbits-foot": {
         name: "Rabbit's Foot",
         icon: "🐇",
-        description: "Gives Random Walk Snails an additional 10% chance to go the right direction.",
+        description: "Gives Random Walk Snails an additional 20% chance to go the right direction.",
         price: 4000,
         order: 1,
         mazeType: "random-walk",
         showAfter: 25,
     },
     "horseshoe": {
-        name: "Rabbit's Foot",
+        name: "Horseshoe",
         icon: "🧲",
-        description: "Gives Random Walk Snails an additional 10% chance to go the right direction.",
-        price: 10_000,
+        description: "Gives Random Walk Snails an additional 30% chance to go the right direction.",
+        price: 50_000,
         order: 2,
         mazeType: "random-walk",
         showAfter: 50,
@@ -113,11 +128,146 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Radium Mine",
         description: "A nearby radium mine leads to Learning Snails having a higher mutation rate.",
         icon: "⚛️",
-        price: 500_000,
+        price: 2_500_000,
         order: 0,
         mazeType: "learning",
+        showAfter: 50
+    },
+    "left-glove": {
+        name: "Left Glove",
+        description: "With a glove on its left hand, Hold Left Snail is able to move 20% faster.",
+        icon: "🫲",
+        price: 50_000,
+        order: 0,
+        mazeType: "hold-left",
+        showAfter: 5,
+    },
+    "right-handed-snail": {
+        name: "Right Handed Snail",
+        description: "Left Handed Snail recruits Right Handed Snail to help explore the maze faster.",
+        icon: "👉",
+        price: 1_000_000,
+        order: 1,
+        mazeType: "hold-left",
+        showAfter: 25,
+    },
+    "right-glove": {
+        name: "Right Glove",
+        description: "With a glove on its left hand, Hold Left Snail is able to move 20% faster.",
+        icon: "🫲",
+        price: 500_000,
+        order: 0,
+        mazeType: "inverted",
+        showAfter: 5,
+    },
+    "left-handed-snail": {
+        name: "Right Handed Snail",
+        description: "Right Handed Snail recruits Left Handed Snail to help explore the maze faster.",
+        icon: "👈",
+        price: 10_000_000,
+        order: 1,
+        mazeType: "inverted",
+        showAfter: 25,
+    },
+    "compass": {
+        name: "Compass",
+        description: "Using a compass, Segment Snail is able to make smarter decisions about where to go.",
+        icon: "🧭",
+        price: 10_000_000,
+        order: 0,
+        mazeType: "tremaux",
+        showAfter: 5,
+    },
+    "electromagnet": {
+        name: "Electromagnet",
+        description: "Segment Snail installs an electromagnet near the goal to make its compass more accurate.",
+        icon: "⚡",
+        price: 50_000_000,
+        order: 1,
+        mazeType: "tremaux",
+        showAfter: 25,
+    },
+    "breadcrumbs": {
+        name: "Breadcrumbs",
+        description: "The Segment Snail leaves breadcrumbs which allow it to backtrack twice as fast.",
+        icon: "🍞",
+        price: 500_000_000,
+        order: 2,
+        mazeType: "tremaux",
+        showAfter: 50,
+    },
+    "comradery": {
+        name: "Comradery",
+        description: "RPG Snail gets along better with its party, gains +10% for each member",
+        icon: "🫂",
+        price: 50_000_000,
+        order: 0,
+        mazeType: "rpg",
+        showAfter: 5
+    },
+    "sidequests": {
+        name: "Sidequests",
+        description: "RPG Snail goes on picks up any snails it runs into.",
+        icon: "🛡️",
+        price: 150_000_000,
+        order: 1,
+        mazeType: "rpg",
         showAfter: 25
     },
+    "recruitment": {
+        name: "Recruitment",
+        description: "Everyone comes to the RPG snail at once.",
+        icon: "⚔️",
+        price: 3_000_000_000,
+        order: 2,
+        mazeType: "rpg",
+        showAfter: 50
+    },
+    "forward-time-travel": {
+        name: "Forward Time Travel",
+        description: "Time Travel Snail moves 50% faster through time in the present.",
+        icon: "⏲️",
+        price: 250_000_000,
+        order: 0,
+        mazeType: "time-travel",
+        showAfter: 5
+    },
+    "improved-time-relay": {
+        name: "Improved Time Relay",
+        description: "Time Travel Snail moves 50% faster through time in the past.",
+        icon: "⏰",
+        price: 1_000_000_000,
+        order: 1,
+        mazeType: "time-travel",
+        showAfter: 25
+    },
+    "time-warp": {
+        name: "Time Warp",
+        description: "Time Travel Snail comes back to the present instantly.",
+        icon: "🕰️",
+        price: 20_000_000_000,
+        order: 2,
+        mazeType: "time-travel",
+        showAfter: 50
+    },
+    "self-improvement": {
+        name: "Self-Improvement",
+        description: "Cloning Snails improve themselves with each generation.",
+        icon: "🤖",
+        price: 2_000_000_000,
+        order: 0,
+        mazeType: "clone",
+        showAfter: 5
+    },
+    "singularity": {
+        name: "Singularity",
+        description: "Cloning Snails approach the singularity.",
+        icon: "🌎",
+        price: 100_000_000_000,
+        order: 1,
+        mazeType: "clone",
+        showAfter: 25
+    }
 }
 
 

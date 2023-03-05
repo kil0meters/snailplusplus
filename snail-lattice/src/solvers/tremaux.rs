@@ -71,24 +71,29 @@ impl Default for Mark {
     }
 }
 
+/// Segment Snail Upgrades:
+/// - Compass:       Using a compass, the segment snail can sometimes make smarter decisions about where to turn.
+/// - Electromagnet: Installs an electromagnet near the goal to make Segment Snails compass more accurate.
+/// - Breadcrumbs:   Segment Snail is twice as fast while backtracking.
+
 pub struct Tremaux<const S: usize>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     pub snail: Snail<S>,
     pub visited: HashMap<Vec2, Mark>,
+    is_backtracking: bool,
     upgrades: u32,
+    directions: [Direction; S * S],
     movement_time: usize,
-    pub finished: bool,
 }
 
 impl<const S: usize> Tremaux<S>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    pub fn set_movement_time(mut self, movement_time: usize) -> Self {
+    pub fn set_movement_time(&mut self, movement_time: usize) {
         self.movement_time = movement_time;
-        self
     }
 }
 
@@ -101,7 +106,8 @@ where
             snail: Snail::new(),
             visited: HashMap::new(),
             upgrades: 0,
-            finished: false,
+            directions: [Direction::Left; S * S],
+            is_backtracking: false,
             movement_time: SNAIL_MOVEMENT_TIME,
         }
     }
@@ -134,18 +140,20 @@ where
         );
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
-        if self.finished {
-            self.snail.reset();
-            self.visited.clear();
-            self.finished = false;
-        }
+    fn setup(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) {
+        self.snail.reset();
+        self.visited.clear();
+        self.directions = maze.get_directions(maze.end_pos);
+    }
 
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         let cell = maze.get_cell(self.snail.pos.x, self.snail.pos.y);
         let valid_directions = cell.valid_directions();
 
         // if in junction
         if valid_directions.len() > 2 {
+            self.is_backtracking = false;
+
             let mark = self.visited.entry(self.snail.pos).or_default();
             let back_direction = self.snail.direction.flip();
 
@@ -190,7 +198,16 @@ where
                     })
                     .collect();
 
-                self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
+                if choices.len() == 1 && mark.directions[choices[0] as usize] == 1 {
+                    self.is_backtracking = true;
+                }
+
+                let odds = (self.upgrades & 0b11) << 1;
+                if odds > 0 && lfsr.big() % 12 < odds as usize {
+                    self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];
+                } else {
+                    self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
+                }
             }
 
             // mark the direction the snail is now going
@@ -206,19 +223,19 @@ where
         // if at dead end
         else if valid_directions.len() == 1 {
             self.snail.direction = valid_directions[0];
+            self.is_backtracking = true;
         }
 
         self.snail.move_forward(maze);
 
-        if self.snail.pos == maze.end_pos {
-            self.finished = true;
-            true
-        } else {
-            false
-        }
+        self.snail.pos == maze.end_pos
     }
 
     fn movement_time(&self) -> usize {
-        self.movement_time
+        if self.is_backtracking && (self.upgrades & 0b100) != 0 {
+            self.movement_time / 2
+        } else {
+            self.movement_time
+        }
     }
 }

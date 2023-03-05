@@ -3,10 +3,15 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE, INVERTED_PALETTE},
+    snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
-    utils::{console_log, Vec2},
+    utils::Vec2,
 };
+
+/// RPG Snail Upgrades:
+/// - Comradery:   RPG Snail gets a 10% speed boost for each snail in its party.
+/// - Sidequests:  Any snail RPG Snail runs into is automatically added to its party.
+/// - Recruitment: The snails come to RPG snail on their own.
 
 pub struct Rpg<const S: usize>
 where
@@ -15,6 +20,7 @@ where
     party: Vec<Snail<S>>,
     lost: Vec<Snail<S>>,
     upgrades: u32,
+    directions: [Direction; S * S],
 
     current_sequence: Vec<Direction>,
 }
@@ -50,6 +56,7 @@ where
             party: vec![],
             lost: vec![],
 
+            directions: [Direction::Left; S * S],
             current_sequence: vec![],
             upgrades: 0,
         }
@@ -93,44 +100,92 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
-        if self.party.is_empty() && self.lost.is_empty() {
-            self.party.push(Snail::new());
-            self.generate_lost_snails(lfsr);
+    fn setup(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) {
+        self.lost.clear();
+        self.party.clear();
 
-            return true;
+        self.party.push(Snail::new());
+        self.generate_lost_snails(lfsr);
+
+        if (self.upgrades & 0b100) != 0 {
+            self.directions = maze.get_directions(Vec2 { x: 0, y: 0 });
         }
+    }
 
-        if self.current_sequence.is_empty() {
-            if let Some(last) = self.lost.last() {
-                self.current_sequence =
-                    maze.get_solve_sequence(self.party[0].pos.x, self.party[0].pos.y, last.pos);
-            } else {
-                self.current_sequence =
-                    maze.get_solve_sequence(self.party[0].pos.x, self.party[0].pos.y, maze.end_pos);
+    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+        // recruitment
+        if (self.upgrades & 0b100) != 0 && !self.lost.is_empty() {
+            if !(self.party[0].pos.x == 0 && self.party[0].pos.y == 0) {
+                self.setup(maze, lfsr);
+                return false;
             }
 
-            self.current_sequence.reverse();
-        }
+            for lost_snail in &mut self.lost {
+                lost_snail.direction = self.directions[lost_snail.pos.y * S + lost_snail.pos.x];
+                lost_snail.move_forward(maze);
+            }
 
-        match self.current_sequence.pop() {
-            Some(mut next_move) => {
-                let tmp = next_move;
-                next_move = self.party[0].direction;
-                self.party[0].direction = tmp;
-                self.party[0].move_forward(maze);
-                let mut next_pos = self.party[0].prev_pos;
+            let target_pos = self.party[0].pos;
 
-                for follower in self.party.iter_mut().skip(1) {
-                    let tmp = follower.direction;
-                    follower.direction = next_move;
-                    follower.prev_pos = follower.pos;
-                    follower.pos = next_pos;
-                    next_pos = follower.prev_pos;
-                    next_move = tmp;
+            // add any lost snails that are in the party
+            let new_snails = self.lost.drain_filter(|snail| snail.pos == target_pos);
+
+            for mut snail in new_snails {
+                snail.prev_pos = target_pos;
+                snail.pos = target_pos;
+                snail.direction = Direction::Right;
+                self.party.push(snail);
+            }
+        } else {
+            if self.current_sequence.is_empty() {
+                if let Some(last) = self.lost.last() {
+                    self.current_sequence =
+                        maze.get_solve_sequence(self.party[0].pos.x, self.party[0].pos.y, last.pos);
+                } else {
+                    self.current_sequence = maze.get_solve_sequence(
+                        self.party[0].pos.x,
+                        self.party[0].pos.y,
+                        maze.end_pos,
+                    );
                 }
 
-                if self.current_sequence.is_empty() {
+                self.current_sequence.reverse();
+            }
+
+            match self.current_sequence.pop() {
+                Some(mut next_move) => {
+                    let tmp = next_move;
+                    next_move = self.party[0].direction;
+                    self.party[0].direction = tmp;
+                    self.party[0].move_forward(maze);
+                    let mut next_pos = self.party[0].prev_pos;
+
+                    for follower in self.party.iter_mut().skip(1) {
+                        let tmp = follower.direction;
+                        follower.direction = next_move;
+                        follower.prev_pos = follower.pos;
+                        follower.pos = next_pos;
+                        next_pos = follower.prev_pos;
+                        next_move = tmp;
+                    }
+
+                    if self.current_sequence.is_empty() {
+                        if let Some(mut new_follower) = self.lost.pop() {
+                            new_follower.pos = self.party[0].prev_pos;
+                            self.party.push(new_follower);
+                        } else if !self.party.is_empty() {
+                            self.party.remove(0);
+                        }
+                    }
+
+                    // sidequests
+                    if (self.upgrades & 0b10) != 0 {
+                        let target_pos = self.party[0].pos;
+                        let new_followers = self.lost.drain_filter(|lost| lost.pos == target_pos);
+                        self.party.extend(new_followers);
+                    }
+                }
+                None => {
                     if let Some(mut new_follower) = self.lost.pop() {
                         new_follower.pos = self.party[0].prev_pos;
                         self.party.push(new_follower);
@@ -138,30 +193,22 @@ where
                         self.party.remove(0);
                     }
                 }
+            }
 
-                for (i, lost) in self.lost.iter().enumerate() {
-                    if self.party[0].pos == lost.pos {
-                        let mut new_follower = self.lost.remove(i);
-                        new_follower.pos = self.party[0].prev_pos;
-                        self.party.push(new_follower);
-                        break;
-                    }
-                }
+            if self.party.is_empty() && self.lost.is_empty() {
+                return true;
             }
-            None => {
-                if let Some(mut new_follower) = self.lost.pop() {
-                    new_follower.pos = self.party[0].prev_pos;
-                    self.party.push(new_follower);
-                } else if !self.party.is_empty() {
-                    self.party.remove(0);
-                }
-            }
-        };
+        }
 
         false
     }
 
     fn movement_time(&self) -> usize {
-        SNAIL_MOVEMENT_TIME
+        // Comradery
+        if (self.upgrades & 0b1) != 0 {
+            SNAIL_MOVEMENT_TIME * 10 / (9 + self.party.len())
+        } else {
+            SNAIL_MOVEMENT_TIME
+        }
     }
 }

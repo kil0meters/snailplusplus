@@ -421,7 +421,7 @@ export class InvertedLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        wasm.holdleftlattice_set_upgrades(this.ptr, upgrades);
+        wasm.invertedlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
     * @param {Uint8Array} buffer

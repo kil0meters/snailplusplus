@@ -9,8 +9,8 @@ use crate::{
 
 /// Random Walk Snail Upgrades:
 /// - Four Leaf Clover: Gives 10% chance to go the right way
-/// - Rabbit's Foot:    Gives an additional 10% to go the right way
-/// - Horseshoe:        Gives an additional 10% to go the right way
+/// - Rabbit's Foot:    Gives an additional 20% to go the right way
+/// - Horseshoe:        Gives an additional 30% to go the right way
 
 pub struct RandomWalk<const S: usize>
 where
@@ -63,8 +63,10 @@ where
 
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         // chance to move in the right direction based on the upgrades provided
-        let chance =
-            (self.upgrades & 0b1) + ((self.upgrades & 0b10) >> 1) + ((self.upgrades & 0b100) >> 2);
+        let chance = (self.upgrades & 0b1)
+            + (self.upgrades & 0b10)
+            + ((self.upgrades & 0b100) >> 1)
+            + ((self.upgrades & 0b100) >> 2);
 
         if (lfsr.big() % 10) < chance as usize {
             self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];

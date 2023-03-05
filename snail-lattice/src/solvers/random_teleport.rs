@@ -4,7 +4,7 @@ use crate::{
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
-    utils::{console_log, discrete_lerp, Vec2},
+    utils::{discrete_lerp, Vec2},
 };
 
 /// Random Teleport Snail Upgrades:
