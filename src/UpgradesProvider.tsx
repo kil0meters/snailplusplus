@@ -198,7 +198,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     },
     "comradery": {
         name: "Comradery",
-        description: "RPG Snail gets along better with its party, gains +10% for each member",
+        description: "RPG Snail gets along better with its party, gains +10% movement speed for each member",
         icon: "🫂",
         price: 50_000_000,
         order: 0,
