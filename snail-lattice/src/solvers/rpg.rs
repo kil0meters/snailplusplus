@@ -179,7 +179,7 @@ where
                     }
 
                     // sidequests
-                    if (self.upgrades & 0b10) != 0 {
+                    if (self.upgrades & 0b10) != 0 && !self.party.is_empty() {
                         let target_pos = self.party[0].pos;
                         let new_followers = self.lost.drain_filter(|lost| lost.pos == target_pos);
                         self.party.extend(new_followers);
