@@ -153,7 +153,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     },
     "right-glove": {
         name: "Right Glove",
-        description: "With a glove on its left hand, Hold Left Snail is able to move 20% faster.",
+        description: "With a glove on its right hand, Hold Right Snail is able to move 20% faster.",
         icon: "🫲",
         price: 500_000,
         order: 0,
