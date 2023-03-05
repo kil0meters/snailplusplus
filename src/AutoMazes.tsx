@@ -2,14 +2,14 @@ import { Component, createEffect, createSignal, For, onCleanup, onMount, untrack
 import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
 import { ScoreContext } from "./ScoreProvider";
 import { createStoredSignal } from "./utils";
-import { latticePostMessage, LATTICE_WORKER_STORE } from "./Game";
+import { latticePostMessage, LATTICES_FILLED, LATTICE_WORKER_STORE } from "./Game";
 import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
 import { SnailInfoContext } from "./SnailInfoProvider";
 import { AverageContext } from "./AverageProvider";
 
 // this saves an insane amount of gc time
-const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
+const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, collapsed: boolean }> = (props) => {
     let container: HTMLDivElement;
     let visibleIndexes = new Set([]);
     let worker = LATTICE_WORKER_STORE[props.key];
@@ -116,6 +116,8 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
             } else if (data.type == "lattice-updated") {
                 const { height, width, latticeCount } = data;
 
+                if (latticeCount == 0) return;
+
                 bufferDimensions.width = width;
                 bufferDimensions.height = height;
 
@@ -176,7 +178,12 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
     });
 
     createEffect(() => {
+
+    });
+
+    createEffect(() => {
         props.latticeWidth;
+        props.collapsed;
 
         worker.removeEventListener("message", workerOnMessage);
 
@@ -184,15 +191,11 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
         worker = LATTICE_WORKER_STORE[props.key];
         worker.addEventListener("message", workerOnMessage);
 
-        if (firstRender) {
-            firstRender = false;
-        } else {
-            worker.postMessage({ type: "set-width", width: props.latticeWidth });
-        }
+        worker.postMessage({ type: "set-width", width: props.latticeWidth });
     });
 
     const mazeSize = () => container.getBoundingClientRect().width / props.latticeWidth;
-    const [snailInfo, setSnailInfo] = useContext(SnailInfoContext)
+    const [snailInfo, _setSnailInfo] = useContext(SnailInfoContext)
 
     // surely linearly searching ~10 elements 4 times isn't a big deal
     const thisSnailInfo = () => snailInfo.find((x) => x.key == props.key);
@@ -238,6 +241,7 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
     let mazeDisplay: HTMLDivElement;
     const [latticeWidth, setLatticeWidth] = createSignal(SHOP[props.key].latticeWidth);
     const [averages, setAverages] = useContext(AverageContext);
+    const [collapsed, setCollapsed] = createSignal(false);
 
     let intervalId: number;
 
@@ -270,6 +274,10 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
                 </div>
 
                 <div class="text-center ml-auto flex my-auto">
+                    <button class="text-lg font-display font-bold mr-4 px-4 py-2 hover:bg-white hover:text-black transition-colors w-20" onclick={() => setCollapsed((collapsed) => !collapsed)}>
+                        {collapsed() ? "Show" : "Hide"}
+                    </button>
+
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>
                     <p class="bg-white text-black p-2">{latticeWidth()}</p>
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.min(x + 1, 12))}>+</button>
@@ -293,9 +301,10 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
                 </div>
             </dt>
 
-            <dd class="p-2 h-full w-full bg-[#068fef]">
-                <SnailLatticeElement key={props.key} count={props.count} latticeWidth={latticeWidth()} />
-            </dd>
+            {!collapsed() &&
+                <dd class="p-2 h-full w-full bg-[#068fef]">
+                    <SnailLatticeElement key={props.key} count={props.count} latticeWidth={latticeWidth()} collapsed={collapsed()} />
+                </dd>}
         </div >
     );
 }

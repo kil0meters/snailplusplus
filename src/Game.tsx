@@ -16,6 +16,7 @@ import { NAMES } from "../assets/names";
 
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
 
+export let LATTICES_FILLED = false;
 export const LATTICE_WORKER_STORE: { [key in ShopKey]: Worker } = {
     "clone": new LatticeWorker(),
     "hold-left": new LatticeWorker(),
@@ -140,7 +141,6 @@ const Game: Component = () => {
 
     onMount(() => {
         shop.forEach(({ key, count }) => {
-            console.log(key);
             LATTICE_WORKER_STORE[key].postMessage({ type: "setup", mazeType: key });
             LATTICE_WORKER_STORE[key].postMessage({ type: "alter", diff: count });
             LATTICE_WORKER_STORE[key].addEventListener("message", setScoreListener)
