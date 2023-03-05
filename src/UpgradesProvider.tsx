@@ -207,7 +207,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     },
     "sidequests": {
         name: "Sidequests",
-        description: "RPG Snail goes on picks up any snails it runs into.",
+        description: "RPG Snail picks up any snails it runs into.",
         icon: "🛡️",
         price: 150_000_000,
         order: 1,
