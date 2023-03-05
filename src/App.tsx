@@ -49,7 +49,7 @@ const App: Component = () => {
                     <UpgradesProvider>
                         <ShopProvider>
                             <ScoreProvider>
-                                <div class='h-screen grid'>
+                                <div class='h-screen grid overflow-hidden'>
                                     {gameStarted() ? (
                                         <Game />
                                     ) : (

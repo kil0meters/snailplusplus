@@ -203,11 +203,26 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
         return dateFormatter.format(date);
     };
 
+    let snailInfoElement: HTMLDivElement;
+
+    const snailInfoLeft = () => {
+        return (focusedIndex() % props.latticeWidth + 0.5) * mazeSize() + container.getBoundingClientRect().left;
+    };
+
+    const snailInfoTop = () => {
+        let underMaze = (1 + Math.floor(focusedIndex() / props.latticeWidth)) * mazeSize() + 4 + container.getBoundingClientRect().top;
+        let body = document.querySelector("body").getBoundingClientRect();
+        let maxHeight = body.height - 108;
+
+        return Math.min(maxHeight, underMaze);
+    }
+
     return (
         <div ref={container} class={`flex items-center justify-center w-full flex-col`}>
-            {focusedIndex() !== null && <div class="z-50 flex flex-col bg-black p-4 border-2 border-white shadow-md absolute text-white font-display" style={{
-                top: `${(1 + Math.floor(focusedIndex() / props.latticeWidth)) * mazeSize() + 4 + container.getBoundingClientRect().top}px`,
-                left: `${(focusedIndex() % props.latticeWidth + 0.5) * mazeSize() + container.getBoundingClientRect().left}px`,
+            {focusedIndex() !== null && <div ref={snailInfoElement} class="z-50 flex flex-col bg-black p-4 border-2 border-white shadow-md absolute text-white font-display" style={{
+                height: "108px",
+                top: `${snailInfoTop()}px`,
+                left: `${snailInfoLeft()}px`,
                 transform: "translateX(-50%)"
             }}>
                 <b>{thisSnailInfo().names[focusedIndex()]}</b>
