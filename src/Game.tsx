@@ -12,8 +12,8 @@ import { PowerupContext } from './App';
 import { SnailInfoContext } from './SnailInfoProvider';
 import { Upgrade, UpgradeKey, UPGRADES, UpgradesContext } from './UpgradesProvider';
 import { AverageContext } from './AverageProvider';
+import { NAMES } from "../assets/names";
 
-export const NAMES: string[] = await (await fetch('/assets/names.json')).json();
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
 
 export const LATTICE_WORKER_STORE: { [key in ShopKey]: Worker } = {

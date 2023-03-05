@@ -1,6 +1,7 @@
 import { children, Component, createSignal, For, JSX, onCleanup, onMount, useContext } from "solid-js";
 import { produce } from 'solid-js/store';
-import { LATTICE_WORKER_STORE, NAMES } from "./Game";
+import { NAMES } from "../assets/names";
+import { LATTICE_WORKER_STORE } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
 import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { SnailInfoContext } from "./SnailInfoProvider";
