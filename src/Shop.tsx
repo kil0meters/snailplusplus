@@ -71,7 +71,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
     );
 }
 
-const UpgradeListing: Component<Upgrade> = (props) => {
+const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
     const [upgrades, setUpgrades] = useContext(UpgradesContext);
     const [hover, setHover] = createSignal(false);
@@ -82,7 +82,7 @@ const UpgradeListing: Component<Upgrade> = (props) => {
     const formattedPrice = () => fmt.format(upgrade().price);
 
     const buy = () => {
-        if (!props.owned && (score() >= upgrade().price || document["devmode"])) {
+        if (!props.owned && props.canBuy && (score() >= upgrade().price || document["devmode"])) {
             if (!document["devmode"])
                 setScore(score() - upgrade().price)
 
@@ -99,19 +99,24 @@ const UpgradeListing: Component<Upgrade> = (props) => {
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             onClick={buy}
-            class={`p-1 aspect-square ${props.owned ? "cursor-default" : ""}`}
+            class={`p-1 aspect-square ${props.owned || !props.canBuy ? "cursor-default" : ""}`}
         >
             <div
                 class={
-                    `aspect-square flex items-center justify-center border-4 border-black p-2 transition-all outline-black outline outline-0 hover:outline-4 ${props.owned ? "bg-black" : "bg-white"}`
+                    `aspect-square flex items-center justify-center border-4 p-2 transition-all outline-black outline outline-0 ${props.owned ? "bg-black" : "bg-white"} ${props.canBuy ? "border-black hover:outline-4" : "bg-neutral-200"}`
                 }
             >
                 {upgrade().icon}
 
                 {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
-                    <span class="font-bold text-lg">{upgrade().name}</span>
-                    {!props.owned && <span>{formattedPrice()} fragments</span>}
-                    <span>{upgrade().description}</span>
+                    {props.canBuy ? <>
+                        <span class="font-bold text-lg">{upgrade().name}</span>
+                        {!props.owned && <span>{formattedPrice()} fragments</span>}
+                        <span>{upgrade().description}</span>
+                    </> : <>
+                        <span class="font-bold text-lg italic">{upgrade().name}</span>
+                        <span class="italic">Unlocks after {upgrade().showAfter} {SHOP[upgrade().mazeType].name}s.</span>
+                    </>}
                 </ShopDescription>}
             </div>
         </button>
@@ -208,6 +213,7 @@ const Shop: Component<{ class?: string }> = (props) => {
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
+                            canBuy={true}
                         />
                     }</For>
                 </div>
@@ -216,6 +222,15 @@ const Shop: Component<{ class?: string }> = (props) => {
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
+                            canBuy={true}
+                        />
+                    }</For>
+
+                    <For each={upgrades.filter((upgrade) => !upgrade.owned && shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType).count < UPGRADES[upgrade.key].showAfter)}>{item =>
+                        <UpgradeListing
+                            key={item.key}
+                            owned={item.owned}
+                            canBuy={false}
                         />
                     }</For>
                 </div>
