@@ -2,7 +2,7 @@ import { Component, createContext, JSX } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
 import { createLocalStore } from "./utils";
 
-export const SHOP_KEYS = ["random-walk", "random-teleport", "hold-left", "tremaux", "clone", "time-travel", "learning", "rpg", "meta", "inverted"] as const;
+export const SHOP_KEYS = ["random-walk", "random-teleport", "learning", "hold-left", "inverted", "tremaux", "rpg", "time-travel", "clone", "meta"] as const;
 export type ShopKey = typeof SHOP_KEYS[number];
 
 export interface ShopItem {
@@ -117,6 +117,10 @@ const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
             break;
         }
     }
+
+    let newShop = [...shop];
+    newShop.sort((a, b) => SHOP_KEYS.indexOf(a.key) - SHOP_KEYS.indexOf(b.key));
+    setShop(newShop);
 
     return (
         <ShopContext.Provider value={[shop, setShop]}>
