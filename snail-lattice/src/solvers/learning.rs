@@ -106,6 +106,7 @@ where
     generation_count: usize,
     fitness: usize,
     distances: [usize; S * S],
+    upgrades: u32,
     solve_sequence: Vec<Direction>,
     new_maze: bool,
 }
@@ -121,9 +122,14 @@ where
             generation_timer: 0,
             distances: [0; S * S],
             solve_sequence: Vec::new(),
+            upgrades: 0,
             fitness: 0,
             new_maze: true,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn draw(

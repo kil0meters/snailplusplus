@@ -10,6 +10,8 @@ import LatticeWorker from './latticeWorker.ts?worker';
 import { SHOP, ShopContext, ShopKey, SHOP_KEYS } from './ShopProvider';
 import { PowerupContext } from './App';
 import { SnailInfoContext } from './SnailInfoProvider';
+import { Upgrade, UpgradeKey, UPGRADES, UpgradesContext } from './UpgradesProvider';
+import { AverageContext } from './AverageProvider';
 
 export const NAMES: string[] = await (await fetch('/assets/names.json')).json();
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
@@ -39,8 +41,6 @@ const Determination: Component = () => {
     let intervalId = 0;
 
     createEffect(() => {
-        console.log("this code is run");
-        console.log(`${JSON.stringify(powerup)}`);
         clearInterval(intervalId);
         if (powerup.active) {
             setTickRate(powerup.multiplier);
@@ -76,6 +76,25 @@ const Determination: Component = () => {
     </>;
 }
 
+function setUpgradeNumbers(upgrades: Upgrade[]) {
+    let upgradeNumbers = new Map<ShopKey, number>();
+
+    for (let i = 0; i < upgrades.length; i++) {
+        if (upgrades[i].owned) {
+            let upgrade = UPGRADES[upgrades[i].key];
+            if (!upgradeNumbers[upgrade.mazeType]) {
+                upgradeNumbers[upgrade.mazeType] = 1 << upgrade.order;
+            } else {
+                upgradeNumbers[upgrade.mazeType] |= 1 << upgrade.order;
+            }
+        }
+    }
+
+    for (let key of SHOP_KEYS) {
+        latticePostMessage(LATTICE_WORKER_STORE[key], { type: "set-upgrades", upgrades: upgradeNumbers[key] });
+    }
+}
+
 const Game: Component = () => {
     const [score, setScore] = useContext(ScoreContext);
     const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
@@ -84,13 +103,16 @@ const Game: Component = () => {
     const [shop, _] = useContext(ShopContext);
     const [powerup, setPowerup] = useContext(PowerupContext);
     const [menuShown, setMenuShown] = createSignal(false);
+    const [upgrades, _setUpgrades] = useContext(UpgradesContext);
+    const [averages, setAverages] = useContext(AverageContext);
 
     const [displayedScore, setDisplayedScore] = createSignal(score());
 
     const setScoreListener = (event: MessageEvent<LatticeWorkerResponse>) => {
         let msg = event.data;
         if (msg.type === "score") { // idk why type inferrence doesn't work here
-            setScore(oldScore => oldScore + (SHOP[msg.mazeType].baseMultiplier * msg.score));
+            let addedScore = SHOP[msg.mazeType].baseMultiplier * msg.score;
+            setScore(oldScore => oldScore + addedScore);
             setSnailInfo(
                 (info) => info.key == msg.mazeType,
                 produce((info) => {
@@ -99,8 +121,22 @@ const Game: Component = () => {
                     }
                 })
             );
+
+            setAverages(
+                (average) => average.key == msg.mazeType,
+                "count",
+                (count) => count + addedScore,
+            );
         }
     };
+
+    setInterval(() => {
+        setAverages(
+            () => true,
+            "seconds",
+            (seconds) => seconds + 1,
+        );
+    }, 1000);
 
     onMount(() => {
         shop.forEach(({ key, count }) => {
@@ -121,6 +157,7 @@ const Game: Component = () => {
                 })
             );
         });
+        setUpgradeNumbers(upgrades);
     });
 
     onCleanup(() => {
@@ -128,6 +165,9 @@ const Game: Component = () => {
             LATTICE_WORKER_STORE[key].terminate()
         );
     })
+
+    createEffect(() => setUpgradeNumbers(upgrades));
+
 
     createEffect(() => {
         let difference = score() - untrack(displayedScore);
@@ -154,13 +194,25 @@ const Game: Component = () => {
     const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
     const formattedScore = () => fmt.format(displayedScore());
 
+    const fragmentsPerSecond = () => {
+        let totalCount = 0;
+        let seconds = averages[0].seconds;
+
+        for (let i = 0; i < averages.length; i++) {
+            totalCount += averages[i].count;
+        }
+
+        return fmt.format(totalCount / seconds);
+    };
+
     return <>
         <Determination />
         <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] md:overflow-auto lg:overflow-hidden md:max-h-screen bg-[#068fef]'>
             <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-0 pb-16 lg:pb-0 md:overflow-auto'>
                 <div class='lg:border-r-2 border-black flex flex-col'>
-                    <div class='p-8 bg-black flex justify-center h-[128px] content-center'>
-                        <span class='text-2xl text-center font-extrabold font-pixelated text-white my-auto'>{formattedScore()} fragments</span>
+                    <div class='p-8 bg-black flex flex-col justify-center h-[128px] content-center text-white font-display'>
+                        <span class='text-3xl text-center font-extrabold my-auto'>{formattedScore()} fragments</span>
+                        <span class='text-lg text-center'>{fragmentsPerSecond()} fragments/second</span>
                         <button
                             class='font-display select-none font-bold bg-white absolute md:hidden right-5 my-auto mt-2 px-4 py-2 rounded-md shadow-md border-2 border-black hover:bg-neutral-200 transition-colors'
                             onclick={() => setMenuShown((shown) => !shown)}

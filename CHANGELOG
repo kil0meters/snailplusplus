@@ -1,3 +1,4 @@
 next:
 - Snails now have names, and track how many mazes they've solved
 - RPG snail now picks up any snail it runs into
+- Average fragments per second is now reported both globally and per snail

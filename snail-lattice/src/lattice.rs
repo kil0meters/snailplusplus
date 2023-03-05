@@ -28,6 +28,7 @@ pub trait TilableMaze {
 
     fn new() -> Self;
     fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize;
+    fn set_upgrades(&mut self, upgrades: u32);
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize);
     fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize);
     fn generate(&mut self, lfsr: &mut LFSR);
@@ -40,6 +41,7 @@ where
     width: usize,
     mazes: Vec<LatticeElement>,
     lfsr: LFSR,
+    upgrades: u32,
 
     // stores the number of mazes solved by a given maze since the last query
     solve_count: Vec<u32>,
@@ -59,6 +61,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
         let mut lattice = SnailLattice::<LatticeElement> {
             width,
+            upgrades: 0,
             mazes: Vec::new(),
             lfsr: LFSR::new(seed),
             solve_count: Vec::new(),
@@ -167,6 +170,13 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         }
     }
 
+    pub fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
+        for maze in &mut self.mazes {
+            maze.set_upgrades(self.upgrades);
+        }
+    }
+
     pub fn set_width(&mut self, width: usize) {
         self.width = width;
 
@@ -220,6 +230,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
             for _ in 0..difference {
                 let mut new_maze = LatticeElement::new();
+                new_maze.set_upgrades(self.upgrades);
                 new_maze.generate(&mut self.lfsr);
 
                 // offset time slightly
@@ -264,6 +275,8 @@ impl TilableMaze for MetaMaze {
             rpg: AutoMaze::new(),
         }
     }
+
+    fn set_upgrades(&mut self, _upgrades: u32) {}
 
     fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
         let mut total = 0;
@@ -340,6 +353,11 @@ macro_rules! lattice_impl {
             #[wasm_bindgen]
             pub fn get_solve_count(&mut self) -> Vec<u32> {
                 self.0.get_solve_count()
+            }
+
+            #[wasm_bindgen]
+            pub fn set_upgrades(&mut self, upgrades: u32) {
+                self.0.set_upgrades(upgrades);
             }
 
             #[wasm_bindgen]

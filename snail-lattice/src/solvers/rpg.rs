@@ -14,6 +14,7 @@ where
 {
     party: Vec<Snail<S>>,
     lost: Vec<Snail<S>>,
+    upgrades: u32,
 
     current_sequence: Vec<Direction>,
 }
@@ -50,7 +51,12 @@ where
             lost: vec![],
 
             current_sequence: vec![],
+            upgrades: 0,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn draw(

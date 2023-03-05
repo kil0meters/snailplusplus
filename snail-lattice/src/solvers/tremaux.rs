@@ -77,6 +77,7 @@ where
 {
     pub snail: Snail<S>,
     pub visited: HashMap<Vec2, Mark>,
+    upgrades: u32,
     movement_time: usize,
     pub finished: bool,
 }
@@ -99,9 +100,14 @@ where
         Tremaux {
             snail: Snail::new(),
             visited: HashMap::new(),
+            upgrades: 0,
             finished: false,
             movement_time: SNAIL_MOVEMENT_TIME,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn draw(

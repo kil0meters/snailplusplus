@@ -6,6 +6,7 @@ import { latticePostMessage, LATTICE_WORKER_STORE } from "./Game";
 import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
 import { SnailInfoContext } from "./SnailInfoProvider";
+import { AverageContext } from "./AverageProvider";
 
 // this saves an insane amount of gc time
 const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (props) => {
@@ -221,6 +222,7 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number }> = (
 const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
     let mazeDisplay: HTMLDivElement;
     const [latticeWidth, setLatticeWidth] = createSignal(SHOP[props.key].latticeWidth);
+    const [averages, setAverages] = useContext(AverageContext);
 
     let intervalId: number;
 
@@ -236,13 +238,21 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
         removeEventListener('fullscreenchange', togglefullscreen);
     });
 
+    const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
+    const averageFps = () => {
+        let average = averages.find((x) => x.key == props.key);
+        return fmt.format(average.count / average.seconds);
+    };
 
     return (
         <div class="w-full" ref={mazeDisplay}>
             <dt class="sticky z-10 top-0 p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-x-auto">
-                <span class="bg-black text-lg md:text-2xl my-auto p-2 hover:bg-white hover:text-black transition-colors font-display font-bold">
-                    {SHOP[props.key].name}
-                </span>
+                <div class="flex-col flex font-display">
+                    <span class="bg-black text-lg md:text-2xl my-auto font-bold">
+                        {SHOP[props.key].name}
+                    </span>
+                    <span>{averageFps} fragments/second</span>
+                </div>
 
                 <div class="text-center ml-auto flex my-auto">
                     <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>

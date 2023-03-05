@@ -1,8 +1,12 @@
 use std::{collections::VecDeque, mem::size_of};
 
 use crate::{
-    direction::Direction, image::Image, lattice::TilableMaze, lfsr::LFSR, solvers::Solver,
-    utils::Vec2,
+    direction::Direction,
+    image::Image,
+    lattice::TilableMaze,
+    lfsr::LFSR,
+    solvers::Solver,
+    utils::{console_log, Vec2},
 };
 
 pub const SNAIL_MOVEMENT_TIME: usize = 250000;
@@ -87,12 +91,16 @@ where
         for _ in 0..num_movements {
             if self.solver.step(&self.maze, lfsr) {
                 total += S * S;
-                self.maze.generate(lfsr);
+                self.generate(lfsr);
                 self.movement_timer = movement_time;
             }
         }
 
         total
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.solver.set_upgrades(upgrades);
     }
 
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
@@ -112,6 +120,7 @@ where
 
     fn generate(&mut self, lfsr: &mut LFSR) {
         self.maze.generate(lfsr);
+        self.solver.setup(&self.maze, lfsr);
     }
 }
 
@@ -225,58 +234,67 @@ where
         }
     }
 
-    pub fn get_solve_sequence(&self, x: usize, y: usize, target: Vec2) -> Vec<Direction> {
-        let mut queue = VecDeque::new();
-        let mut visited = [None; S * S];
+    pub fn get_directions(&self, source: Vec2) -> [Direction; S * S] {
+        let mut visited = [false; S * S];
+        let mut directions = [Direction::Left; S * S];
 
-        queue.push_back((target.x, target.y));
+        let mut queue = VecDeque::new();
+        queue.push_back((source.x, source.y));
 
         while let Some((x, y)) = queue.pop_front() {
             let cell = self.get_cell(x, y);
-            if !cell.has_wall(Direction::Up) && visited[(y - 1) * S + x].is_none() {
+            if !cell.has_wall(Direction::Up) && !visited[(y - 1) * S + x] {
                 queue.push_back((x, y - 1));
-                visited[(y - 1) * S + x] = Some(Direction::Up);
+                visited[(y - 1) * S + x] = true;
+                directions[(y - 1) * S + x] = Direction::Down;
             }
 
-            if !cell.has_wall(Direction::Down) && visited[(y + 1) * S + x].is_none() {
+            if !cell.has_wall(Direction::Down) && !visited[(y + 1) * S + x] {
                 queue.push_back((x, y + 1));
-                visited[(y + 1) * S + x] = Some(Direction::Down);
+                visited[(y + 1) * S + x] = true;
+                directions[(y + 1) * S + x] = Direction::Up;
             }
 
-            if !cell.has_wall(Direction::Left) && visited[y * S + x - 1].is_none() {
+            if !cell.has_wall(Direction::Left) && !visited[y * S + x - 1] {
                 queue.push_back((x - 1, y));
-                visited[y * S + x - 1] = Some(Direction::Left);
+                visited[y * S + x - 1] = true;
+                directions[y * S + x - 1] = Direction::Right;
             }
 
-            if !cell.has_wall(Direction::Right) && visited[y * S + x + 1].is_none() {
+            if !cell.has_wall(Direction::Right) && !visited[y * S + x + 1] {
                 queue.push_back((x + 1, y));
-                visited[y * S + x + 1] = Some(Direction::Right);
+                visited[y * S + x + 1] = true;
+                directions[y * S + x + 1] = Direction::Left;
             }
         }
 
-        let mut pos = Vec2 { x, y };
+        directions
+    }
 
+    pub fn get_solve_sequence(&self, x: usize, y: usize, target: Vec2) -> Vec<Direction> {
+        let directions = self.get_directions(target);
+
+        let mut pos = Vec2 { x, y };
         let mut moves = vec![];
 
         while pos != target {
-            match visited[pos.y * S + pos.x] {
-                Some(Direction::Up) => {
-                    pos.y += 1;
-                    moves.push(Direction::Down);
-                }
-                Some(Direction::Down) => {
+            match directions[pos.y * S + pos.x] {
+                Direction::Up => {
                     pos.y -= 1;
                     moves.push(Direction::Up);
                 }
-                Some(Direction::Left) => {
-                    pos.x += 1;
-                    moves.push(Direction::Right);
+                Direction::Down => {
+                    pos.y += 1;
+                    moves.push(Direction::Down);
                 }
-                Some(Direction::Right) => {
+                Direction::Left => {
                     pos.x -= 1;
                     moves.push(Direction::Left);
                 }
-                None => unreachable!(),
+                Direction::Right => {
+                    pos.x += 1;
+                    moves.push(Direction::Right);
+                }
             }
         }
 

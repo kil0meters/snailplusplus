@@ -9,6 +9,7 @@ interface SnailLattice {
     count: () => number;
     get_dimensions: (count: number) => Uint32Array;
     get_solve_count: () => Uint32Array;
+    set_upgrades: (upgrades: number) => void;
     set_width: (width: number) => void;
 }
 
@@ -51,6 +52,10 @@ class LatticeList<T extends SnailLattice> {
 
     getSolveCount(): Uint32Array {
         return this.lattice.get_solve_count();
+    }
+
+    setUpgrades(upgrades: number) {
+        this.lattice.set_upgrades(upgrades);
     }
 
     // tick everything
@@ -112,6 +117,7 @@ export type LatticeWorkerMessage =
     | { type: "set-tick-rate", rate: number }
     | { type: "render", pages: { page: number, buffer: Uint8ClampedArray }[] }
     | { type: "reset" }
+    | { type: "set-upgrades", upgrades: number }
     | { type: "alter", diff: number }
     | { type: "get-count" };
 
@@ -205,6 +211,10 @@ function processMessage(msg: LatticeWorkerMessage) {
         case "set-tick-rate":
             if (!LATTICE) messageQueue.push(msg);
             else LATTICE.setTickRate(msg.rate);
+            break;
+        case "set-upgrades":
+            if (!LATTICE) messageQueue.push(msg);
+            else LATTICE.setUpgrades(msg.upgrades);
             break;
         case "alter":
             if (!LATTICE) messageQueue.push(msg);

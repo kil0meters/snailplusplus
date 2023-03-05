@@ -12,6 +12,7 @@ where
 {
     active_snails: Vec<Snail<S>>,
     inactive_snails: Vec<Snail<S>>,
+    upgrades: u32,
 }
 
 impl<const S: usize> Clones<S>
@@ -32,7 +33,12 @@ where
         Clones {
             active_snails: vec![Snail::new()],
             inactive_snails: vec![],
+            upgrades: 0,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn draw(

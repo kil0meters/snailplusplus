@@ -194,6 +194,12 @@ export class CloneLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.clonelattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -298,6 +304,12 @@ export class HoldLeftLattice {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.holdleftlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
     * @param {Uint8Array} buffer
@@ -406,6 +418,12 @@ export class InvertedLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.holdleftlattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -512,6 +530,12 @@ export class LearningLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.learninglattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -616,6 +640,12 @@ export class MetaLattice {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.metalattice_set_upgrades(this.ptr, upgrades);
     }
     /**
     * @param {Uint8Array} buffer
@@ -740,6 +770,12 @@ export class RandomTeleportLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.randomteleportlattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -844,6 +880,12 @@ export class RandomWalkLattice {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.randomwalklattice_set_upgrades(this.ptr, upgrades);
     }
     /**
     * @param {Uint8Array} buffer
@@ -952,6 +994,12 @@ export class RpgLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.rpglattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -1058,6 +1106,12 @@ export class TimeTravelLattice {
         }
     }
     /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.timetravellattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {number} index
     * @param {number} count
@@ -1162,6 +1216,12 @@ export class TremauxLattice {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.tremauxlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
     * @param {Uint8Array} buffer

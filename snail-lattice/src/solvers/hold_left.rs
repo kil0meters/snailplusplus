@@ -11,6 +11,7 @@ where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
+    upgrades: u32,
 }
 
 impl<const S: usize> Solver<S> for HoldLeft<S>
@@ -20,7 +21,12 @@ where
     fn new() -> Self {
         HoldLeft {
             snail: Snail::new(),
+            upgrades: 0,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn draw(

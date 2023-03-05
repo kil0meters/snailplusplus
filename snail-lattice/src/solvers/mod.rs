@@ -42,6 +42,11 @@ where
         by: usize,
     );
 
+    fn set_upgrades(&mut self, upgrades: u32);
+
+    // run upon maze generation
+    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {}
+
     // returns true if the step solved the maze
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool;
 

@@ -1,12 +1,12 @@
-import { Component, createSignal, For, onCleanup, onMount, useContext } from "solid-js";
+import { children, Component, createSignal, For, JSX, onCleanup, onMount, useContext } from "solid-js";
 import { produce } from 'solid-js/store';
 import { LATTICE_WORKER_STORE, NAMES } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
 import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { SnailInfoContext } from "./SnailInfoProvider";
-import { Upgrade, upgrades, UpgradesContext } from "./UpgradesProvider";
+import { Upgrade, UPGRADES, UpgradesContext } from "./UpgradesProvider";
 
-const PRICE_SCALER = 1.15;
+const PRICE_SCALER = 1.13;
 
 document["devmode"] = false;
 
@@ -39,7 +39,6 @@ const ShopListingElement: Component<ShopListing> = (props) => {
                         })
                     );
 
-
                     return count + 1;
                 }
             );
@@ -64,60 +63,82 @@ const ShopListingElement: Component<ShopListing> = (props) => {
 
             {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
 
-            {hover() && <ShopDescription onMouseEnter={() => setHover(false)} title={SHOP[props.key].name} description={SHOP[props.key].description} fragmentsPerSecond={SHOP[props.key].fragmentsPerSecond} />}
+            {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
+                <MazeDescription title={SHOP[props.key].name} description={SHOP[props.key].description} fragmentsPerSecond={SHOP[props.key].fragmentsPerSecond} />
+            </ShopDescription>}
         </button>
     );
 }
 
-// const UpgradeListing: Component<Upgrade> = (props) => {
-//     const [score, setScore] = useContext(ScoreContext);
-//     const [_shop, setUpgrades] = useContext(UpgradesContext);
-//     const [hover, setHover] = createSignal(false);
-//
-//
-//     return;
-//     let upgrade = upgrades[props.key];
-//
-//     const buy = () => {
-//         if (props.owned) {
-//             setScore(score() + upgrade.price)
-//             setUpgrades(
-//                 (item) => item.key === props.key,
-//                 "owned",
-//                 () => false
-//             );
-//         } else {
-//             if (score() >= upgrade.price) {
-//                 setScore(score() - upgrade.price)
-//                 setUpgrades(
-//                     (item) => item.key === props.key,
-//                     "owned",
-//                     () => true
-//                 );
-//             }
-//         }
-//     };
-//
-//     return <>
-//         <button
-//             onMouseEnter={() => setHover(true)}
-//             onMouseLeave={() => setHover(false)}
-//             onClick={buy}
-//             class={
-//                 `border-4 border-black p-2 transition-all outline-black outline outline-0 hover:outline-4 ${props.owned ? "bg-black text-white" : "bg-white text-black"}`
-//             }>
-//             {upgrade.name}
-//
-//             {hover() && <ShopDescription title={upgrade.name} description={upgrade.description} />}
-//         </button>
-//     </>
-// }
+const UpgradeListing: Component<Upgrade> = (props) => {
+    const [score, setScore] = useContext(ScoreContext);
+    const [upgrades, setUpgrades] = useContext(UpgradesContext);
+    const [hover, setHover] = createSignal(false);
 
-const ShopDescription: Component<{
-    onMouseEnter: () => void,
+    const upgrade = () => UPGRADES[props.key];
+
+    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
+    const formattedPrice = () => fmt.format(upgrade().price);
+
+    const buy = () => {
+        if (!props.owned && (score() >= upgrade().price || document["devmode"])) {
+            if (!document["devmode"])
+                setScore(score() - upgrade().price)
+
+            setUpgrades(
+                (item) => item.key === props.key,
+                "owned",
+                () => true
+            );
+        }
+    };
+
+    return (
+        <button
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            onClick={buy}
+            class={`p-1 aspect-square ${props.owned ? "cursor-default" : ""}`}
+        >
+            <div
+                class={
+                    `aspect-square flex items-center justify-center border-4 border-black p-2 transition-all outline-black outline outline-0 hover:outline-4 ${props.owned ? "bg-black" : "bg-white"}`
+                }
+            >
+                {upgrade().icon}
+
+                {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
+                    <span class="font-bold text-lg">{upgrade().name}</span>
+                    {!props.owned && <span>{formattedPrice()} fragments</span>}
+                    <span>{upgrade().description}</span>
+                </ShopDescription>}
+            </div>
+        </button>
+    );
+}
+
+const MazeDescription: Component<{
     title: string,
     description: string,
     fragmentsPerSecond?: number
+}> = (props) => {
+    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
+    const formattedFragments = () => fmt.format(props.fragmentsPerSecond);
+
+    return <>
+        <h1 class="font-extrabold text-lg">{props.title}</h1>
+
+        {props.fragmentsPerSecond && <div class="mb-2">
+            <span class="text-sm">avg. {formattedFragments()} fragments/second</span>
+        </div>}
+
+        <span>{props.description}</span>
+    </>;
+}
+
+const ShopDescription: Component<{
+    onMouseEnter: () => void,
+    children: JSX.Element
 }> = (props) => {
     let hoverContainer: HTMLDivElement;
     let onResize: () => void;
@@ -146,22 +167,13 @@ const ShopDescription: Component<{
         removeEventListener("resize", onMouseMove);
     })
 
-    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
-    const formattedFragments = () => fmt.format(props.fragmentsPerSecond);
-
     return (
         <div
-            onMouseEnter={props.onMouseEnter}
             ref={hoverContainer}
+            onMouseEnter={props.onMouseEnter}
             class="absolute bg-white p-4 border-4 border-black flex flex-col justify-left text-left w-96"
         >
-            <h1 class="font-extrabold text-lg">{props.title}</h1>
-
-            {props.fragmentsPerSecond && <div class="mb-2">
-                <span class="text-sm">avg. {formattedFragments()} fragments/second</span>
-            </div>}
-
-            <span>{props.description}</span>
+            {props.children}
         </div>
     );
 };
@@ -186,18 +198,26 @@ const Shop: Component<{ class?: string }> = (props) => {
         <div
             id="shop-sidebar"
             class={`${props.class} bg-white overflow-x-hidden overflow-y-auto fixed top-[30%] bottom-0 left-0 right-0 md:static flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display`}>
-            {/*<div class='border-b-4 border-black p-4'>
+            <div class='border-b-4 border-black p-4'>
                 <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
 
-                <div class='flex gap-4'>
-                    <For each={upgrades}>{item =>
+                <div class='grid grid-cols-7'>
+                    <For each={upgrades.filter((upgrade) => upgrade.owned)}>{item =>
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
                         />
                     }</For>
                 </div>
-            </div>*/}
+                <div class='grid grid-cols-7'>
+                    <For each={upgrades.filter((upgrade) => !upgrade.owned && shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType).count >= UPGRADES[upgrade.key].showAfter)}>{item =>
+                        <UpgradeListing
+                            key={item.key}
+                            owned={item.owned}
+                        />
+                    }</For>
+                </div>
+            </div>
 
             <For each={shop}>{item => <ShopListingElement
                 key={item.key}

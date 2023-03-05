@@ -12,18 +12,16 @@ impl<'a> Image<'a> {
         self.buffer[index + 3] = 0xFF;
     }
 
-    pub fn draw_rectangle_with<F>(
+    pub fn draw_rectangle_with(
         &mut self,
         x: usize,
         y: usize,
         w: usize,
         h: usize,
-        mut color: F,
+        mut color: impl FnMut() -> [u8; 3],
         bx: usize,
         by: usize,
-    ) where
-        F: FnMut() -> [u8; 3],
-    {
+    ) {
         let px = 4 * ((y + by) * self.buffer_width + x + bx);
 
         for row in 0..h {

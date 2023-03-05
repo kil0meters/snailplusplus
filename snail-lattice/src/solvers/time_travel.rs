@@ -170,6 +170,7 @@ where
     snail: Snail<S>,
     state: TimeTravelState,
     path: Vec<PathTile>,
+    upgrades: u32,
 
     path_drawer: Snail<S>,
     time_traveler: Tremaux<S>,
@@ -191,11 +192,16 @@ where
             snail: Snail::new(),
             state: TimeTravelState::TimeTraveling,
             path: vec![],
+            upgrades: 0,
 
             path_drawer,
             time_traveler,
             time_dilation_timer: 0,
         }
+    }
+
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.upgrades = upgrades;
     }
 
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {

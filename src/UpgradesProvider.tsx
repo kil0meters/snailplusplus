@@ -1,68 +1,110 @@
 import { Component, createContext, JSX } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
+import { ShopKey } from "./ShopProvider";
 import { createLocalStore } from "./utils";
 
 export const UpgradesContext = createContext<[Upgrade[], SetStoreFunction<Upgrade[]>]>();
 
+const UPGRADE_KEYS = ["four-leaf-clover", "rabbits-foot", "horseshoe", "fusion-reactor", "homing-beacon", "advanced-homing-beacon"] as const;
+export type UpgradeKey = typeof UPGRADE_KEYS[number];
+
 export type Upgrade = {
-  key: string;
-  owned: boolean;
+    key: UpgradeKey;
+    owned: boolean;
 };
 
 export type UpgradeListing = {
-  name: string;
-  description: string;
-  price: number;
+    name: string;
+    icon: string;
+    description: string;
+    price: number;
+    order: number; // where in the progression the upgrade is
+    mazeType: ShopKey;
+    showAfter: number; // certain number of units of that type
 };
 
-const upgradesDefault: Upgrade[] = [
-  {
-    key: "glasses",
-    owned: false
-  },
-  {
-    key: "banana-peel",
-    owned: false
-  },
-  {
-    key: "faster-random-walk",
-    owned: false
-  }
-];
 
-export const upgrades: { [key: string]: UpgradeListing } = {
-  "faster-random-walk": {
-    "name": "Speed",
-    "description": "Makes random walk snails twice as fast",
-    "price": 200,
-  },
-  "glasses": {
-    "name": "Glasses",
-    "description": "Gives random walk snails some glasses so they will no longer run into walls",
-    "price": 500,
-  },
-  "banana-peel": {
-    "name": "Banana Peel",
-    "description": "Makes random walk snails stand on banana peels that ",
-    "price": 500,
-  }
+const UPGRADES_DEFAULT: Upgrade[] = UPGRADE_KEYS.map((key) => { return { key, owned: false } });
+
+export const UPGRADES: { [key: string]: UpgradeListing } = {
+    "four-leaf-clover": {
+        name: "Four Leaf Clover",
+        icon: "🍀",
+        description: "Gives Random Walk Snails an additional 10% chance to go the right direction.",
+        price: 400,
+        order: 0,
+        mazeType: "random-walk",
+        showAfter: 5,
+    },
+    "rabbits-foot": {
+        name: "Rabbit's Foot",
+        icon: "🐇",
+        description: "Gives Random Walk Snails an additional 10% chance to go the right direction.",
+        price: 4000,
+        order: 1,
+        mazeType: "random-walk",
+        showAfter: 25,
+    },
+    "horseshoe": {
+        name: "Rabbit's Foot",
+        icon: "🧲",
+        description: "Gives Random Walk Snails an additional 10% chance to go the right direction.",
+        price: 10_000,
+        order: 2,
+        mazeType: "random-walk",
+        showAfter: 50,
+    },
+    "fusion-reactor": {
+        name: "Fusion Reactor",
+        icon: "☢️",
+        description: "Random Teleport Snail uses a fusion reactor to charge up its teleports 20% faster.",
+        price: 2_000,
+        order: 0,
+        mazeType: "random-teleport",
+        showAfter: 5,
+    },
+    "homing-beacon": {
+        name: "Homing Beacon",
+        icon: "🔉",
+        description: "Random Teleport Snail uses a homing beacon to get more accurate teleports over time.",
+        price: 20_000,
+        order: 1,
+        mazeType: "random-teleport",
+        showAfter: 25,
+    },
+    "advanced-homing-beacon": {
+        name: "Advanced Homing Beacon",
+        description: "Random Teleport Snail upgrades its homing beacon to get even more accurate teleports.",
+        icon: "🔊",
+        price: 1_000_000,
+        order: 2,
+        mazeType: "random-teleport",
+        showAfter: 50
+    }
 }
 
 
 const UpgradesProvider: Component<{ children: JSX.Element }> = (props) => {
-  const [upgradeItems, setUpgrades] = createLocalStore<Upgrade[]>("upgrades", upgradesDefault);
+    const [upgradeItems, setUpgrades] = createLocalStore<Upgrade[]>("upgrades", UPGRADES_DEFAULT);
 
-  for (let [key, _] of Object.entries(upgrades)) {
-    if (!upgradeItems.find(x => x.key == key)) {
-      setUpgrades([...upgradeItems, { key, owned: false }]);
+    for (let upgrade of UPGRADES_DEFAULT) {
+        if (!upgradeItems.find(x => x.key == upgrade.key)) {
+            setUpgrades([...upgradeItems, upgrade]);
+        }
     }
-  }
 
-  return (
-    <UpgradesContext.Provider value={[upgradeItems, setUpgrades]}>
-      {props.children}
-    </UpgradesContext.Provider>
-  );
+    for (let upgrade of upgradeItems) {
+        if (!UPGRADES_DEFAULT.find(x => x.key == upgrade.key)) {
+            setUpgrades([...UPGRADES_DEFAULT]);
+            break;
+        }
+    }
+
+    return (
+        <UpgradesContext.Provider value={[upgradeItems, setUpgrades]}>
+            {props.children}
+        </UpgradesContext.Provider>
+    );
 }
 
 export default UpgradesProvider;
