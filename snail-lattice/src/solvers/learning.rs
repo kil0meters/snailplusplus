@@ -9,9 +9,6 @@ use crate::{
     solvers::Solver,
 };
 
-const POPULATION_COUNT: usize = 16;
-const MUTATION_AMOUNT: usize = 5;
-
 // This does not implement a real genetic algorithm because they seem to suck for mazes and end up
 // being both way too slow and computationally intensive to be viable for this game, so we instead
 // simulate it with something aesthetically similar.
@@ -79,8 +76,8 @@ where
         new_moves
     }
 
-    fn mutate(&mut self, solve_sequence: &Vec<Direction>, lfsr: &mut LFSR) {
-        for _ in 0..MUTATION_AMOUNT {
+    fn mutate(&mut self, solve_sequence: &Vec<Direction>, mutation_amount: usize, lfsr: &mut LFSR) {
+        for _ in 0..mutation_amount {
             let i = lfsr.big() % self.moves.len();
             self.moves[i] = solve_sequence[i];
         }
@@ -97,6 +94,11 @@ where
     }
 }
 
+/// Learning Snail Upgrades:
+/// - Population Boom: Generate more learning snails per generation.
+/// - Uranium:         Learning Snails become more prone to beneficial mutation, yielding more efficient solves.
+/// - Radium:          Learning Snails become more prone to beneficial mutaiton, yielding more efficient solves.
+
 pub struct Learning<const S: usize>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
@@ -109,6 +111,23 @@ where
     upgrades: u32,
     solve_sequence: Vec<Direction>,
     new_maze: bool,
+}
+
+impl<const S: usize> Learning<S>
+where
+    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
+{
+    fn population_count(&self) -> usize {
+        if (self.upgrades & 0b1) != 0 {
+            24
+        } else {
+            16
+        }
+    }
+
+    fn mutation_amount(&self) -> usize {
+        (5 + ((self.upgrades & 0b10) >> 1) + ((self.upgrades & 0b100) >> 2)) as usize
+    }
 }
 
 impl<const S: usize> Solver<S> for Learning<S>
@@ -180,7 +199,7 @@ where
 
         // if empty, seed with random snails
         if self.population.len() == 0 {
-            for _ in 0..POPULATION_COUNT {
+            for _ in 0..self.population_count() {
                 self.population
                     .push(LearningSnail::new_random(lfsr, self.solve_sequence.len()));
             }
@@ -196,14 +215,15 @@ where
 
             let mut moves_list = vec![];
 
-            let top_selection = POPULATION_COUNT / 5;
+            let top_selection = self.population_count() / 5;
 
+            let mutation_amount = self.mutation_amount();
             for snail in self.population.iter_mut() {
-                snail.mutate(&self.solve_sequence, lfsr);
+                snail.mutate(&self.solve_sequence, mutation_amount, lfsr);
             }
 
             // cross
-            for _ in 0..POPULATION_COUNT {
+            for _ in 0..self.population_count() {
                 let snail1 = lfsr.big() % top_selection;
                 let snail2 = lfsr.big() % top_selection;
 

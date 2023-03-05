@@ -5,7 +5,17 @@ import { createLocalStore } from "./utils";
 
 export const UpgradesContext = createContext<[Upgrade[], SetStoreFunction<Upgrade[]>]>();
 
-const UPGRADE_KEYS = ["four-leaf-clover", "rabbits-foot", "horseshoe", "fusion-reactor", "homing-beacon", "advanced-homing-beacon"] as const;
+const UPGRADE_KEYS = [
+    "four-leaf-clover",
+    "rabbits-foot",
+    "horseshoe",
+    "fusion-reactor",
+    "homing-beacon",
+    "advanced-homing-beacon",
+    "population-boom",
+    "uranium",
+    "radium"
+] as const;
 export type UpgradeKey = typeof UPGRADE_KEYS[number];
 
 export type Upgrade = {
@@ -56,7 +66,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     },
     "fusion-reactor": {
         name: "Fusion Reactor",
-        icon: "☢️",
+        icon: "☄️",
         description: "Random Teleport Snail uses a fusion reactor to charge up its teleports 20% faster.",
         price: 2_000,
         order: 0,
@@ -80,7 +90,34 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         order: 2,
         mazeType: "random-teleport",
         showAfter: 50
-    }
+    },
+    "population-boom": {
+        name: "Population Boom",
+        description: "A recent population boom has lead to larger generations of Learning Snails.",
+        icon: "👥",
+        price: 10_000,
+        order: 0,
+        mazeType: "learning",
+        showAfter: 5
+    },
+    "uranium": {
+        name: "Uranium Mine",
+        description: "A nearby uranium mine leads to Learning Snails having a higher mutation rate.",
+        icon: "☢️",
+        price: 500_000,
+        order: 0,
+        mazeType: "learning",
+        showAfter: 25
+    },
+    "radium": {
+        name: "Radium Mine",
+        description: "A nearby radium mine leads to Learning Snails having a higher mutation rate.",
+        icon: "⚛️",
+        price: 500_000,
+        order: 0,
+        mazeType: "learning",
+        showAfter: 25
+    },
 }
 
 

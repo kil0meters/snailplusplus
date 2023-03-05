@@ -98,7 +98,7 @@ where
         }
 
         // draw current teleportation bounds if homing beacon is enabled
-        if ((self.upgrades & 0b11) != 0) {
+        if (self.upgrades & 0b11) != 0 {
             let y_start = discrete_lerp(
                 10 * (S - self.prev_teleport_bounds.y) as i32,
                 10 * (S - self.teleport_bounds.y) as i32,
