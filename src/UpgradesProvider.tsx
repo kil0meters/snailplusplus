@@ -117,19 +117,19 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
     },
     "uranium": {
         name: "Uranium Mine",
-        description: "A nearby uranium mine leads to Learning Snails having a higher mutation rate.",
+        description: "A nearby uranium mine leads to Learning Snails moving faster and having a higher mutation rate.",
         icon: "☢️",
         price: 500_000,
-        order: 0,
+        order: 1,
         mazeType: "learning",
         showAfter: 25
     },
     "radium": {
         name: "Radium Mine",
-        description: "A nearby radium mine leads to Learning Snails having a higher mutation rate.",
+        description: "A nearby radium mine leads to Learning Snails moving faster and having a higher mutation rate.",
         icon: "⚛️",
         price: 2_500_000,
-        order: 0,
+        order: 2,
         mazeType: "learning",
         showAfter: 50
     },

@@ -96,8 +96,8 @@ where
 
 /// Learning Snail Upgrades:
 /// - Population Boom: Generate more learning snails per generation.
-/// - Uranium:         Learning Snails become more prone to beneficial mutation, yielding more efficient solves.
-/// - Radium:          Learning Snails become more prone to beneficial mutaiton, yielding more efficient solves.
+/// - Uranium:         Learning Snails become more prone to beneficial mutation and faster movement, yielding more efficient solves.
+/// - Radium:          Learning Snails become more prone to beneficial mutaiton and faster movement, yielding more efficient solves.
 
 pub struct Learning<const S: usize>
 where
@@ -126,7 +126,7 @@ where
     }
 
     fn mutation_amount(&self) -> usize {
-        (5 + ((self.upgrades & 0b10) >> 1) + ((self.upgrades & 0b100) >> 2)) as usize
+        (5 + (self.upgrades & 0b10) + (self.upgrades & 0b100)) as usize
     }
 }
 
@@ -258,6 +258,18 @@ where
     }
 
     fn movement_time(&self) -> usize {
-        SNAIL_MOVEMENT_TIME / 2
+        let mut movement_time = SNAIL_MOVEMENT_TIME / 2;
+
+        // Uranium
+        if (self.upgrades & 0b10) != 0 {
+            movement_time = (movement_time * 2) / 3
+        }
+
+        // Radium
+        if (self.upgrades & 0b100) != 0 {
+            movement_time = movement_time / 4
+        }
+
+        movement_time
     }
 }
