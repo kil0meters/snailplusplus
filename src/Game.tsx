@@ -208,9 +208,9 @@ const Game: Component = () => {
 
     return <>
         <Determination />
-        <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] md:overflow-auto lg:overflow-hidden md:max-h-screen bg-[#068fef]'>
+        <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] lg:overflow-hidden md:max-h-screen bg-[#068fef]'>
             <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-0 pb-16 lg:pb-0 md:overflow-auto'>
-                <div class='lg:border-r-2 border-black flex flex-col'>
+                <div class='lg:border-r-2 border-black flex flex-col max-h-full overflow-hidden'>
                     <div class='p-8 bg-black flex flex-col justify-center h-[128px] content-center text-white font-display'>
                         <span class='text-3xl text-center font-extrabold my-auto'>{formattedScore()} fragments</span>
                         <span class='text-lg text-center'>{fragmentsPerSecond()} fragments/second</span>

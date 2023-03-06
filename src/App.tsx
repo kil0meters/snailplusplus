@@ -53,7 +53,7 @@ const App: Component = () => {
                                     {gameStarted() ? (
                                         <Game />
                                     ) : (
-                                        <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center'>
+                                        <div class='flex flex-col gap-8 w-96 self-center justify-self-center text-center overflow-hidden'>
                                             <h1 class='text-5xl font-extrabold'>Snail Maze</h1>
                                             <button onClick={startGame} class='border-4 font-extrabold text-3xl py-4 px-8 border-black hover:bg-black hover:text-white transition-colors'>Play</button>
                                         </div>

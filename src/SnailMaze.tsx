@@ -285,15 +285,15 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         animation = !animation;
     }, 500);
 
-    let container: HTMLDivElement | undefined;
+    let container: HTMLDivElement;
     const [scale, setScale] = createSignal(1);
 
     const updateScale = () => {
         const scaleX = container.clientWidth / canvas.width;
-        // const scaleY = container.clientHeight / canvas.height;
-        // setScale(Math.floor(Math.min(scaleX, scaleY)));
+        const scaleY = container.clientHeight / canvas.height;
+        setScale(Math.floor(Math.min(scaleX, scaleY)));
         // console.log(scaleX);
-        setScale(Math.floor(scaleX));
+        // setScale(Math.floor(scaleX));
     }
 
     createEffect(() => {
@@ -305,7 +305,6 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
     onMount(() => {
         updateScale();
-        container.focus();
 
         const resizeObserver = new ResizeObserver(() => {
             updateScale();
@@ -327,7 +326,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         <div
             tabindex={-1}
             ref={container}
-            class={`flex items-center content-center justify-center outline-0 ${props.class}`}
+            class={`flex items-center content-center justify-center outline-0 h-full ${props.class}`}
         >
             <div class="grid z-20 grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
                 <button
