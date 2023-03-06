@@ -153,10 +153,10 @@ const ShopDescription: Component<{
     onMount(() => {
         let shopContainer = document.getElementById("shop-sidebar");
 
-        hoverContainer.style.right = `${shopContainer.clientWidth}px`;
+        hoverContainer.style.right = `${shopContainer.offsetWidth + 4}px`;
 
         onResize = () => {
-            hoverContainer.style.right = `${shopContainer.clientWidth}px`;
+            hoverContainer.style.right = `${shopContainer.offsetWidth + 4}px`;
         };
 
         onMouseMove = (event: MouseEvent) => {
