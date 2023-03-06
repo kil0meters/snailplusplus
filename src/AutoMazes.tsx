@@ -22,10 +22,13 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
     let cachedImageHeight = 0;
 
     function requestBuffer(width: number, height: number) {
-        if (CACHED_BUFFERS.length == 0 || cachedImageWidth != width || cachedImageHeight != height) {
+        if (cachedImageWidth != width || cachedImageHeight != height) {
             cachedImageWidth = width;
             cachedImageHeight = height;
+            CACHED_BUFFERS.length = 0;
+        }
 
+        if (CACHED_BUFFERS.length == 0) {
             return new Uint8ClampedArray(width * height * 4);
         }
 
@@ -48,49 +51,32 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
     }
 
     const intersectionObserver = new IntersectionObserver(entries => {
-        // let previouslyHadNoVisible = visibleIndexes.size == 0;
-
         entries.forEach(entry => {
             let i = +entry.target.getAttribute("index");
 
             if (entry.isIntersecting) {
                 visibleIndexes.add(i);
-
-                // if (previouslyHadNoVisible) {
-                //     requestAnimationFrame(renderloop);
-                //     previouslyHadNoVisible = false;
-                // }
             } else {
                 visibleIndexes.delete(i);
             }
         });
+
+        if (visibleIndexes.size == 0) {
+            CACHED_BUFFERS.length = 0;
+        }
     }, { threshold: 0 });
 
     const workerOnMessage = (msg: MessageEvent<LatticeWorkerResponse>) => {
         workerMessageQueue.push(msg.data);
     };
 
+    let renderLocked = false;
+
     const renderloop = () => {
-        let pages = [];
-        let buffers = [];
-
-        for (let i of visibleIndexes) {
-            let arr = requestBuffer(bufferDimensions.width, bufferDimensions.height);
-            pages.push({ page: i, buffer: arr });
-            buffers.push(arr.buffer);
-        }
-
-        if (pages.length > 0) {
-            worker.postMessage({ type: "render", pages }, buffers);
-        }
-
-        requestAnimationFrame(renderloop);
-
         while (workerMessageQueue.length > 0) {
             let data = workerMessageQueue.pop();
             if (data.type == "render") {
-                // if (visibleIndexes.size > 0)
-                //     requestAnimationFrame(renderloop);
+                renderLocked = false;
 
                 for (let page of data.pages) {
                     let target = elements()[page.page];
@@ -112,11 +98,10 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
 
                     reclaimBuffer(imageData.data, target.width, target.height);
                 }
-
             } else if (data.type == "lattice-updated") {
                 const { height, width, latticeCount } = data;
 
-                if (latticeCount == 0) return;
+                if (latticeCount == 0) continue;
 
                 bufferDimensions.width = width;
                 bufferDimensions.height = height;
@@ -150,9 +135,26 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
                 setElements(newElements);
             }
         }
+
+        if (!renderLocked) {
+            let pages = [];
+            let buffers = [];
+
+            for (let i of visibleIndexes) {
+                let arr = requestBuffer(bufferDimensions.width, bufferDimensions.height);
+                pages.push({ page: i, buffer: arr });
+                buffers.push(arr.buffer);
+            }
+
+            if (pages.length > 0) {
+                worker.postMessage({ type: "render", pages }, buffers);
+                renderLocked = true;
+            }
+        }
+
+        requestAnimationFrame(renderloop);
     };
 
-    let firstRender = true;
     const [elements, setElements] = createSignal<HTMLCanvasElement[]>([]);
 
     const mousemove = (e) => {
@@ -175,10 +177,6 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
     onMount(() => {
         renderloop();
         document.addEventListener("mousemove", mousemove);
-    });
-
-    createEffect(() => {
-
     });
 
     createEffect(() => {

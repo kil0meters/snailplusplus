@@ -40,12 +40,14 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        mut movement_timer: usize,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
         by: usize,
     ) {
+        movement_timer %= self.movement_time();
+
         for snail in self.inactive_snails.iter() {
             snail.draw(
                 GRAYSCALE_PALETTE,
@@ -73,8 +75,9 @@ where
 
     fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {
         self.move_count = 0;
-        self.active_snails = vec![Snail::new()];
-        self.inactive_snails = vec![]
+        self.active_snails.clear();
+        self.active_snails.push(Snail::new());
+        self.inactive_snails.clear();
     }
 
     fn step(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) -> bool {
@@ -150,6 +153,6 @@ where
             movement_time /= self.move_count;
         }
 
-        movement_time.max(10_000)
+        movement_time.max(10_000).min(SNAIL_MOVEMENT_TIME)
     }
 }
