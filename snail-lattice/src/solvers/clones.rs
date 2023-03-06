@@ -139,7 +139,10 @@ where
 
         // self-improvement
         if (self.upgrades & 0b1) != 0 {
-            movement_time -= 1_000 * self.move_count;
+            let sub = 1_000 * self.move_count;
+            if movement_time > sub {
+                movement_time -= sub;
+            }
         }
 
         // singularity
