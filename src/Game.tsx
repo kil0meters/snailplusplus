@@ -1,4 +1,4 @@
-import { createStoredSignal } from './utils';
+import { bigint_min, createStoredSignal } from './utils';
 import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
 import Shop from './Shop';
@@ -99,7 +99,7 @@ function setUpgradeNumbers(upgrades: Upgrade[]) {
 const Game: Component = () => {
     const [score, setScore] = useContext(ScoreContext);
     const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
-    const updateScore = (newScore: number) => setScore(score() + newScore);
+    const updateScore = (newScore: bigint) => setScore(score() + newScore);
     const [mazeSize, setMazeSize] = createStoredSignal("maze-size", 5);
     const [shop, _] = useContext(ShopContext);
     const [powerup, setPowerup] = useContext(PowerupContext);
@@ -112,13 +112,14 @@ const Game: Component = () => {
     const setScoreListener = (event: MessageEvent<LatticeWorkerResponse>) => {
         let msg = event.data;
         if (msg.type === "score") { // idk why type inferrence doesn't work here
-            let addedScore = SHOP[msg.mazeType].baseMultiplier * msg.score;
+            let addedScore = SHOP[msg.mazeType].baseMultiplier * BigInt(msg.score);
             setScore(oldScore => oldScore + addedScore);
             setSnailInfo(
                 (info) => info.key == msg.mazeType,
-                produce((info) => {
+                "solvedCounts",
+                produce((solvedCounts) => {
                     for (let i = 0; i < msg.solves.length; i += 2) {
-                        info.solvedCounts[msg.solves[i]] += msg.solves[i + 1];
+                        solvedCounts[msg.solves[i]] += msg.solves[i + 1];
                     }
                 })
             );
@@ -126,7 +127,7 @@ const Game: Component = () => {
             setAverages(
                 (average) => average.key == msg.mazeType,
                 "count",
-                (count) => count + addedScore,
+                (count) => count + Number(addedScore),
             );
         }
     };
@@ -180,8 +181,8 @@ const Game: Component = () => {
 
         const animate = () => {
             let now = new Date();
-            let dt = now.valueOf() - prev.valueOf();
-            setDisplayedScore(Math.min(displayedScore() + difference * dt / 1000, score()));
+            let dt = BigInt(now.valueOf() - prev.valueOf());
+            setDisplayedScore(bigint_min(displayedScore() + difference * dt / 1000n, score()));
 
             if (displayedScore() != score()) {
                 requestAnimationFrame(animate);
@@ -219,7 +220,7 @@ const Game: Component = () => {
                         >menu</button>
                     </div>
                     <SnailMaze class='my-auto' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
-                        updateScore(score);
+                        updateScore(BigInt(score));
                         setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
 
                         if (isSpecial) {

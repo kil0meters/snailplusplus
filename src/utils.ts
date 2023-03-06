@@ -41,6 +41,13 @@ export function createLocalStore<T extends object>(
         localState ? JSON.parse(localState) : init
     );
 
-    createEffect(() => localStorage.setItem(name, JSON.stringify(state)));
+    // save score only periodically, saves a lot of updates
+    setInterval(() => {
+        localStorage.setItem(name, JSON.stringify(state));
+    }, 500);
     return [state, setState];
+}
+
+export function bigint_min(a: bigint, b: bigint) {
+    return a < b ? a : b;
 }

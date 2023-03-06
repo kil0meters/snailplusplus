@@ -9,7 +9,7 @@ export interface ShopItem {
     name: string;
     description: string;
     price: number;
-    baseMultiplier: number;
+    baseMultiplier: bigint;
     fragmentsPerSecond: number;
     latticeWidth: number;
 };
@@ -28,7 +28,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Random Walk Snail",
         "description": "Randomly walks around until it happens to stumble its way to the end.",
         "price": 25,
-        "baseMultiplier": 1,
+        "baseMultiplier": 1n,
         "latticeWidth": 8,
         "fragmentsPerSecond": 0.3,
     },
@@ -36,7 +36,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Random Teleport Snail",
         "description": "Randomly teleports to another location.",
         "price": 100,
-        "baseMultiplier": 1.5,
+        "baseMultiplier": 2n,
         "latticeWidth": 5,
         "fragmentsPerSecond": 1,
     },
@@ -44,7 +44,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Learning Snail",
         "description": "Learns how to solve the maze.",
         "price": 1_000,
-        "baseMultiplier": 5,
+        "baseMultiplier": 5n,
         "latticeWidth": 3,
         "fragmentsPerSecond": 6,
     },
@@ -52,7 +52,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Left Handed Snail",
         "description": "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
         "price": 50_000,
-        "baseMultiplier": 5,
+        "baseMultiplier": 5n,
         "latticeWidth": 4,
         "fragmentsPerSecond": 25,
     },
@@ -60,7 +60,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Right Handed Snail",
         "description": "Holds the right wall instead. I wonder where he got that idea from.",
         "price": 500_000,
-        "baseMultiplier": 24,
+        "baseMultiplier": 24n,
         "latticeWidth": 4,
         "fragmentsPerSecond": 92,
     },
@@ -68,7 +68,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Segment Snail",
         "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
         "price": 3_000_000,
-        "baseMultiplier": 100,
+        "baseMultiplier": 100n,
         "latticeWidth": 3,
         "fragmentsPerSecond": 420,
     },
@@ -76,7 +76,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "RPG Snail",
         "description": "It's dangerous to go alone, go that way.",
         "price": 10_000_000,
-        "baseMultiplier": 1_000,
+        "baseMultiplier": 1_000n,
         "latticeWidth": 3,
         "fragmentsPerSecond": 2800,
     },
@@ -84,7 +84,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Time Travel Snail",
         "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
         "price": 50_000_000,
-        "baseMultiplier": 1_500,
+        "baseMultiplier": 1_500n,
         "latticeWidth": 3,
         "fragmentsPerSecond": 13_000,
     },
@@ -92,7 +92,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Cloning Snail",
         "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
         "price": 800_000_000,
-        "baseMultiplier": 4_000,
+        "baseMultiplier": 4_000n,
         "latticeWidth": 2,
         "fragmentsPerSecond": 80_000,
     },
@@ -100,7 +100,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Meta Snail",
         "description": "All the snails that came before.",
         "price": 10_000_000_000,
-        "baseMultiplier": 14_000,
+        "baseMultiplier": 14_000n,
         "latticeWidth": 2,
         "fragmentsPerSecond": 500_000,
     }

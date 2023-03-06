@@ -17,7 +17,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
     const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
     const [hover, setHover] = createSignal(false);
 
-    const price = () => Math.floor(SHOP[props.key].price * Math.pow(PRICE_SCALER, props.count));
+    const price = () => BigInt(Math.floor(SHOP[props.key].price * Math.pow(PRICE_SCALER, props.count)));
 
     const buy = () => {
         if (score() >= price() || document["devmode"]) {
