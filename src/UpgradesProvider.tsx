@@ -161,7 +161,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         showAfter: 5,
     },
     "left-handed-snail": {
-        name: "Right Handed Snail",
+        name: "Left Handed Snail",
         description: "Right Handed Snail recruits Left Handed Snail to help explore the maze faster.",
         icon: "👈",
         price: 10_000_000n,
