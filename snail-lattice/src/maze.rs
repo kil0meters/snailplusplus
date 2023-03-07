@@ -86,7 +86,7 @@ where
 
         for _ in 0..num_movements {
             if self.solver.step(&self.maze, lfsr) {
-                total += S * S;
+                total += 1;
                 self.generate(lfsr);
                 self.movement_timer = movement_time;
             }

@@ -275,7 +275,17 @@ impl TilableMaze for MetaMaze {
         }
     }
 
-    fn set_upgrades(&mut self, _upgrades: u32) {}
+    fn set_upgrades(&mut self, upgrades: u32) {
+        self.random_walk.set_upgrades(upgrades & 0b111);
+        self.random_teleport.set_upgrades((upgrades >> 3) & 0b111);
+        self.learning.set_upgrades((upgrades >> 6) & 0b111);
+        self.hold_left.set_upgrades((upgrades >> 9) & 0b111);
+        self.inverted.set_upgrades((upgrades >> 12) & 0b111);
+        self.tremaux.set_upgrades((upgrades >> 15) & 0b111);
+        self.rpg.set_upgrades((upgrades >> 18) & 0b111);
+        self.time_travel.set_upgrades((upgrades >> 21) & 0b111);
+        self.clone.set_upgrades((upgrades >> 24) & 0b111);
+    }
 
     fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
         let mut total = 0;

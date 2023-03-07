@@ -80,9 +80,14 @@ const Determination: Component = () => {
 function setUpgradeNumbers(upgrades: Upgrade[]) {
     let upgradeNumbers = new Map<ShopKey, number>();
 
+    let metaSnailUpgrades = 0;
+
     for (let i = 0; i < upgrades.length; i++) {
         if (upgrades[i].owned) {
             let upgrade = UPGRADES[upgrades[i].key];
+
+            metaSnailUpgrades |= 1 << (3 * SHOP_KEYS.indexOf(upgrade.mazeType) + upgrade.order);
+
             if (!upgradeNumbers[upgrade.mazeType]) {
                 upgradeNumbers[upgrade.mazeType] = 1 << upgrade.order;
             } else {
@@ -94,6 +99,8 @@ function setUpgradeNumbers(upgrades: Upgrade[]) {
     for (let key of SHOP_KEYS) {
         latticePostMessage(LATTICE_WORKER_STORE[key], { type: "set-upgrades", upgrades: upgradeNumbers[key] || 0 });
     }
+
+    latticePostMessage(LATTICE_WORKER_STORE["meta"], { type: "set-upgrades", upgrades: metaSnailUpgrades });
 }
 
 const Game: Component = () => {
@@ -158,6 +165,7 @@ const Game: Component = () => {
                 })
             );
         });
+
         setUpgradeNumbers(upgrades);
     });
 

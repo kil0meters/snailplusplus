@@ -65,7 +65,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
 
             {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
-                <MazeDescription title={SHOP[props.key].name} description={SHOP[props.key].description} fragmentsPerSecond={SHOP[props.key].fragmentsPerSecond} />
+                <MazeDescription title={SHOP[props.key].name} description={SHOP[props.key].description} fragmentsPerCompletion={SHOP[props.key].baseMultiplier} />
             </ShopDescription>}
         </button>
     );
@@ -126,17 +126,17 @@ const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
 const MazeDescription: Component<{
     title: string,
     description: string,
-    fragmentsPerSecond?: number
+    fragmentsPerCompletion: bigint
 }> = (props) => {
     const fmt = new Intl.NumberFormat('en', { notation: "compact" });
-    const formattedFragments = () => fmt.format(props.fragmentsPerSecond);
+    const formattedFPC = () => fmt.format(props.fragmentsPerCompletion);
 
     return <>
         <h1 class="font-extrabold text-lg">{props.title}</h1>
 
-        {props.fragmentsPerSecond && <div class="mb-2">
-            <span class="text-sm">avg. {formattedFragments()} fragments/second</span>
-        </div>}
+        <div class="mb-2 flex flex-col gap-1">
+            <span class="text-sm">{formattedFPC()} fragments/solve</span>
+        </div>
 
         <span>{props.description}</span>
     </>;

@@ -10,7 +10,6 @@ export interface ShopItem {
     description: string;
     price: number;
     baseMultiplier: bigint;
-    fragmentsPerSecond: number;
     latticeWidth: number;
 };
 
@@ -26,81 +25,71 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         "name": "Random Walk Snail",
         "description": "Randomly walks around until it happens to stumble its way to the end.",
         "price": 25,
-        "baseMultiplier": 1n,
+        "baseMultiplier": 25n,
         "latticeWidth": 8,
-        "fragmentsPerSecond": 0.3,
     },
     "random-teleport": {
         "name": "Random Teleport Snail",
         "description": "Randomly teleports to another location.",
         "price": 100,
-        "baseMultiplier": 2n,
+        "baseMultiplier": 74n,
         "latticeWidth": 5,
-        "fragmentsPerSecond": 1,
     },
     "learning": {
         "name": "Learning Snail",
         "description": "Learns how to solve the maze.",
         "price": 1_000,
-        "baseMultiplier": 5n,
+        "baseMultiplier": 5n * 81n,
         "latticeWidth": 3,
-        "fragmentsPerSecond": 6,
     },
     "hold-left": {
         "name": "Left Handed Snail",
         "description": "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
         "price": 50_000,
-        "baseMultiplier": 5n,
+        "baseMultiplier": 5n * 81n,
         "latticeWidth": 4,
-        "fragmentsPerSecond": 25,
     },
     "inverted": {
         "name": "Right Handed Snail",
         "description": "Holds the right wall instead. I wonder where he got that idea from.",
         "price": 500_000,
-        "baseMultiplier": 24n,
+        "baseMultiplier": 24n * 81n,
         "latticeWidth": 4,
-        "fragmentsPerSecond": 92,
     },
     "tremaux": {
         "name": "Segment Snail",
         "description": "Uses marks on the ground to block off segments of the maze which have been explored.",
         "price": 3_000_000,
-        "baseMultiplier": 100n,
+        "baseMultiplier": 100n * 121n,
         "latticeWidth": 3,
-        "fragmentsPerSecond": 420,
     },
     "rpg": {
         "name": "RPG Snail",
         "description": "It's dangerous to go alone, go that way.",
         "price": 10_000_000,
-        "baseMultiplier": 1_000n,
+        "baseMultiplier": 1_000n * 121n,
         "latticeWidth": 3,
-        "fragmentsPerSecond": 2800,
     },
     "time-travel": {
         "name": "Time Travel Snail",
         "description": "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
         "price": 50_000_000,
-        "baseMultiplier": 1_500n,
+        "baseMultiplier": 1_500n * 169n,
         "latticeWidth": 3,
-        "fragmentsPerSecond": 13_000,
     },
     "clone": {
         "name": "Cloning Snail",
         "description": "Can't turn but clones itself facing another direction when it reaches a junction.",
         "price": 800_000_000,
-        "baseMultiplier": 4_000n,
+        "baseMultiplier": 4_000n * 400n,
         "latticeWidth": 2,
-        "fragmentsPerSecond": 80_000,
     },
     "meta": {
         "name": "Meta Snail",
         "description": "All the snails that came before.",
         "price": 10_000_000_000,
-        "baseMultiplier": 14_000n,
+        "baseMultiplier": 14_000n * 49n,
         "latticeWidth": 2,
-        "fragmentsPerSecond": 500_000,
     }
 };
 
