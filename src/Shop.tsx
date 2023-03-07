@@ -193,7 +193,7 @@ const Shop: Component<{ class?: string }> = (props) => {
         if (window.confirm("This will cause you to lose all of your progress. Are you sure?")) {
             setShop(() => true, "count", () => 0);
             setUpgrades(() => true, "owned", () => false);
-            setScore(0);
+            setScore(0n);
 
             shop.forEach(({ key }) => {
                 LATTICE_WORKER_STORE[key].postMessage({ type: "reset" });

@@ -17,11 +17,9 @@ export interface ShopItem {
 export interface ShopListing {
     key: ShopKey;
     count: number;
+    displayWidth: number;
+    collapsed: boolean;
 };
-
-const SHOP_LISTINGS_DEFAULT: ShopListing[] = SHOP_KEYS.map((key) => {
-    return { key, count: 0 };
-});
 
 export const SHOP: { [key in ShopKey]: ShopItem } = {
     "random-walk": {
@@ -106,6 +104,10 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     }
 };
 
+const SHOP_LISTINGS_DEFAULT: ShopListing[] = SHOP_KEYS.map((key) => {
+    return { key, count: 0, displayWidth: SHOP[key].latticeWidth, collapsed: false };
+});
+
 export const ShopContext = createContext<[ShopListing[], SetStoreFunction<ShopListing[]>]>();
 const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
     const [shop, setShop] = createLocalStore<ShopListing[]>("shop", SHOP_LISTINGS_DEFAULT);
@@ -118,9 +120,22 @@ const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
         }
     }
 
-    let newShop = [...shop];
-    newShop.sort((a, b) => SHOP_KEYS.indexOf(a.key) - SHOP_KEYS.indexOf(b.key));
-    setShop(newShop);
+    setShop((newShop) => {
+        newShop.sort((a, b) => SHOP_KEYS.indexOf(a.key) - SHOP_KEYS.indexOf(b.key));
+
+        // legacy migration code
+        for (let i = 0; i < newShop.length; i++) {
+            if (!("displayWidth" in newShop[i])) {
+                newShop[i].displayWidth = SHOP[newShop[i].key].latticeWidth;
+            }
+
+            if (!("collapsed" in newShop[i])) {
+                newShop[i].collapsed = false;
+            }
+        }
+
+        return newShop;
+    });
 
     return (
         <ShopContext.Provider value={[shop, setShop]}>

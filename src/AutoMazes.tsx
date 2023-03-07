@@ -9,7 +9,7 @@ import { SnailInfoContext } from "./SnailInfoProvider";
 import { AverageContext } from "./AverageProvider";
 
 // this saves an insane amount of gc time
-const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, collapsed: boolean }> = (props) => {
+const SnailLatticeElement: Component<ShopListing> = (props) => {
     let container: HTMLDivElement;
     let visibleIndexes = new Set([]);
     let worker = LATTICE_WORKER_STORE[props.key];
@@ -162,12 +162,12 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
         let x = e.clientX - rect.left;
         let y = e.clientY - rect.top;
 
-        let mazeSize = rect.width / props.latticeWidth
+        let mazeSize = rect.width / props.displayWidth
         let mazeX = Math.floor(x / mazeSize);
         let mazeY = Math.floor(y / mazeSize);
-        let index = mazeY * props.latticeWidth + mazeX;
+        let index = mazeY * props.displayWidth + mazeX;
 
-        if (mazeY >= 0 && mazeX >= 0 && mazeX < props.latticeWidth && index < props.count) {
+        if (mazeY >= 0 && mazeX >= 0 && mazeX < props.displayWidth && index < props.count) {
             setFocusedIndex(index);
         } else {
             setFocusedIndex(null);
@@ -180,7 +180,7 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
     });
 
     createEffect(() => {
-        props.latticeWidth;
+        props.displayWidth;
         props.collapsed;
 
         worker.removeEventListener("message", workerOnMessage);
@@ -189,10 +189,10 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
         worker = LATTICE_WORKER_STORE[props.key];
         worker.addEventListener("message", workerOnMessage);
 
-        worker.postMessage({ type: "set-width", width: props.latticeWidth });
+        worker.postMessage({ type: "set-width", width: props.displayWidth });
     });
 
-    const mazeSize = () => container.getBoundingClientRect().width / props.latticeWidth;
+    const mazeSize = () => container.getBoundingClientRect().width / props.displayWidth;
     const [snailInfo, _setSnailInfo] = useContext(SnailInfoContext)
 
     // surely linearly searching ~10 elements 4 times isn't a big deal
@@ -207,11 +207,11 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
     let snailInfoElement: HTMLDivElement;
 
     const snailInfoLeft = () => {
-        return (focusedIndex() % props.latticeWidth + 0.5) * mazeSize() + container.getBoundingClientRect().left;
+        return (focusedIndex() % props.displayWidth + 0.5) * mazeSize() + container.getBoundingClientRect().left;
     };
 
     const snailInfoTop = () => {
-        let underMaze = (1 + Math.floor(focusedIndex() / props.latticeWidth)) * mazeSize() + 4 + container.getBoundingClientRect().top;
+        let underMaze = (1 + Math.floor(focusedIndex() / props.displayWidth)) * mazeSize() + 4 + container.getBoundingClientRect().top;
         let body = document.querySelector("body").getBoundingClientRect();
         let maxHeight = body.height - 108;
 
@@ -237,9 +237,14 @@ const SnailLatticeElement: Component<ShopListing & { latticeWidth: number, colla
 
 const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
     let mazeDisplay: HTMLDivElement;
-    const [latticeWidth, setLatticeWidth] = createSignal(SHOP[props.key].latticeWidth);
-    const [averages, setAverages] = useContext(AverageContext);
-    const [collapsed, setCollapsed] = createSignal(false);
+    const [averages, _setAverages] = useContext(AverageContext);
+    const [shop, setShop] = useContext(ShopContext);
+
+    const collapsed = () => shop.find((x) => x.key == props.key).collapsed;
+    const toggleCollapsed = () => setShop((x) => x.key == props.key, "collapsed", (collapsed) => !collapsed);
+
+    const displayWidth = () => shop.find((x) => x.key == props.key).displayWidth;
+    const setDisplayWidth = (func: (input: number) => number) => setShop((x) => x.key == props.key, "displayWidth", func);
 
     let intervalId: number;
 
@@ -272,13 +277,13 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
                 </div>
 
                 <div class="text-center ml-auto flex my-auto">
-                    <button class="text-lg font-display font-bold mr-4 px-4 py-2 hover:bg-white hover:text-black transition-colors w-20" onclick={() => setCollapsed((collapsed) => !collapsed)}>
+                    <button class="text-lg font-display font-bold mr-4 px-4 py-2 hover:bg-white hover:text-black transition-colors w-20" onclick={toggleCollapsed}>
                         {collapsed() ? "Show" : "Hide"}
                     </button>
 
-                    <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.max(x - 1, 1))}>-</button>
-                    <p class="bg-white text-black p-2">{latticeWidth()}</p>
-                    <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setLatticeWidth(x => Math.min(x + 1, 12))}>+</button>
+                    <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setDisplayWidth(x => Math.max(x - 1, 1))}>-</button>
+                    <p class="bg-white text-black p-2">{displayWidth()}</p>
+                    <button class="hover:bg-white hover:text-black transition-all p-2 select-none" onClick={() => setDisplayWidth(x => Math.min(x + 1, 12))}>+</button>
 
                     {fullscreen() ?
                         <button class="hidden md:block ml-4 hover:bg-black hover:text-white text-black bg-white transition-all p-2" onClick={() => {
@@ -301,7 +306,7 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
 
             {!collapsed() &&
                 <dd class="p-2 h-full w-full bg-[#068fef]">
-                    <SnailLatticeElement key={props.key} count={props.count} latticeWidth={latticeWidth()} collapsed={collapsed()} />
+                    <SnailLatticeElement key={props.key} count={props.count} displayWidth={displayWidth()} collapsed={collapsed()} />
                 </dd>}
         </div >
     );
