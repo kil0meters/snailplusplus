@@ -97,7 +97,8 @@ function setUpgradeNumbers(upgrades: Upgrade[]) {
     }
 
     for (let key of SHOP_KEYS) {
-        latticePostMessage(LATTICE_WORKER_STORE[key], { type: "set-upgrades", upgrades: upgradeNumbers[key] || 0 });
+        if (key != "meta")
+            latticePostMessage(LATTICE_WORKER_STORE[key], { type: "set-upgrades", upgrades: upgradeNumbers[key] || 0 });
     }
 
     latticePostMessage(LATTICE_WORKER_STORE["meta"], { type: "set-upgrades", upgrades: metaSnailUpgrades });
@@ -165,8 +166,6 @@ const Game: Component = () => {
                 })
             );
         });
-
-        setUpgradeNumbers(upgrades);
     });
 
     onCleanup(() => {

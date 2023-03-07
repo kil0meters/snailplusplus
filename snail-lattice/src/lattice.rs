@@ -9,7 +9,7 @@ use crate::{
     solvers::{
         Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, TimeTravel, Tremaux,
     },
-    utils::set_panic_hook,
+    utils::{console_log, set_panic_hook},
 };
 
 #[derive(Clone, Copy)]
