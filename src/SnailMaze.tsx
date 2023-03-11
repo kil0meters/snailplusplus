@@ -1,5 +1,5 @@
 import { batch, Component, createEffect, createMemo, createSignal, on, onCleanup, onMount, untrack, useContext } from "solid-js";
-import init, { Game, SolveType } from "../snail-lattice/pkg/snail_lattice";
+import init, { Game } from "../snail-lattice/pkg/snail_lattice";
 import { PowerupContext } from "./App";
 import { ScoreContext } from "./ScoreProvider";
 import { randomSeed } from "./utils";
@@ -108,12 +108,12 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         prevTime = now;
 
         // @ts-ignore: this does work, but due to a wasm-bindgen we cannot make the signature take a Uint8ClampedArray
-        let solve: SolveType = game.render(buffer, new Uint32Array(movement), dt);
+        let solve = game.render(buffer, new Uint32Array(movement), dt);
 
-        if (solve != SolveType.None) {
-            setScore(score() + 25n);
+        if (solve != 0) {
+            setScore(score() + BigInt(Math.abs(solve)));
 
-            if (solve == SolveType.Special) {
+            if (solve < 0) {
                 let calculatedBoost = Math.max(Math.floor(Math.sqrt(Math.random() * 100)), 2);
                 let boostDuration = Math.max(Math.floor(Math.sqrt(Math.random() * 1000)), 4);
                 let start = new Date();
@@ -154,6 +154,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
         init().then(() => {
             game = new Game(randomSeed());
+            game.set_game(1);
             ctx = canvas.getContext("2d");
             prevTime = performance.now();
             requestAnimationFrame(render);

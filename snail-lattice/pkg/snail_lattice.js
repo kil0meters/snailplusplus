@@ -139,9 +139,6 @@ function passStringToWasm0(arg, malloc, realloc) {
 }
 /**
 */
-export const SolveType = Object.freeze({ None:0,"0":"None",Regular:1,"1":"Regular",Special:2,"2":"Special", });
-/**
-*/
 export class CloneLattice {
 
     static __wrap(ptr) {
@@ -298,6 +295,12 @@ export class Game {
         }
     }
     /**
+    * @param {number} game_type
+    */
+    set_game(game_type) {
+        wasm.game_set_game(this.ptr, game_type);
+    }
+    /**
     * @param {Uint8Array} buffer
     * @param {Uint32Array} keys
     * @param {number} dt
@@ -310,7 +313,7 @@ export class Game {
             const ptr1 = passArray32ToWasm0(keys, wasm.__wbindgen_malloc);
             const len1 = WASM_VECTOR_LEN;
             const ret = wasm.game_render(this.ptr, ptr0, len0, ptr1, len1, dt);
-            return ret >>> 0;
+            return ret;
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
             wasm.__wbindgen_free(ptr0, len0 * 1);

@@ -141,7 +141,7 @@ where
     }
 
     // 4 bytes
-    fn set_cell(&mut self, x: usize, y: usize, data: usize) {
+    pub fn set_cell(&mut self, x: usize, y: usize, data: usize) {
         let offset = y * S + x;
 
         self.walls[offset / CELLS_PER_IDX] ^=

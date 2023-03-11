@@ -6,23 +6,19 @@ use crate::{
     lfsr::LFSR,
     maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
-    utils::{console_log, Vec2},
+    utils::Vec2,
 };
 
-#[wasm_bindgen]
-#[derive(Clone, Copy, PartialEq)]
-pub enum SolveType {
-    None,
-    Regular,
-    Special,
-}
+use self::pacsnail::PacSnail;
+
+mod pacsnail;
 
 // am i really going to implemennt 3 full parody games inside my snail maze incremental game?
 // yes, yes i am
 enum ManualGame {
     SnailMaze(ManualMaze),
+    PacSnail(PacSnail),
     Asteroids,
-    PacMan,
     Wolfenstein,
 }
 
@@ -50,19 +46,22 @@ impl Game {
         match &self.game {
             ManualGame::SnailMaze(game) => game.resolution(),
             ManualGame::Asteroids => todo!(),
-            ManualGame::PacMan => todo!(),
+            ManualGame::PacSnail(game) => game.resolution(),
             ManualGame::Wolfenstein => todo!(),
         }
     }
 
-    // keys is a list of keys in the order the were pressed
-    // mappings:
-    // 1 => right
-    // 2 => left
-    // 4 => down
-    // 8 => up
     #[wasm_bindgen]
-    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, dt: usize) -> SolveType {
+    pub fn set_game(&mut self, game_type: u32) {
+        match game_type {
+            0 => self.game = ManualGame::SnailMaze(ManualMaze::new(&mut self.lfsr)),
+            1 => self.game = ManualGame::PacSnail(PacSnail::new()),
+            _ => unreachable!(),
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, dt: usize) -> i32 {
         match &mut self.game {
             ManualGame::SnailMaze(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
@@ -70,7 +69,11 @@ impl Game {
                 ret
             }
             ManualGame::Asteroids => todo!(),
-            ManualGame::PacMan => todo!(),
+            ManualGame::PacSnail(game) => {
+                let ret = game.tick(&mut self.lfsr, keys, dt);
+                game.render(buffer);
+                ret
+            }
             ManualGame::Wolfenstein => todo!(),
         }
     }
@@ -84,7 +87,7 @@ struct ManualMaze {
     end_pos: Vec2,
     bg_buffer: Vec<u8>,
 
-    solve_type: SolveType,
+    solve_type: i32,
     time: usize,
     movement_timer: usize,
 }
@@ -108,7 +111,7 @@ impl ManualMaze {
             end_pos: Vec2 { x: 6, y: 6 },
             bg_buffer,
             movement_timer: MANUAL_MOVEMENT_TIME,
-            solve_type: SolveType::Regular,
+            solve_type: 0,
             time: 0,
         }
     }
@@ -117,7 +120,13 @@ impl ManualMaze {
         vec![71, 71]
     }
 
-    fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: usize) -> SolveType {
+    // keys is a list of keys in the order the were pressed
+    // mappings:
+    // 1 => right
+    // 2 => left
+    // 4 => down
+    // 8 => up
+    fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: usize) -> i32 {
         self.time = self.time.wrapping_add(dt);
 
         self.movement_timer += dt;
@@ -158,12 +167,12 @@ impl ManualMaze {
             let solve_type = self.solve_type;
 
             if lfsr.big() % 10 == 0 {
-                self.solve_type = SolveType::Special;
+                self.solve_type = -25;
             } else {
-                self.solve_type = SolveType::Regular;
+                self.solve_type = 25;
             }
 
-            if self.solve_type == SolveType::Regular {
+            if self.solve_type > 0 {
                 self.maze
                     .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
             } else {
@@ -178,7 +187,7 @@ impl ManualMaze {
 
             solve_type
         } else {
-            SolveType::None
+            0
         }
     }
 
