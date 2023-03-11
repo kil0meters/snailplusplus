@@ -1,3 +1,5 @@
+use crate::utils::Vec2;
+
 pub struct Image<'a> {
     pub buffer: &'a mut [u8],
     pub buffer_width: usize,
@@ -108,6 +110,27 @@ impl<'a> Image<'a> {
                 self.draw_char(c, x, y);
             }
             x += 4;
+        }
+    }
+
+    pub fn draw_goal(&mut self, color: [u8; 3], pos: Vec2, bx: usize, by: usize) {
+        const GOAL_IMAGE_SIZE: usize = 7;
+
+        let goal_image = include_bytes!("../../assets/goal_7x7.bin");
+
+        for y in 0..GOAL_IMAGE_SIZE {
+            for x in 0..GOAL_IMAGE_SIZE {
+                let goal_px = y * GOAL_IMAGE_SIZE + x;
+                let px =
+                    4 * ((by + x + pos.y * 10 + 2) * self.buffer_width + bx + y + pos.x * 10 + 2);
+
+                // not transparent
+                if goal_image[goal_px] != 255 {
+                    self.buffer[px] = color[0];
+                    self.buffer[px + 1] = color[1];
+                    self.buffer[px + 2] = color[2];
+                }
+            }
         }
     }
 }

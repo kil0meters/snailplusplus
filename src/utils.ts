@@ -23,13 +23,8 @@ export function createStoredSignal<T>(
     return [value, setValueAndStore];
 }
 
-export function generateMaze(width: number, height: number, then: (maze: Uint8Array) => void) {
-    let mazeGenerationWorker = new Worker(new URL("./generateMaze.ts", import.meta.url));
-    mazeGenerationWorker.postMessage({ width, height });
-    mazeGenerationWorker.onmessage = (msg: MessageEvent<Uint8Array>) => {
-        then(msg.data);
-        mazeGenerationWorker.terminate();
-    };
+export function randomSeed(): number {
+    return self.crypto.getRandomValues(new Uint16Array(1))[0];
 }
 
 export function createLocalStore<T extends object>(

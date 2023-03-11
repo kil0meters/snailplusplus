@@ -58,11 +58,7 @@ where
             clock: 0,
             movement_timer: 0,
 
-            maze: Maze::<S> {
-                end_pos: Vec2 { x: S - 1, y: S - 1 },
-                walls: [0; _],
-                visited: [false; _],
-            },
+            maze: Maze::new(),
         }
     }
 
@@ -136,6 +132,14 @@ impl<const S: usize> Maze<S>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
+    pub fn new() -> Self {
+        Maze::<S> {
+            end_pos: Vec2 { x: S - 1, y: S - 1 },
+            walls: [0; _],
+            visited: [false; _],
+        }
+    }
+
     // 4 bytes
     fn set_cell(&mut self, x: usize, y: usize, data: usize) {
         let offset = y * S + x;
@@ -396,28 +400,7 @@ where
     ) {
         // draw goal
         if animation_cycle {
-            const GOAL_IMAGE_SIZE: usize = 7;
-
-            let goal_image = include_bytes!("../../assets/goal_7x7.bin");
-
-            for y in 0..GOAL_IMAGE_SIZE {
-                for x in 0..GOAL_IMAGE_SIZE {
-                    let goal_px = y * GOAL_IMAGE_SIZE + x;
-                    let px = 4
-                        * ((by + x + self.end_pos.y * 10 + 2) * image.buffer_width
-                            + bx
-                            + y
-                            + self.end_pos.x * 10
-                            + 2);
-
-                    // not transparent
-                    if goal_image[goal_px] != 255 {
-                        image.buffer[px] = goal_color[0];
-                        image.buffer[px + 1] = goal_color[1];
-                        image.buffer[px + 2] = goal_color[2];
-                    }
-                }
-            }
+            image.draw_goal(goal_color, self.end_pos, bx, by);
         }
     }
 }

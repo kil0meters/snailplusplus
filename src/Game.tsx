@@ -226,25 +226,7 @@ const Game: Component = () => {
                             onclick={() => setMenuShown((shown) => !shown)}
                         >menu</button>
                     </div>
-                    <SnailMaze class='my-auto' height={mazeSize()} width={mazeSize()} onScore={(score, isSpecial) => {
-                        updateScore(BigInt(score));
-                        setMazeSize(Math.max(Math.floor(Math.random() * 15), 5));
-
-                        if (isSpecial) {
-                            let calculatedBoost = Math.max(Math.floor(Math.sqrt(Math.random() * 100)), 2);
-                            let boostDuration = Math.max(Math.floor(Math.sqrt(Math.random() * 1000)), 4);
-                            let start = new Date();
-                            let end = new Date(start);
-                            end.setSeconds(end.getSeconds() + boostDuration);
-
-                            setPowerup({
-                                active: true,
-                                start,
-                                end,
-                                multiplier: calculatedBoost,
-                            });
-                        }
-                    }} />
+                    <SnailMaze class='my-auto' />
                 </div>
                 <AutoMazes />
             </div>

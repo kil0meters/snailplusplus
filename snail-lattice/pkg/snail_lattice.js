@@ -69,6 +69,13 @@ function passArray8ToWasm0(arg, malloc) {
     return ptr;
 }
 
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4);
+    getUint32Memory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
 function addHeapObject(obj) {
     if (heap_next === heap.length) heap.push(heap.length + 1);
     const idx = heap_next;
@@ -130,6 +137,9 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
+/**
+*/
+export const SolveType = Object.freeze({ None:0,"0":"None",Regular:1,"1":"Regular",Special:2,"2":"Special", });
 /**
 */
 export class CloneLattice {
@@ -240,6 +250,71 @@ export class CloneLattice {
     */
     set_width(width) {
         wasm.clonelattice_set_width(this.ptr, width);
+    }
+}
+/**
+*/
+export class Game {
+
+    static __wrap(ptr) {
+        const obj = Object.create(Game.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_game_free(ptr);
+    }
+    /**
+    * @param {number} seed
+    */
+    constructor(seed) {
+        const ret = wasm.game_new(seed);
+        return Game.__wrap(ret);
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    resolution() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.game_resolution(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {Uint8Array} buffer
+    * @param {Uint32Array} keys
+    * @param {number} dt
+    * @returns {number}
+    */
+    render(buffer, keys, dt) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            const ptr1 = passArray32ToWasm0(keys, wasm.__wbindgen_malloc);
+            const len1 = WASM_VECTOR_LEN;
+            const ret = wasm.game_render(this.ptr, ptr0, len0, ptr1, len1, dt);
+            return ret >>> 0;
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
     }
 }
 /**

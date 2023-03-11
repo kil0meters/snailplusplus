@@ -91,6 +91,10 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
     // renders to a buffer of size 4*self.get_dimensions()
     pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
+        for i in 0..buffer.len() {
+            buffer[i] = 0xFF;
+        }
+
         let dimensions = self.get_dimensions(count);
         let buffer_size = 4 * dimensions[0] * dimensions[1];
 

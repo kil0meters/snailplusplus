@@ -1,5 +1,6 @@
 import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice, LearningLattice, RpgLattice, MetaLattice, InvertedLattice } from "../snail-lattice/pkg/snail_lattice";
 import type { ShopKey } from "./ShopProvider";
+import { randomSeed } from "./utils";
 
 // see lattice.rs
 interface SnailLattice {
@@ -127,10 +128,6 @@ export type LatticeWorkerResponse =
     | { type: "lattice-updated", width: number, height: number, latticeCount: number };
 
 let LATTICE: LatticeList<SnailLattice>;
-
-function randomSeed(): number {
-    return self.crypto.getRandomValues(new Uint16Array(1))[0];
-}
 
 function setupLattice(mazeType: ShopKey) {
     init().then(() => {
