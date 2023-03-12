@@ -20,7 +20,7 @@ where
     party: Vec<Snail<S>>,
     lost: Vec<Snail<S>>,
     upgrades: u32,
-    directions: [Direction; S * S],
+    directions: [Option<Direction>; S * S],
 
     current_sequence: Vec<Direction>,
 }
@@ -56,7 +56,7 @@ where
             party: vec![],
             lost: vec![],
 
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             current_sequence: vec![],
             upgrades: 0,
         }
@@ -119,7 +119,8 @@ where
             }
 
             for lost_snail in &mut self.lost {
-                lost_snail.direction = self.directions[lost_snail.pos.y * S + lost_snail.pos.x];
+                lost_snail.direction =
+                    self.directions[lost_snail.pos.y * S + lost_snail.pos.x].unwrap();
                 lost_snail.move_forward(maze);
             }
 

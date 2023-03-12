@@ -84,7 +84,7 @@ where
     pub visited: HashMap<Vec2, Mark>,
     is_backtracking: bool,
     upgrades: u32,
-    directions: [Direction; S * S],
+    directions: [Option<Direction>; S * S],
     movement_time: f32,
 }
 
@@ -106,7 +106,7 @@ where
             snail: Snail::new(),
             visited: HashMap::new(),
             upgrades: 0,
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             is_backtracking: false,
             movement_time: SNAIL_MOVEMENT_TIME,
         }
@@ -203,7 +203,8 @@ where
 
                 let odds = (self.upgrades & 0b11) << 1;
                 if odds > 0 && lfsr.big() % 12 < odds as usize {
-                    self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];
+                    self.snail.direction =
+                        self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
                 } else {
                     self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
                 }

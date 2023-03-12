@@ -6,6 +6,12 @@ pub struct Vec2 {
     pub y: usize,
 }
 
+impl Vec2 {
+    pub fn manhattan_dist(&self, rhs: Vec2) -> usize {
+        self.x.abs_diff(rhs.x) + self.y.abs_diff(rhs.y)
+    }
+}
+
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
     // `set_panic_hook` function at least once during initialization, and then

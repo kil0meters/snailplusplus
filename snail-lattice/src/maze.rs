@@ -234,9 +234,9 @@ where
         }
     }
 
-    pub fn get_directions(&self, source: Vec2) -> [Direction; S * S] {
+    pub fn get_directions(&self, source: Vec2) -> [Option<Direction>; S * S] {
         let mut visited = [false; S * S];
-        let mut directions = [Direction::Left; S * S];
+        let mut directions = [None; S * S];
 
         let mut queue = VecDeque::new();
         queue.push_back((source.x, source.y));
@@ -246,25 +246,25 @@ where
             if !cell.has_wall(Direction::Up) && !visited[(y - 1) * S + x] {
                 queue.push_back((x, y - 1));
                 visited[(y - 1) * S + x] = true;
-                directions[(y - 1) * S + x] = Direction::Down;
+                directions[(y - 1) * S + x] = Some(Direction::Down);
             }
 
             if !cell.has_wall(Direction::Down) && !visited[(y + 1) * S + x] {
                 queue.push_back((x, y + 1));
                 visited[(y + 1) * S + x] = true;
-                directions[(y + 1) * S + x] = Direction::Up;
+                directions[(y + 1) * S + x] = Some(Direction::Up);
             }
 
             if !cell.has_wall(Direction::Left) && !visited[y * S + x - 1] {
                 queue.push_back((x - 1, y));
                 visited[y * S + x - 1] = true;
-                directions[y * S + x - 1] = Direction::Right;
+                directions[y * S + x - 1] = Some(Direction::Right);
             }
 
             if !cell.has_wall(Direction::Right) && !visited[y * S + x + 1] {
                 queue.push_back((x + 1, y));
                 visited[y * S + x + 1] = true;
-                directions[y * S + x + 1] = Direction::Left;
+                directions[y * S + x + 1] = Some(Direction::Left);
             }
         }
 
@@ -279,21 +279,25 @@ where
 
         while pos != target {
             match directions[pos.y * S + pos.x] {
-                Direction::Up => {
+                Some(Direction::Up) => {
                     pos.y -= 1;
                     moves.push(Direction::Up);
                 }
-                Direction::Down => {
+                Some(Direction::Down) => {
                     pos.y += 1;
                     moves.push(Direction::Down);
                 }
-                Direction::Left => {
+                Some(Direction::Left) => {
                     pos.x -= 1;
                     moves.push(Direction::Left);
                 }
-                Direction::Right => {
+                Some(Direction::Right) => {
                     pos.x += 1;
                     moves.push(Direction::Right);
+                }
+
+                None => {
+                    return vec![];
                 }
             }
         }

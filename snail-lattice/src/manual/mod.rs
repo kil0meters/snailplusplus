@@ -6,7 +6,7 @@ use crate::{
     lfsr::LFSR,
     maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
-    utils::Vec2,
+    utils::{set_panic_hook, Vec2},
 };
 
 use self::pacsnail::PacSnail;
@@ -32,6 +32,8 @@ pub struct Game {
 impl Game {
     #[wasm_bindgen(constructor)]
     pub fn new(seed: u16) -> Self {
+        set_panic_hook();
+
         let mut lfsr = LFSR::new(seed);
 
         Self {

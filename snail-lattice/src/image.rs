@@ -14,6 +14,11 @@ impl<'a> Image<'a> {
         self.buffer[index + 3] = 0xFF;
     }
 
+    #[inline(always)]
+    pub fn draw_pixel_xy(&mut self, pixel: [u8; 3], x: usize, y: usize) {
+        self.draw_pixel(4 * (y * self.buffer_width + x), pixel);
+    }
+
     pub fn draw_rectangle_with(
         &mut self,
         x: usize,
@@ -110,6 +115,15 @@ impl<'a> Image<'a> {
                 self.draw_char(c, x, y);
             }
             x += 4;
+        }
+    }
+
+    pub fn draw_line(&mut self, color: [u8; 3], start: Vec2, end: Vec2) {
+        let dy = start.y - end.y;
+        let dx = start.x - end.x;
+        for x in start.x..end.x {
+            let y = start.y + dy * (x - start.x) / dx;
+            self.draw_pixel_xy(color, x, y);
         }
     }
 

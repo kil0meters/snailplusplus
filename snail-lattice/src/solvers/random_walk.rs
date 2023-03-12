@@ -17,7 +17,7 @@ where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
-    directions: [Direction; S * S],
+    directions: [Option<Direction>; S * S],
     upgrades: u32,
 }
 
@@ -28,7 +28,7 @@ where
     fn new() -> Self {
         RandomWalk {
             snail: Snail::new(),
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             upgrades: 0,
         }
     }
@@ -68,7 +68,8 @@ where
             + ((self.upgrades & 0b100) >> 2);
 
         if (lfsr.big() % 10) < chance as usize {
-            self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];
+            self.snail.direction =
+                self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
             self.snail.move_forward(maze);
         } else {
             loop {
