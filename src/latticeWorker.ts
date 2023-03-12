@@ -193,7 +193,6 @@ let messageQueue: LatticeWorkerMessage[] = [];
 function processMessage(msg: LatticeWorkerMessage) {
     switch (msg.type) {
         case "setup":
-            console.log("hello");
             setupLattice(msg.mazeType);
             break;
         case "reset":

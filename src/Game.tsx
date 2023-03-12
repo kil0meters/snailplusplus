@@ -65,7 +65,7 @@ const Determination: Component = () => {
 
     return <>
         {powerup.active ?
-            <div class='z-50 flex flex-col gap-4 shadow-md absolute text-white font-pixelated bg-black border-4 border-white top-4 max-w-md left-0 right-0 mx-auto p-4'>
+            <div class='z-50 flex flex-col gap-4 shadow-md absolute text-white font-pixelated bg-black border-4 border-white bottom-4 max-w-md left-0 right-0 mx-auto p-4'>
                 <span>
                     Your snails are filled with determination. They move {powerup.multiplier}x faster for {Math.floor((powerup.end.getTime() - powerup.start.getTime()) / 1000)} seconds.
                 </span>
@@ -150,8 +150,6 @@ const Game: Component = () => {
 
     onMount(() => {
         shop.forEach(({ key, count }) => {
-            console.log("Hello");
-
             LATTICE_WORKER_STORE[key].postMessage({ type: "setup", mazeType: key });
             LATTICE_WORKER_STORE[key].postMessage({ type: "alter", diff: count });
             LATTICE_WORKER_STORE[key].addEventListener("message", setScoreListener)

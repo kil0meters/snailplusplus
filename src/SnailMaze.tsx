@@ -2,7 +2,7 @@ import { batch, Component, createEffect, createMemo, createSignal, on, onCleanup
 import init, { Game } from "../snail-lattice/pkg/snail_lattice";
 import { PowerupContext } from "./App";
 import { ScoreContext } from "./ScoreProvider";
-import { randomSeed } from "./utils";
+import { createStoredSignal, randomSeed } from "./utils";
 
 interface SnailMazeProps {
     class?: string;
@@ -77,6 +77,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
     const [grid, setGrid] = createSignal(new Uint8Array);
     const [score, setScore] = useContext(ScoreContext);
     const [_powerup, setPowerup] = useContext(PowerupContext);
+    const [gameMode, setGameMode] = createStoredSignal("selected-game", 0);
 
     let game: Game;
     let prevTime: number;
@@ -140,6 +141,14 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         requestAnimationFrame(render);
     };
 
+    createEffect(() => {
+        // idk why i need this here, but sure
+        gameMode();
+
+        if (game)
+            game.set_game(gameMode());
+    });
+
     onMount(() => {
         updateScale();
 
@@ -154,7 +163,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
 
         init().then(() => {
             game = new Game(randomSeed());
-            game.set_game(1);
+            game.set_game(gameMode());
             ctx = canvas.getContext("2d");
             prevTime = performance.now();
             requestAnimationFrame(render);
@@ -165,7 +174,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         <div
             tabindex={-1}
             ref={container}
-            class={`flex items-center content-center justify-center outline-0 h-full ${props.class}`}
+            class={`flex items-center content-center justify-center outline-0 h-full group ${props.class}`}
         >
             <div class="grid z-20 grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
                 <button
@@ -244,6 +253,16 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                         keyReleased(e);
                     }}
                 >→</button>
+            </div>
+            <div class="bg-white border-black border-2 p-4 group-hover:flex flex-col text-lg gap-2 absolute hidden">
+                <span class="font-display font-bold">Game Mode</span>
+
+                <div class="grid grid-cols-4">
+                    <button class="p-2 hover:bg-black aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
+                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(1)}>🧀</button>
+                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(2)}>🚀</button>
+                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(3)}>🔫</button>
+                </div>
             </div>
             <canvas
                 ref={canvas}
