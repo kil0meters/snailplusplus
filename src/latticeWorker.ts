@@ -1,4 +1,4 @@
-import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice, LearningLattice, RpgLattice, MetaLattice, InvertedLattice } from "../snail-lattice/pkg/snail_lattice";
+import init, { RandomWalkLattice, RandomTeleportLattice, LearningLattice, HoldLeftLattice, InvertedLattice, TremauxLattice, RpgLattice, TimeTravelLattice, CloneLattice, MetaLattice } from "../snail-lattice/pkg/snail_lattice";
 import type { ShopKey } from "./ShopProvider";
 import { randomSeed } from "./utils";
 
@@ -62,7 +62,7 @@ class LatticeList<T extends SnailLattice> {
     // tick everything
     tick(): number {
         let now = performance.now();
-        let dt = Math.round((now - this.prevTick) * 1000);
+        let dt = now - this.prevTick;
         this.prevTick = performance.now();
 
         return this.lattice.tick(dt * this.tickRate);
@@ -193,6 +193,7 @@ let messageQueue: LatticeWorkerMessage[] = [];
 function processMessage(msg: LatticeWorkerMessage) {
     switch (msg.type) {
         case "setup":
+            console.log("hello");
             setupLattice(msg.mazeType);
             break;
         case "reset":

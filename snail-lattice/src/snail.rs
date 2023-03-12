@@ -1,7 +1,7 @@
 use crate::{
     image::Image,
     maze::CELLS_PER_IDX,
-    utils::{discrete_lerp, Vec2},
+    utils::{lerp, Vec2},
 };
 
 use super::{direction::Direction, maze::Maze};
@@ -63,8 +63,7 @@ where
         palette: [[u8; 3]; 6],
 
         animation_cycle: bool,
-        movement_timer: usize,
-        movement_time: usize,
+        progress: f32,
 
         image: &mut Image,
         bx: usize,
@@ -77,22 +76,20 @@ where
         };
 
         let offset_y = if self.prev_pos.y != self.pos.y {
-            discrete_lerp(
+            lerp(
                 (self.prev_pos.y * 10) as i32,
                 (self.pos.y * 10) as i32,
-                movement_timer as i32,
-                movement_time as i32,
+                progress,
             )
         } else {
             (self.pos.y * 10) as i32
         };
 
         let offset_x = if self.prev_pos.x != self.pos.x {
-            discrete_lerp(
+            lerp(
                 (self.prev_pos.x * 10) as i32,
                 (self.pos.x * 10) as i32,
-                movement_timer as i32,
-                movement_time as i32,
+                progress,
             )
         } else {
             (self.pos.x * 10) as i32

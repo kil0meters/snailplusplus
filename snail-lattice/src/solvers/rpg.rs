@@ -69,7 +69,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -79,8 +79,7 @@ where
             snail.draw(
                 DEFAULT_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -91,8 +90,7 @@ where
             snail.draw(
                 GRAYSCALE_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -203,10 +201,10 @@ where
         false
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         // Comradery
         if (self.upgrades & 0b1) != 0 {
-            SNAIL_MOVEMENT_TIME * 10 / (9 + self.party.len())
+            SNAIL_MOVEMENT_TIME * 10.0 / (9.0 + self.party.len() as f32)
         } else {
             SNAIL_MOVEMENT_TIME
         }

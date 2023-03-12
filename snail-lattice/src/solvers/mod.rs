@@ -34,7 +34,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         lfsr: &mut LFSR,
 
         image: &mut Image,
@@ -50,7 +50,7 @@ where
     // returns true if the step solved the maze
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool;
 
-    fn movement_time(&self) -> usize;
+    fn movement_time(&self) -> f32;
 
     fn palette() -> [[u8; 3]; 6] {
         DEFAULT_PALETTE

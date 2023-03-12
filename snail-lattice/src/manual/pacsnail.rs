@@ -78,8 +78,8 @@ fn pacman_maze() -> (Maze<10>, Vec<Pellet>, usize) {
     (maze, pellets, pellet_count)
 }
 
-const PACMAN_MOVEMENT_TIME: usize = SNAIL_MOVEMENT_TIME * 3 / 2;
-const POWERUP_TIME: usize = SNAIL_MOVEMENT_TIME * 50;
+const PACMAN_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME * 1.5;
+const POWERUP_TIME: f32 = SNAIL_MOVEMENT_TIME * 50.0;
 
 #[derive(Clone, Copy, PartialEq)]
 enum Pellet {
@@ -93,12 +93,12 @@ pub struct PacSnail {
     pellets: Vec<Pellet>,
     snail: Snail<10>,
     maze: Maze<10>,
-    time: usize,
     stuck: bool,
     pellet_count: usize,
     next_direction: Option<Direction>,
-    powerup_timer: usize,
-    movement_timer: usize,
+    time: f32,
+    powerup_timer: f32,
+    movement_timer: f32,
 }
 
 impl PacSnail {
@@ -123,10 +123,10 @@ impl PacSnail {
             bg_buffer,
             snail,
             stuck: true,
-            time: 0,
             pellet_count,
-            powerup_timer: 0,
             next_direction: None,
+            powerup_timer: 0.0,
+            time: 0.0,
             movement_timer: PACMAN_MOVEMENT_TIME,
         };
 
@@ -181,7 +181,7 @@ impl PacSnail {
         vec![101, 101]
     }
 
-    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: usize) -> i32 {
+    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
         if self.pellet_count == 0 {
             let (maze, pellets, pellet_count) = pacman_maze();
 
@@ -199,10 +199,10 @@ impl PacSnail {
             return 0;
         }
 
-        self.time = self.time.wrapping_add(dt);
+        self.time += dt;
 
         self.movement_timer += dt;
-        let can_move = self.movement_timer / PACMAN_MOVEMENT_TIME > 0;
+        let can_move = self.movement_timer / PACMAN_MOVEMENT_TIME >= 1.0;
 
         match keys.first() {
             Some(1) => {
@@ -255,7 +255,7 @@ impl PacSnail {
             if !self.snail.move_forward(&self.maze) {
                 self.stuck = true;
             } else {
-                self.movement_timer = 0;
+                self.movement_timer = 0.0;
             }
         }
 
@@ -264,7 +264,8 @@ impl PacSnail {
 
     pub fn render(&self, buffer: &mut [u8]) {
         buffer.copy_from_slice(&self.bg_buffer);
-        let animation_cycle = self.stuck || (self.time / (ANIMATION_TIME / 4)) % 2 == 0;
+        let animation_cycle =
+            self.stuck || (self.time / (ANIMATION_TIME / 4.0)).floor() as usize % 2 == 0;
 
         let mut image = Image {
             buffer,
@@ -274,8 +275,7 @@ impl PacSnail {
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            self.movement_timer,
-            PACMAN_MOVEMENT_TIME,
+            self.movement_timer / PACMAN_MOVEMENT_TIME,
             &mut image,
             0,
             0,

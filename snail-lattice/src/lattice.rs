@@ -9,7 +9,7 @@ use crate::{
     solvers::{
         Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, TimeTravel, Tremaux,
     },
-    utils::{console_log, set_panic_hook},
+    utils::set_panic_hook,
 };
 
 #[derive(Clone, Copy)]
@@ -26,7 +26,7 @@ pub trait TilableMaze {
     const SIZE: usize;
 
     fn new() -> Self;
-    fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize;
+    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize;
     fn set_upgrades(&mut self, upgrades: u32);
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize);
     fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize);
@@ -204,7 +204,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
     // progresses all snails a certain number of microseconds
     // returns the number of maze framents accrued
-    pub fn tick(&mut self, dt: usize) -> usize {
+    pub fn tick(&mut self, dt: f32) -> usize {
         let mut total = 0;
 
         for (i, maze) in self.mazes.iter_mut().enumerate() {
@@ -229,7 +229,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             self.bg_buffers.clear();
             self.render_marked.clear();
         } else {
-            let mut time_offset = 0;
+            let mut time_offset = 0.0;
 
             for _ in 0..difference {
                 let mut new_maze = LatticeElement::new();
@@ -243,7 +243,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
                 self.mazes.push(new_maze);
                 self.solve_count.push(0);
 
-                time_offset += 100000;
+                time_offset += 100.0;
             }
         }
     }
@@ -291,7 +291,7 @@ impl TilableMaze for MetaMaze {
         self.clone.set_upgrades((upgrades >> 24) & 0b111);
     }
 
-    fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
+    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize {
         let mut total = 0;
 
         total += self.random_walk.tick(dt, lfsr);
@@ -379,7 +379,7 @@ macro_rules! lattice_impl {
             }
 
             #[wasm_bindgen]
-            pub fn tick(&mut self, dt: usize) -> usize {
+            pub fn tick(&mut self, dt: f32) -> usize {
                 self.0.tick(dt)
             }
 

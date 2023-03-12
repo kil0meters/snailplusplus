@@ -5,8 +5,8 @@ use crate::{
     utils::Vec2,
 };
 
-pub const SNAIL_MOVEMENT_TIME: usize = 250000;
-pub const ANIMATION_TIME: usize = 500000;
+pub const SNAIL_MOVEMENT_TIME: f32 = 250.0;
+pub const ANIMATION_TIME: f32 = 500.0;
 
 // each cell is 4 bits, so 2 cells per byte
 pub const CELLS_PER_IDX: usize = size_of::<usize>() * 2;
@@ -37,11 +37,11 @@ where
 {
     solver: T,
 
-    // stores time since start, in microseconds
-    clock: usize,
+    // stores time since start, in milliseconds
+    clock: f32,
 
     // time since last movement
-    movement_timer: usize,
+    movement_timer: f32,
 
     pub maze: Maze<S>,
 }
@@ -55,8 +55,8 @@ where
     fn new() -> AutoMaze<S, T> {
         AutoMaze {
             solver: T::new(),
-            clock: 0,
-            movement_timer: 0,
+            clock: 0.0,
+            movement_timer: 0.0,
 
             maze: Maze::new(),
         }
@@ -65,16 +65,16 @@ where
     // progresses time a certain number of microseconds
     // notably, no rendering happens when we tick the time
     // returns true if the tick results in a new maze to be generated
-    fn tick(&mut self, dt: usize, lfsr: &mut LFSR) -> usize {
+    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize {
         let prev = self.clock;
         let now = self.clock + dt;
         self.clock = now;
         let movement_time = self.solver.movement_time();
 
-        let mut num_movements = (now - prev) / movement_time;
+        let mut num_movements = ((now - prev) / movement_time).floor() as usize;
         self.movement_timer += (now - prev) % movement_time;
         if self.movement_timer > movement_time {
-            num_movements += self.movement_timer / movement_time;
+            num_movements += (self.movement_timer / movement_time).floor() as usize;
             self.movement_timer %= movement_time;
         }
 
@@ -96,7 +96,7 @@ where
     }
 
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
-        let animation_cycle = (self.clock / ANIMATION_TIME) % 2 == 0;
+        let animation_cycle = (self.clock / ANIMATION_TIME).round() as usize % 2 == 0;
 
         // draw "snail"
         self.solver

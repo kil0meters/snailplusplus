@@ -4,7 +4,7 @@ use crate::{
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
-    utils::{discrete_lerp, Vec2},
+    utils::{lerp, Vec2},
 };
 
 /// Random Teleport Snail Upgrades:
@@ -17,7 +17,7 @@ where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
-    teleport_timer: usize,
+    teleport_timer: f32,
     teleport_bounds: Vec2,
     prev_teleport_bounds: Vec2,
     upgrades: u32,
@@ -27,12 +27,12 @@ impl<const S: usize> RandomTeleport<S>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    fn teleportation_time(&self) -> usize {
+    fn teleportation_time(&self) -> f32 {
         // has fusion reactor upgrade
         if (self.upgrades & 1) != 0 {
-            5
+            5.0 * SNAIL_MOVEMENT_TIME
         } else {
-            6
+            6.0 * SNAIL_MOVEMENT_TIME
         }
     }
 }
@@ -44,7 +44,7 @@ where
     fn new() -> Self {
         RandomTeleport {
             snail: Snail::new(),
-            teleport_timer: 0,
+            teleport_timer: 0.0,
             prev_teleport_bounds: Vec2 { x: S, y: S },
             teleport_bounds: Vec2 { x: S, y: S },
             upgrades: 0,
@@ -58,7 +58,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -69,8 +69,7 @@ where
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            movement_timer,
-            movement_time,
+            movement_timer / movement_time,
             image,
             bx,
             by,
@@ -86,11 +85,9 @@ where
             px -= 44 * image.buffer_width;
         }
 
-        let fact1 = ((self.teleport_timer * movement_time + movement_timer)
-            % (self.teleportation_time() * movement_time)) as i32;
-        let fact2 = (self.teleportation_time() * movement_time) as i32;
-
-        let progress = discrete_lerp(0, 36, fact1, fact2) as usize;
+        let teleportation_progress =
+            (self.teleport_timer + movement_timer) / self.teleportation_time();
+        let progress = lerp(0, 36, teleportation_progress) as usize;
 
         // draw progress bar under snail
         for index in (px..(px + progress)).step_by(4) {
@@ -99,18 +96,16 @@ where
 
         // draw current teleportation bounds if homing beacon is enabled
         if (self.upgrades & 0b11) != 0 {
-            let y_start = discrete_lerp(
+            let y_start = lerp(
                 10 * (S - self.prev_teleport_bounds.y) as i32,
                 10 * (S - self.teleport_bounds.y) as i32,
-                fact1,
-                fact2,
+                teleportation_progress,
             ) as usize;
 
-            let x_start = discrete_lerp(
+            let x_start = lerp(
                 10 * (S - self.prev_teleport_bounds.x) as i32,
                 10 * (S - self.teleport_bounds.x) as i32,
-                fact1,
-                fact2,
+                teleportation_progress,
             ) as usize;
 
             let start_px = 4 * (((by + y_start) * image.buffer_width) + bx + x_start);
@@ -145,8 +140,9 @@ where
     fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
         self.snail.prev_pos.x = self.snail.pos.x;
         self.snail.prev_pos.y = self.snail.pos.y;
-        self.teleport_timer += 1;
-        if self.teleport_timer % self.teleportation_time() == 0 {
+        self.teleport_timer += SNAIL_MOVEMENT_TIME;
+        if self.teleport_timer >= self.teleportation_time() {
+            self.teleport_timer = 0.0;
             self.snail.pos.x = S - (lfsr.big() % self.teleport_bounds.x) - 1;
             self.snail.pos.y = S - (lfsr.big() % self.teleport_bounds.y) - 1;
 
@@ -177,7 +173,7 @@ where
         }
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         SNAIL_MOVEMENT_TIME
     }
 }

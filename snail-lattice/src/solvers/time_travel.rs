@@ -310,7 +310,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -318,15 +318,7 @@ where
     ) {
         match self.state {
             TimeTravelState::TimeTraveling => {
-                self.snail.draw(
-                    GRAYSCALE_PALETTE,
-                    true,
-                    0,
-                    self.movement_time(),
-                    image,
-                    bx,
-                    by,
-                );
+                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image, bx, by);
 
                 self.time_traveler
                     .draw(animation_cycle, movement_timer, lfsr, image, bx, by);
@@ -336,21 +328,12 @@ where
                     tile.draw(lfsr, image, bx, by);
                 }
 
-                self.snail.draw(
-                    GRAYSCALE_PALETTE,
-                    true,
-                    0,
-                    self.movement_time(),
-                    image,
-                    bx,
-                    by,
-                );
+                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image, bx, by);
 
                 self.path_drawer.draw(
                     DEFAULT_PALETTE,
                     animation_cycle,
-                    movement_timer,
-                    self.movement_time(),
+                    movement_timer / self.movement_time(),
                     image,
                     bx,
                     by,
@@ -364,8 +347,7 @@ where
                 self.snail.draw(
                     DEFAULT_PALETTE,
                     animation_cycle,
-                    movement_timer,
-                    self.movement_time(),
+                    movement_timer / self.movement_time(),
                     image,
                     bx,
                     by,
@@ -374,12 +356,12 @@ where
         }
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         match self.state {
             TimeTravelState::Normal => {
                 // forward time travel
                 if (self.upgrades & 0b1) != 0 {
-                    SNAIL_MOVEMENT_TIME * 2 / 3
+                    SNAIL_MOVEMENT_TIME / 1.5
                 } else {
                     SNAIL_MOVEMENT_TIME
                 }
@@ -387,12 +369,12 @@ where
             TimeTravelState::TimeTraveling => {
                 // improved time relay
                 if (self.upgrades & 0b10) != 0 {
-                    (SNAIL_MOVEMENT_TIME / 8) * 2 / 3
+                    (SNAIL_MOVEMENT_TIME / 8.0) / 1.5
                 } else {
-                    SNAIL_MOVEMENT_TIME / 8
+                    SNAIL_MOVEMENT_TIME / 8.0
                 }
             }
-            TimeTravelState::DrawingPath => SNAIL_MOVEMENT_TIME / 8,
+            TimeTravelState::DrawingPath => SNAIL_MOVEMENT_TIME / 8.0,
         }
     }
 }

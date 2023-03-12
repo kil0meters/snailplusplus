@@ -40,7 +40,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -49,8 +49,7 @@ where
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            movement_timer,
-            self.movement_time(),
+            movement_timer / self.movement_time(),
             image,
             bx,
             by,
@@ -95,7 +94,7 @@ where
         }
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         SNAIL_MOVEMENT_TIME
     }
 }

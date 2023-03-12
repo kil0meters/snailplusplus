@@ -61,7 +61,7 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, dt: usize) -> i32 {
+    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, dt: f32) -> i32 {
         match &mut self.game {
             ManualGame::SnailMaze(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
@@ -79,7 +79,7 @@ impl Game {
     }
 }
 
-const MANUAL_MOVEMENT_TIME: usize = SNAIL_MOVEMENT_TIME / 2;
+const MANUAL_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME / 2.0;
 
 struct ManualMaze {
     snail: Snail<7>,
@@ -88,8 +88,8 @@ struct ManualMaze {
     bg_buffer: Vec<u8>,
 
     solve_type: i32,
-    time: usize,
-    movement_timer: usize,
+    time: f32,
+    movement_timer: f32,
 }
 
 impl ManualMaze {
@@ -112,7 +112,7 @@ impl ManualMaze {
             bg_buffer,
             movement_timer: MANUAL_MOVEMENT_TIME,
             solve_type: 0,
-            time: 0,
+            time: 0.0,
         }
     }
 
@@ -126,11 +126,11 @@ impl ManualMaze {
     // 2 => left
     // 4 => down
     // 8 => up
-    fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: usize) -> i32 {
-        self.time = self.time.wrapping_add(dt);
+    fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
+        self.time += dt;
 
         self.movement_timer += dt;
-        let can_move = self.movement_timer / MANUAL_MOVEMENT_TIME > 0;
+        let can_move = self.movement_timer / MANUAL_MOVEMENT_TIME >= 1.0;
         self.movement_timer %= MANUAL_MOVEMENT_TIME;
 
         if can_move {
@@ -199,13 +199,12 @@ impl ManualMaze {
             buffer_width: 71,
         };
 
-        let animation_cycle = (self.time / ANIMATION_TIME) % 2 == 0;
+        let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;
 
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            self.movement_timer,
-            MANUAL_MOVEMENT_TIME,
+            self.movement_timer / MANUAL_MOVEMENT_TIME,
             &mut image,
             0,
             0,

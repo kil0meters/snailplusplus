@@ -85,14 +85,14 @@ where
     is_backtracking: bool,
     upgrades: u32,
     directions: [Direction; S * S],
-    movement_time: usize,
+    movement_time: f32,
 }
 
 impl<const S: usize> Tremaux<S>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    pub fn set_movement_time(&mut self, movement_time: usize) {
+    pub fn set_movement_time(&mut self, movement_time: f32) {
         self.movement_time = movement_time;
     }
 }
@@ -119,7 +119,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -132,8 +132,7 @@ where
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            movement_timer,
-            self.movement_time(),
+            movement_timer / self.movement_time(),
             image,
             bx,
             by,
@@ -231,9 +230,9 @@ where
         self.snail.pos == maze.end_pos
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         if self.is_backtracking && (self.upgrades & 0b100) != 0 {
-            self.movement_time / 2
+            self.movement_time / 2.0
         } else {
             self.movement_time
         }

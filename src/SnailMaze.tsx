@@ -104,7 +104,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         }
 
         let now = performance.now();
-        let dt = Math.round((now - prevTime) * 1000);
+        let dt = now - prevTime;
         prevTime = now;
 
         // @ts-ignore: this does work, but due to a wasm-bindgen we cannot make the signature take a Uint8ClampedArray

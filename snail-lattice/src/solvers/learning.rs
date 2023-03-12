@@ -154,7 +154,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -174,8 +174,7 @@ where
             snail.snail.draw(
                 DEFAULT_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -257,17 +256,17 @@ where
         false
     }
 
-    fn movement_time(&self) -> usize {
-        let mut movement_time = SNAIL_MOVEMENT_TIME / 2;
+    fn movement_time(&self) -> f32 {
+        let mut movement_time = SNAIL_MOVEMENT_TIME / 2.0;
 
         // Uranium
         if (self.upgrades & 0b10) != 0 {
-            movement_time = (movement_time * 2) / 3
+            movement_time *= 0.65;
         }
 
         // Radium
         if (self.upgrades & 0b100) != 0 {
-            movement_time = movement_time / 4
+            movement_time *= 0.25;
         }
 
         movement_time

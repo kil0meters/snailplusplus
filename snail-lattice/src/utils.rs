@@ -19,10 +19,8 @@ pub fn set_panic_hook() {
 
 // discrete linear interpolation
 // returns a linear intepolation between v1 and v2 baded on fact1/fact2
-pub fn discrete_lerp(v1: i32, v2: i32, fact1: i32, fact2: i32) -> i32 {
-    let difference = v2 - v1;
-    let add = (fact1 * difference) / fact2;
-    v1 + add
+pub fn lerp(v1: i32, v2: i32, fact: f32) -> i32 {
+    v1 + (fact * (v2 - v1) as f32).floor() as i32
 }
 
 /* pub fn draw_rectangle(

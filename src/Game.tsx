@@ -150,6 +150,8 @@ const Game: Component = () => {
 
     onMount(() => {
         shop.forEach(({ key, count }) => {
+            console.log("Hello");
+
             LATTICE_WORKER_STORE[key].postMessage({ type: "setup", mazeType: key });
             LATTICE_WORKER_STORE[key].postMessage({ type: "alter", diff: count });
             LATTICE_WORKER_STORE[key].addEventListener("message", setScoreListener)
