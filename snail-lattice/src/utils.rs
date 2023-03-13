@@ -1,3 +1,5 @@
+use std::ops::{Add, AddAssign, Mul, SubAssign};
+
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -9,6 +11,121 @@ pub struct Vec2 {
 impl Vec2 {
     pub fn manhattan_dist(&self, rhs: Vec2) -> usize {
         self.x.abs_diff(rhs.x) + self.y.abs_diff(rhs.y)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct Vec2i {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Vec2i {
+    pub fn new(x: i32, y: i32) -> Vec2i {
+        Vec2i { x, y }
+    }
+}
+
+impl Add for Vec2i {
+    type Output = Vec2i;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Vec2i::new(self.x + rhs.x, self.y + rhs.y)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Vec2f {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Vec2f {
+    pub fn new(x: f32, y: f32) -> Vec2f {
+        Vec2f { x, y }
+    }
+
+    pub fn to_vec2i(self) -> Vec2i {
+        Vec2i::new(self.x as i32, self.y as i32)
+    }
+
+    pub fn wrap(&mut self, wrapping: f32) {
+        if self.x > wrapping {
+            self.x -= wrapping;
+        }
+
+        if self.x < 0.0 {
+            self.x += wrapping;
+        }
+
+        if self.y > wrapping {
+            self.y -= wrapping;
+        }
+
+        if self.y < 0.0 {
+            self.y += wrapping;
+        }
+    }
+
+    pub fn rot(mut self, angle: f32) -> Vec2f {
+        let s = angle.sin();
+        let c = angle.cos();
+
+        let new_x = self.x * c - self.y * s;
+        let new_y = self.x * s + self.y * c;
+
+        self.x = new_x;
+        self.y = new_y;
+
+        self
+    }
+
+    pub fn rot_around(mut self, pivot: Vec2f, angle: f32) -> Vec2f {
+        self.x -= pivot.x;
+        self.y -= pivot.y;
+
+        self = self.rot(angle);
+
+        self.x += pivot.x;
+        self.y += pivot.y;
+
+        self
+    }
+}
+
+impl Add for Vec2f {
+    type Output = Vec2f;
+
+    fn add(mut self, rhs: Self) -> Self::Output {
+        self.x += rhs.x;
+        self.y += rhs.y;
+
+        self
+    }
+}
+
+impl Mul<f32> for Vec2f {
+    type Output = Vec2f;
+
+    fn mul(mut self, rhs: f32) -> Self::Output {
+        self.x *= rhs;
+        self.y *= rhs;
+
+        self
+    }
+}
+
+impl AddAssign for Vec2f {
+    fn add_assign(&mut self, rhs: Self) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl SubAssign for Vec2f {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
     }
 }
 

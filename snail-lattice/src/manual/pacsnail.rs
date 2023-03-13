@@ -2,9 +2,9 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, ANIMATION_TIME, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE, INVERTED_PALETTE},
-    utils::{console_log, Vec2},
+    maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
+    snail::{Snail, DEFAULT_PALETTE, INVERTED_PALETTE},
+    utils::Vec2,
 };
 
 const PACMAN_BOARD: &[u8] = concat!(

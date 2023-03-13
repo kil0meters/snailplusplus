@@ -38,10 +38,6 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
 
-function _assertNum(n) {
-    if (typeof(n) !== 'number') throw new Error('expected a number argument');
-}
-
 let cachedInt32Memory0 = new Int32Array();
 
 function getInt32Memory0() {
@@ -80,28 +76,10 @@ function passArray32ToWasm0(arg, malloc) {
     return ptr;
 }
 
-function logError(f, args) {
-    try {
-        return f.apply(this, args);
-    } catch (e) {
-        let error = (function () {
-            try {
-                return e instanceof Error ? `${e.message}\n\nStack:\n${e.stack}` : e.toString();
-            } catch(_) {
-                return "<failed to stringify thrown value>";
-            }
-        }());
-        console.error("wasm-bindgen: imported JS function that was not marked as `catch` threw an error:", error);
-        throw e;
-    }
-}
-
 function addHeapObject(obj) {
     if (heap_next === heap.length) heap.push(heap.length + 1);
     const idx = heap_next;
     heap_next = heap[idx];
-
-    if (typeof(heap_next) !== 'number') throw new Error('corrupt heap');
 
     heap[idx] = obj;
     return idx;
@@ -123,8 +101,6 @@ const encodeString = (typeof cachedTextEncoder.encodeInto === 'function'
 });
 
 function passStringToWasm0(arg, malloc, realloc) {
-
-    if (typeof(arg) !== 'string') throw new Error('expected a string argument');
 
     if (realloc === undefined) {
         const buf = cachedTextEncoder.encode(arg);
@@ -154,7 +130,7 @@ function passStringToWasm0(arg, malloc, realloc) {
         ptr = realloc(ptr, len, len = offset + arg.length * 3);
         const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
         const ret = encodeString(arg, view);
-        if (ret.read !== arg.length) throw new Error('failed to pass whole string');
+
         offset += ret.written;
     }
 
@@ -188,8 +164,6 @@ export class CloneLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
         const ret = wasm.clonelattice_new(width, seed);
         return CloneLattice.__wrap(ret);
     }
@@ -199,10 +173,7 @@ export class CloneLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.clonelattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -218,9 +189,7 @@ export class CloneLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
             wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -235,9 +204,6 @@ export class CloneLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.clonelattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -247,12 +213,8 @@ export class CloneLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.clonelattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -264,8 +226,6 @@ export class CloneLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.clonelattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -273,17 +233,12 @@ export class CloneLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.clonelattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
@@ -291,9 +246,6 @@ export class CloneLattice {
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
         wasm.clonelattice_set_width(this.ptr, width);
     }
 }
@@ -323,7 +275,6 @@ export class Game {
     * @param {number} seed
     */
     constructor(seed) {
-        _assertNum(seed);
         const ret = wasm.game_new(seed);
         return Game.__wrap(ret);
     }
@@ -332,9 +283,7 @@ export class Game {
     */
     resolution() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
             wasm.game_resolution(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -349,9 +298,6 @@ export class Game {
     * @param {number} game_type
     */
     set_game(game_type) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(game_type);
         wasm.game_set_game(this.ptr, game_type);
     }
     /**
@@ -362,8 +308,6 @@ export class Game {
     */
     render(buffer, keys, dt) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
             const ptr1 = passArray32ToWasm0(keys, wasm.__wbindgen_malloc);
@@ -403,9 +347,7 @@ export class HoldLeftLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.holdleftlattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return HoldLeftLattice.__wrap(ret);
     }
     /**
@@ -414,10 +356,7 @@ export class HoldLeftLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.holdleftlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -433,10 +372,8 @@ export class HoldLeftLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.holdleftlattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -450,9 +387,6 @@ export class HoldLeftLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.holdleftlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -462,12 +396,8 @@ export class HoldLeftLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.holdleftlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -479,8 +409,6 @@ export class HoldLeftLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.holdleftlattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -488,28 +416,20 @@ export class HoldLeftLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.holdleftlattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.holdleftlattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.holdleftlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -539,9 +459,7 @@ export class InvertedLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.invertedlattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return InvertedLattice.__wrap(ret);
     }
     /**
@@ -550,11 +468,8 @@ export class InvertedLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
-            wasm.invertedlattice_get_dimensions(retptr, this.ptr, count);
+            wasm.holdleftlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -569,10 +484,8 @@ export class InvertedLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.invertedlattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -586,9 +499,6 @@ export class InvertedLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.invertedlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -598,12 +508,8 @@ export class InvertedLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.invertedlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -615,8 +521,6 @@ export class InvertedLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.invertedlattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -624,28 +528,20 @@ export class InvertedLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.invertedlattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.invertedlattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.invertedlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -675,9 +571,7 @@ export class LearningLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.learninglattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return LearningLattice.__wrap(ret);
     }
     /**
@@ -686,11 +580,8 @@ export class LearningLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
-            wasm.learninglattice_get_dimensions(retptr, this.ptr, count);
+            wasm.holdleftlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -705,10 +596,8 @@ export class LearningLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.learninglattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -722,9 +611,6 @@ export class LearningLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.learninglattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -734,12 +620,8 @@ export class LearningLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.learninglattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -751,8 +633,6 @@ export class LearningLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.learninglattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -760,28 +640,20 @@ export class LearningLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.learninglattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.learninglattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.learninglattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -811,8 +683,6 @@ export class MetaLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
         const ret = wasm.metalattice_new(width, seed);
         return MetaLattice.__wrap(ret);
     }
@@ -822,10 +692,7 @@ export class MetaLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.metalattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -841,10 +708,8 @@ export class MetaLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.metalattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -858,9 +723,6 @@ export class MetaLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.metalattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -870,12 +732,8 @@ export class MetaLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.metalattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -887,8 +745,6 @@ export class MetaLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.metalattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -896,37 +752,25 @@ export class MetaLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.metalattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.metalattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.metalattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
 */
 export class MetaMaze {
-
-    constructor() {
-        throw new Error('cannot invoke `new` directly');
-    }
 
     __destroy_into_raw() {
         const ptr = this.ptr;
@@ -967,9 +811,7 @@ export class RandomTeleportLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.randomteleportlattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return RandomTeleportLattice.__wrap(ret);
     }
     /**
@@ -978,10 +820,7 @@ export class RandomTeleportLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.randomteleportlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -997,10 +836,8 @@ export class RandomTeleportLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.randomteleportlattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1014,9 +851,6 @@ export class RandomTeleportLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.randomteleportlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -1026,12 +860,8 @@ export class RandomTeleportLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.randomteleportlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -1043,8 +873,6 @@ export class RandomTeleportLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.randomteleportlattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -1052,28 +880,20 @@ export class RandomTeleportLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.randomteleportlattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.randomteleportlattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.randomteleportlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1103,9 +923,7 @@ export class RandomWalkLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.randomwalklattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return RandomWalkLattice.__wrap(ret);
     }
     /**
@@ -1114,10 +932,7 @@ export class RandomWalkLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.randomwalklattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -1133,10 +948,8 @@ export class RandomWalkLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.randomwalklattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1150,9 +963,6 @@ export class RandomWalkLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.randomwalklattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -1162,12 +972,8 @@ export class RandomWalkLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.randomwalklattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -1179,8 +985,6 @@ export class RandomWalkLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.randomwalklattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -1188,28 +992,20 @@ export class RandomWalkLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.randomwalklattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.randomwalklattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.randomwalklattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1239,9 +1035,7 @@ export class RpgLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.rpglattice_new(width, seed);
+        const ret = wasm.clonelattice_new(width, seed);
         return RpgLattice.__wrap(ret);
     }
     /**
@@ -1250,10 +1044,7 @@ export class RpgLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.rpglattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -1269,10 +1060,8 @@ export class RpgLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.rpglattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1286,9 +1075,6 @@ export class RpgLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.rpglattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -1298,12 +1084,8 @@ export class RpgLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.rpglattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -1315,8 +1097,6 @@ export class RpgLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.rpglattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -1324,28 +1104,20 @@ export class RpgLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.rpglattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.rpglattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.rpglattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1375,9 +1147,7 @@ export class TimeTravelLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.timetravellattice_new(width, seed);
+        const ret = wasm.metalattice_new(width, seed);
         return TimeTravelLattice.__wrap(ret);
     }
     /**
@@ -1386,10 +1156,7 @@ export class TimeTravelLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
             wasm.timetravellattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
@@ -1405,10 +1172,8 @@ export class TimeTravelLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.timetravellattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1422,9 +1187,6 @@ export class TimeTravelLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.timetravellattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -1434,12 +1196,8 @@ export class TimeTravelLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.timetravellattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -1451,8 +1209,6 @@ export class TimeTravelLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.timetravellattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -1460,28 +1216,20 @@ export class TimeTravelLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.timetravellattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.timetravellattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.timetravellattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1511,9 +1259,7 @@ export class TremauxLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        _assertNum(width);
-        _assertNum(seed);
-        const ret = wasm.tremauxlattice_new(width, seed);
+        const ret = wasm.metalattice_new(width, seed);
         return TremauxLattice.__wrap(ret);
     }
     /**
@@ -1522,11 +1268,8 @@ export class TremauxLattice {
     */
     get_dimensions(count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            _assertNum(count);
-            wasm.tremauxlattice_get_dimensions(retptr, this.ptr, count);
+            wasm.rpglattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1541,10 +1284,8 @@ export class TremauxLattice {
     */
     get_solve_count() {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            _assertNum(this.ptr);
-            wasm.tremauxlattice_get_solve_count(retptr, this.ptr);
+            wasm.clonelattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1558,9 +1299,6 @@ export class TremauxLattice {
     * @param {number} upgrades
     */
     set_upgrades(upgrades) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(upgrades);
         wasm.tremauxlattice_set_upgrades(this.ptr, upgrades);
     }
     /**
@@ -1570,12 +1308,8 @@ export class TremauxLattice {
     */
     render(buffer, index, count) {
         try {
-            if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-            _assertNum(this.ptr);
             var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
             var len0 = WASM_VECTOR_LEN;
-            _assertNum(index);
-            _assertNum(count);
             wasm.tremauxlattice_render(this.ptr, ptr0, len0, index, count);
         } finally {
             buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
@@ -1587,8 +1321,6 @@ export class TremauxLattice {
     * @returns {number}
     */
     tick(dt) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
         const ret = wasm.tremauxlattice_tick(this.ptr, dt);
         return ret >>> 0;
     }
@@ -1596,28 +1328,20 @@ export class TremauxLattice {
     * @param {number} difference
     */
     alter(difference) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(difference);
         wasm.tremauxlattice_alter(this.ptr, difference);
     }
     /**
     * @returns {number}
     */
     count() {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        const ret = wasm.tremauxlattice_count(this.ptr);
+        const ret = wasm.clonelattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        if (this.ptr == 0) throw new Error('Attempt to use a moved value');
-        _assertNum(this.ptr);
-        _assertNum(width);
-        wasm.tremauxlattice_set_width(this.ptr, width);
+        wasm.clonelattice_set_width(this.ptr, width);
     }
 }
 
@@ -1655,27 +1379,27 @@ async function load(module, imports) {
 function getImports() {
     const imports = {};
     imports.wbg = {};
-    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-        takeObject(arg0);
-    };
-    imports.wbg.__wbg_error_f851667af71bcfc6 = function() { return logError(function (arg0, arg1) {
-        try {
-            console.error(getStringFromWasm0(arg0, arg1));
-        } finally {
-            wasm.__wbindgen_free(arg0, arg1);
-        }
-    }, arguments) };
-    imports.wbg.__wbg_new_abda76e883ba8a5f = function() { return logError(function () {
+    imports.wbg.__wbg_new_abda76e883ba8a5f = function() {
         const ret = new Error();
         return addHeapObject(ret);
-    }, arguments) };
-    imports.wbg.__wbg_stack_658279fe44541cf6 = function() { return logError(function (arg0, arg1) {
+    };
+    imports.wbg.__wbg_stack_658279fe44541cf6 = function(arg0, arg1) {
         const ret = getObject(arg1).stack;
         const ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         getInt32Memory0()[arg0 / 4 + 1] = len0;
         getInt32Memory0()[arg0 / 4 + 0] = ptr0;
-    }, arguments) };
+    };
+    imports.wbg.__wbg_error_f851667af71bcfc6 = function(arg0, arg1) {
+        try {
+            console.error(getStringFromWasm0(arg0, arg1));
+        } finally {
+            wasm.__wbindgen_free(arg0, arg1);
+        }
+    };
+    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+        takeObject(arg0);
+    };
     imports.wbg.__wbindgen_throw = function(arg0, arg1) {
         throw new Error(getStringFromWasm0(arg0, arg1));
     };

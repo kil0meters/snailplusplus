@@ -1,4 +1,4 @@
-use crate::utils::Vec2;
+use crate::utils::{console_log, Vec2, Vec2i};
 
 pub struct Image<'a> {
     pub buffer: &'a mut [u8],
@@ -118,12 +118,78 @@ impl<'a> Image<'a> {
         }
     }
 
-    pub fn draw_line(&mut self, color: [u8; 3], start: Vec2, end: Vec2) {
-        let dy = start.y - end.y;
-        let dx = start.x - end.x;
-        for x in start.x..end.x {
-            let y = start.y + dy * (x - start.x) / dx;
-            self.draw_pixel_xy(color, x, y);
+    pub fn draw_line_high(&mut self, color: [u8; 3], x0: i32, y0: i32, x1: i32, y1: i32) {
+        let mut dx = x1 - x0;
+        let dy = y1 - y0;
+        let mut xi = 1;
+        if dx < 0 {
+            xi = -1;
+            dx = -dx;
+        }
+
+        let mut diff = (2 * dx) - dy;
+        let mut x = x0;
+
+        for y in y0..y1 {
+            self.draw_pixel_xy(
+                color,
+                x.rem_euclid(self.buffer_width as i32) as usize,
+                y.rem_euclid(self.buffer_width as i32) as usize,
+            );
+            if diff > 0 {
+                x += xi;
+                diff += 2 * (dx - dy);
+            } else {
+                diff += 2 * dx;
+            }
+        }
+    }
+
+    pub fn draw_line_low(&mut self, color: [u8; 3], x0: i32, y0: i32, x1: i32, y1: i32) {
+        let dx = x1 - x0;
+        let mut dy = y1 - y0;
+        let mut yi = 1;
+        if dy < 0 {
+            yi = -1;
+            dy = -dy;
+        }
+
+        let mut diff = (2 * dy) - dx;
+        let mut y = y0;
+
+        for x in x0..x1 {
+            self.draw_pixel_xy(
+                color,
+                x.rem_euclid(self.buffer_width as i32) as usize,
+                y.rem_euclid(self.buffer_width as i32) as usize,
+            );
+            if diff > 0 {
+                y += yi;
+                diff += 2 * (dy - dx);
+            } else {
+                diff += 2 * dy;
+            }
+        }
+    }
+
+    pub fn draw_line(&mut self, color: [u8; 3], start: Vec2i, end: Vec2i) {
+        let x0 = start.x;
+        let x1 = end.x;
+        let y0 = start.y;
+        let y1 = end.y;
+
+        if y1.abs_diff(y0) < x1.abs_diff(x0) {
+            if x0 > x1 {
+                self.draw_line_low(color, x1, y1, x0, y0);
+            } else {
+                self.draw_line_low(color, x0, y0, x1, y1);
+            }
+        } else {
+            if y0 > y1 {
+                self.draw_line_high(color, x1, y1, x0, y0);
+            } else {
+                self.draw_line_high(color, x0, y0, x1, y1);
+            }
         }
     }
 

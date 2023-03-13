@@ -9,8 +9,9 @@ use crate::{
     utils::{set_panic_hook, Vec2},
 };
 
-use self::pacsnail::PacSnail;
+use self::{asteroids::AsteroidsGame, pacsnail::PacSnail};
 
+mod asteroids;
 mod pacsnail;
 
 // am i really going to implemennt 3 full parody games inside my snail maze incremental game?
@@ -18,7 +19,7 @@ mod pacsnail;
 enum ManualGame {
     SnailMaze(ManualMaze),
     PacSnail(PacSnail),
-    Asteroids,
+    Asteroids(AsteroidsGame),
     Wolfenstein,
 }
 
@@ -47,7 +48,7 @@ impl Game {
     pub fn resolution(&self) -> Vec<u32> {
         match &self.game {
             ManualGame::SnailMaze(game) => game.resolution(),
-            ManualGame::Asteroids => todo!(),
+            ManualGame::Asteroids(game) => game.resolution(),
             ManualGame::PacSnail(game) => game.resolution(),
             ManualGame::Wolfenstein => todo!(),
         }
@@ -58,6 +59,7 @@ impl Game {
         match game_type {
             0 => self.game = ManualGame::SnailMaze(ManualMaze::new(&mut self.lfsr)),
             1 => self.game = ManualGame::PacSnail(PacSnail::new()),
+            2 => self.game = ManualGame::Asteroids(AsteroidsGame::new()),
             _ => unreachable!(),
         }
     }
@@ -70,11 +72,15 @@ impl Game {
                 game.render(buffer);
                 ret
             }
-            ManualGame::Asteroids => todo!(),
             ManualGame::PacSnail(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
                 ret
+            }
+            ManualGame::Asteroids(game) => {
+                game.tick(&mut self.lfsr, keys, dt);
+                game.render(buffer);
+                0
             }
             ManualGame::Wolfenstein => todo!(),
         }
