@@ -1,4 +1,5 @@
-import { batch, Component, createEffect, createMemo, createSignal, on, onCleanup, onMount, untrack, useContext } from "solid-js";
+import { batch, Component, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, untrack, useContext } from "solid-js";
+import { produce } from "solid-js/store";
 import init, { Game } from "../snail-lattice/pkg/snail_lattice";
 import { PowerupContext } from "./App";
 import { ScoreContext } from "./ScoreProvider";
@@ -78,6 +79,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
     const [_powerup, setPowerup] = useContext(PowerupContext);
     const [gameMode, setGameMode] = createStoredSignal("selected-game", 0);
+    const [recentScores, setRecentScores] = createSignal<{ score: bigint, bonus: boolean }[]>([]);
 
     let game: Game;
     let prevTime: number;
@@ -112,7 +114,17 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         let solve = game.render(buffer, new Uint32Array(movement), dt);
 
         if (solve != 0) {
-            setScore(score() + BigInt(Math.abs(solve)));
+            let newScore = BigInt(Math.abs(solve))
+            setScore(score() + newScore);
+
+            setRecentScores((scores) => [...scores, { score: newScore, bonus: solve < 0 }]);
+            setTimeout(() => {
+                setRecentScores((scores) => {
+                    let newScores = [...scores];
+                    newScores.shift();
+                    return newScores;
+                });
+            }, 1000);
 
             if (solve < 0) {
                 let calculatedBoost = Math.max(Math.floor(Math.sqrt(Math.random() * 100)), 2);
@@ -254,7 +266,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                     }}
                 >→</button>
             </div>
-            <div class="bg-white border-black border-2 p-4 group-hover:flex flex-col text-lg gap-2 absolute hidden">
+            <div class="bg-white border-black border-2 p-4 group-hover:flex flex-col text-lg gap-2 absolute hidden bottom-4 shadow-md">
                 <span class="font-display font-bold">Game Mode</span>
 
                 <div class="grid grid-cols-4">
@@ -264,6 +276,11 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                     <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(3)}>🔫</button>
                 </div>
             </div>
+
+            <For each={recentScores()}>{(score) => {
+                return <span class="text-xl text-white drop-shadow-lg font-bold font-display absolute animate-slide-out mb-64">{score.bonus ? "Bonus!" : ""} {score.score.toString()} fragments</span>
+            }}</For>
+
             <canvas
                 ref={canvas}
                 style={{

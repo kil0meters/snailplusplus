@@ -9,10 +9,11 @@ use crate::{
     utils::{set_panic_hook, Vec2},
 };
 
-use self::{asteroids::AsteroidsGame, pacsnail::PacSnail};
+use self::{asteroids::AsteroidsGame, pacsnail::PacSnail, wolfenstein::WolfensteinGame};
 
 mod asteroids;
 mod pacsnail;
+mod wolfenstein;
 
 // am i really going to implemennt 3 full parody games inside my snail maze incremental game?
 // yes, yes i am
@@ -20,7 +21,7 @@ enum ManualGame {
     SnailMaze(ManualMaze),
     PacSnail(PacSnail),
     Asteroids(AsteroidsGame),
-    Wolfenstein,
+    Wolfenstein(WolfensteinGame),
 }
 
 #[wasm_bindgen]
@@ -50,7 +51,7 @@ impl Game {
             ManualGame::SnailMaze(game) => game.resolution(),
             ManualGame::Asteroids(game) => game.resolution(),
             ManualGame::PacSnail(game) => game.resolution(),
-            ManualGame::Wolfenstein => todo!(),
+            ManualGame::Wolfenstein(game) => game.resolution(),
         }
     }
 
@@ -60,6 +61,7 @@ impl Game {
             0 => self.game = ManualGame::SnailMaze(ManualMaze::new(&mut self.lfsr)),
             1 => self.game = ManualGame::PacSnail(PacSnail::new()),
             2 => self.game = ManualGame::Asteroids(AsteroidsGame::new()),
+            3 => self.game = ManualGame::Wolfenstein(WolfensteinGame::new()),
             _ => unreachable!(),
         }
     }
@@ -78,11 +80,14 @@ impl Game {
                 ret
             }
             ManualGame::Asteroids(game) => {
-                game.tick(&mut self.lfsr, keys, dt);
+                let ret = game.tick(&mut self.lfsr, keys, dt);
+                game.render(buffer);
+                ret
+            }
+            ManualGame::Wolfenstein(game) => {
                 game.render(buffer);
                 0
             }
-            ManualGame::Wolfenstein => todo!(),
         }
     }
 }
@@ -119,7 +124,7 @@ impl ManualMaze {
             end_pos: Vec2 { x: 6, y: 6 },
             bg_buffer,
             movement_timer: MANUAL_MOVEMENT_TIME,
-            solve_type: 0,
+            solve_type: 25,
             time: 0.0,
         }
     }

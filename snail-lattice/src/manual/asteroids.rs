@@ -225,13 +225,24 @@ impl AsteroidsGame {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.player.pos.x = 120.0;
+        self.player.pos.y = 120.0;
+        self.player.vel.x = 0.0;
+        self.player.vel.y = 0.0;
+        self.player.rot = 0.0;
+
+        self.asteroids.clear();
+        self.bullets.clear();
+    }
+
     pub fn resolution(&self) -> Vec<u32> {
         vec![240, 240]
     }
 
-    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) {
+    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
         if self.asteroids.is_empty() {
-            self.generate_asteroids(lfsr, 5);
+            self.generate_asteroids(lfsr, 6);
         }
 
         let mut keys_bits = 0;
@@ -263,6 +274,8 @@ impl AsteroidsGame {
             asteroid.movement(dt);
         }
 
+        let mut score = 0;
+
         let mut i = 0;
         'bullets: while i < self.bullets.len() {
             if self.bullets[i].age > MAX_BULLET_AGE {
@@ -275,6 +288,8 @@ impl AsteroidsGame {
                 if self.asteroids[j].collides(self.bullets[i].pos, 4.0) {
                     let asteroid = self.asteroids.swap_remove(j);
 
+                    score += (100.0 * asteroid.size).floor() as i32;
+
                     if let Some((asteroid1, asteroid2)) =
                         asteroid.split(self.bullets[i].rot + PI / 2.0)
                     {
@@ -283,6 +298,7 @@ impl AsteroidsGame {
                     }
 
                     self.bullets.swap_remove(i);
+
                     continue 'bullets;
                 }
 
@@ -294,16 +310,16 @@ impl AsteroidsGame {
 
         for asteroid in &self.asteroids {
             if asteroid.collides(self.player.pos, 5.0) {
-                // reset
-                self.player.pos.x = 120.0;
-                self.player.pos.y = 120.0;
-                self.player.rot = 0.0;
-
-                self.asteroids.clear();
-                self.bullets.clear();
-
-                break;
+                self.reset();
+                return 0;
             }
+        }
+
+        if self.asteroids.is_empty() {
+            self.reset();
+            -10000
+        } else {
+            score
         }
     }
 
