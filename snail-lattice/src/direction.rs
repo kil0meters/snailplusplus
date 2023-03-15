@@ -17,7 +17,11 @@ impl Direction {
         }
     }
 
-    pub fn rotate(&self) -> Direction {
+    pub fn to_wall(self) -> usize {
+        1 << (3 - self as usize)
+    }
+
+    pub fn rotate(self) -> Direction {
         match self {
             Direction::Up => Direction::Right,
             Direction::Down => Direction::Left,
@@ -26,7 +30,7 @@ impl Direction {
         }
     }
 
-    pub fn rotate_counter(&self) -> Direction {
+    pub fn rotate_counter(self) -> Direction {
         match self {
             Direction::Up => Direction::Left,
             Direction::Down => Direction::Right,
@@ -35,7 +39,7 @@ impl Direction {
         }
     }
 
-    pub fn flip(&self) -> Direction {
+    pub fn flip(self) -> Direction {
         match self {
             Direction::Up => Direction::Down,
             Direction::Down => Direction::Up,

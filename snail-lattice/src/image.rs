@@ -1,4 +1,7 @@
-use crate::utils::{console_log, Vec2, Vec2i};
+use crate::{
+    direction::Direction,
+    utils::{console_log, Vec2, Vec2i},
+};
 
 pub struct Image<'a> {
     pub buffer: &'a mut [u8],
@@ -209,6 +212,52 @@ impl<'a> Image<'a> {
                     self.buffer[px] = color[0];
                     self.buffer[px + 1] = color[1];
                     self.buffer[px + 2] = color[2];
+                }
+            }
+        }
+    }
+
+    pub fn draw_snail(
+        &mut self,
+        palette: [[u8; 3]; 6],
+        animation_cycle: bool,
+        direction: Direction,
+        dx: usize,
+        dy: usize,
+    ) {
+        let snail_image = if animation_cycle {
+            include_bytes!("../../assets/snail1_8x8.bin")
+        } else {
+            include_bytes!("../../assets/snail2_8x8.bin")
+        };
+
+        const SNAIL_IMAGE_SIZE: usize = 8;
+
+        // draw goal
+        for y in 0..SNAIL_IMAGE_SIZE {
+            for x in 0..SNAIL_IMAGE_SIZE {
+                let snail_px = y * SNAIL_IMAGE_SIZE + x;
+                // only draw if not transparent
+                if snail_image[snail_px] != 255 {
+                    // I'm so, so, sorry.
+                    let px = match direction {
+                        Direction::Up => {
+                            4 * ((dy + (SNAIL_IMAGE_SIZE - y)) * self.buffer_width + x + dx + 2)
+                        }
+                        Direction::Down => {
+                            4 * ((y + 2 + dy) * self.buffer_width + dx + SNAIL_IMAGE_SIZE - x)
+                        }
+                        Direction::Left => {
+                            4 * ((dy + x + 2) * self.buffer_width + dx + SNAIL_IMAGE_SIZE - y)
+                        }
+                        Direction::Right => 4 * ((dy + x + 2) * self.buffer_width + dx + y + 2),
+                    };
+
+                    let col = palette[snail_image[snail_px] as usize];
+
+                    self.buffer[px] = col[0];
+                    self.buffer[px + 1] = col[1];
+                    self.buffer[px + 2] = col[2];
                 }
             }
         }

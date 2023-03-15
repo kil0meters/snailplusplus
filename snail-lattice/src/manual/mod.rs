@@ -67,7 +67,7 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, dt: f32) -> i32 {
+    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, mut dt: f32) -> i32 {
         match &mut self.game {
             ManualGame::SnailMaze(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
@@ -75,7 +75,13 @@ impl Game {
                 ret
             }
             ManualGame::PacSnail(game) => {
-                let ret = game.tick(&mut self.lfsr, keys, dt);
+                let mut ret = 0;
+                while dt > 30.0 {
+                    ret += game.tick(&mut self.lfsr, &keys, 30.0);
+                    dt -= 30.0;
+                }
+                ret += game.tick(&mut self.lfsr, &keys, dt);
+
                 game.render(buffer);
                 ret
             }

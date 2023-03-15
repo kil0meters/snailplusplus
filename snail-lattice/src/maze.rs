@@ -352,7 +352,7 @@ where
     }
 
     pub fn draw_background(
-        &mut self,
+        &self,
         fg_color: [u8; 3],
         bg_color: [u8; 3],
         image: &mut Image,

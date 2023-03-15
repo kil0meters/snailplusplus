@@ -4,7 +4,7 @@ use crate::{
     lfsr::LFSR,
     maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, INVERTED_PALETTE},
-    utils::Vec2,
+    utils::{console_log, lerp, Vec2, Vec2f, Vec2i},
 };
 
 const PACMAN_BOARD: &[u8] = concat!(
@@ -23,7 +23,7 @@ const PACMAN_BOARD: &[u8] = concat!(
     "##### # ##### # #####",
     "#. . . . .#. . . . .#",
     "# ### ### # ### ### #",
-    "#* .#. . . . . .#. *#",
+    "#* .#. .     . .#. *#",
     "### # # ##### # # ###",
     "#. . .#. .#. .#. . .#",
     "# ####### # ####### #",
@@ -37,12 +37,22 @@ enum GhostStatus {
     Chase,
     Scatter,
     Frightened,
+    // Locked,
 }
 
 trait Ghost {
     fn draw(&self, status: GhostStatus, animation_cycle: bool, progress: f32, image: &mut Image);
     fn get_snail(&mut self) -> &mut Snail<10>;
     fn scatter_point(&self) -> Vec2;
+
+    fn pos(&mut self, fact: f32) -> Vec2f {
+        let snail = self.get_snail();
+
+        Vec2f {
+            x: lerp(snail.prev_pos.x as i32 * 10, snail.pos.x as i32 * 10, fact) as f32,
+            y: lerp(snail.prev_pos.y as i32 * 10, snail.pos.y as i32 * 10, fact) as f32,
+        }
+    }
 
     fn chase(
         &mut self,
@@ -63,30 +73,56 @@ trait Ghost {
         &mut self,
         status: GhostStatus,
         lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &mut Maze<10>,
         player_pos: Vec2,
         player_direction: Direction,
     ) {
-        match status {
-            GhostStatus::Chase => {
-                // we only actually chase if we have more than two options of where to go
-                let snail = self.get_snail();
-                let valid_directions = maze.get_cell(snail.pos.x, snail.pos.y).valid_directions();
+        let (pos, dir) = {
+            let snail = self.get_snail();
+            (snail.pos, snail.direction)
+        };
 
-                if valid_directions.len() > 2 {
-                    self.chase(lfsr, maze, player_pos, player_direction)
-                } else {
-                    if snail.direction.flip() == valid_directions[0] {
-                        snail.direction = valid_directions[1];
-                    } else {
-                        snail.direction = valid_directions[0]
-                    }
+        let behind_dir = dir.flip();
 
-                    snail.move_forward(maze);
-                }
+        let mut set_wall = false;
+
+        if !maze.get_cell(pos.x, pos.y).has_wall(behind_dir) {
+            maze.set_cell(pos.x, pos.y, behind_dir.to_wall());
+            match behind_dir {
+                Direction::Up if pos.y > 0 => maze.set_cell(pos.x, pos.y - 1, dir.to_wall()),
+                Direction::Down if pos.y < 10 => maze.set_cell(pos.x, pos.y + 1, dir.to_wall()),
+                Direction::Left if pos.x > 0 => maze.set_cell(pos.x - 1, pos.y, dir.to_wall()),
+                Direction::Right if pos.x < 10 => maze.set_cell(pos.x + 1, pos.y, dir.to_wall()),
+                _ => {}
             }
-            GhostStatus::Scatter => self.scatter(lfsr, maze),
-            GhostStatus::Frightened => self.frightened(lfsr, maze),
+
+            set_wall = true;
+        }
+
+        let valid_directions = maze.get_cell(pos.x, pos.y).valid_directions();
+
+        if valid_directions.len() > 1 {
+            match status {
+                GhostStatus::Chase => self.chase(lfsr, maze, player_pos, player_direction),
+                GhostStatus::Scatter => self.scatter(lfsr, maze),
+                GhostStatus::Frightened => self.frightened(lfsr, maze),
+            }
+        } else {
+            let snail = self.get_snail();
+            snail.direction = valid_directions[0];
+
+            snail.move_forward(maze);
+        }
+
+        if set_wall {
+            maze.set_cell(pos.x, pos.y, behind_dir.to_wall());
+            match behind_dir {
+                Direction::Up if pos.y > 0 => maze.set_cell(pos.x, pos.y - 1, dir.to_wall()),
+                Direction::Down if pos.y < 10 => maze.set_cell(pos.x, pos.y + 1, dir.to_wall()),
+                Direction::Left if pos.x > 0 => maze.set_cell(pos.x - 1, pos.y, dir.to_wall()),
+                Direction::Right if pos.x < 10 => maze.set_cell(pos.x + 1, pos.y, dir.to_wall()),
+                _ => {}
+            }
         }
     }
 
@@ -101,8 +137,8 @@ trait Ghost {
         snail.direction = match directions.first() {
             Some(dir) => *dir,
             None => {
-                let directions = maze.get_directions(snail.pos);
-                directions[lfsr.next() as usize % directions.len()].unwrap()
+                let directions = maze.get_cell(snail.pos.x, snail.pos.y).valid_directions();
+                directions[lfsr.next() as usize % directions.len()]
             }
         };
 
@@ -170,8 +206,10 @@ impl Ghost for Blinky {
         _player_direction: Direction,
     ) {
         let directions = maze.get_solve_sequence(self.0.pos.x, self.0.pos.y, player_pos);
-        self.0.direction = directions[0];
-        assert!(self.0.move_forward(maze));
+        if let Some(dir) = directions.first() {
+            self.0.direction = *dir;
+            assert!(self.0.move_forward(maze));
+        }
     }
 }
 
@@ -233,7 +271,7 @@ impl Ghost for Pinky {
     }
 }
 
-// Scatters to top right
+// Scatters to bottom left
 // Targets pacman during chase mode, if closer than 1 tile, instead targets his scatter point
 struct Clyde(Snail<10>);
 
@@ -291,6 +329,66 @@ impl Ghost for Clyde {
     }
 }
 
+// Scatters to bottom left
+// should target an extended vector from blinky's line of sight to the snail, but that would be
+// annoying to implenment which how I have things structured right now, so we instead target one
+// space behind the snail.
+struct Inky(Snail<10>);
+
+pub const INKY_PALETTE: [[u8; 3]; 6] = [
+    [0x55, 0xaa, 0xff], // light blue
+    [0x55, 0xff, 0xff], // lighter lbue
+    [0x55, 0xaa, 0xff], // light blue
+    [0xff, 0xff, 0xff], // snail "eyes"
+    [0x00, 0x00, 0x00],
+    [0x00, 0x0A, 0x00],
+];
+
+impl Ghost for Inky {
+    fn draw(&self, status: GhostStatus, animation_cycle: bool, progress: f32, image: &mut Image) {
+        let palette = match status {
+            GhostStatus::Chase | GhostStatus::Scatter => INKY_PALETTE,
+            GhostStatus::Frightened => INVERTED_PALETTE,
+        };
+
+        self.0.draw(palette, animation_cycle, progress, image, 0, 0);
+    }
+
+    fn get_snail(&mut self) -> &mut Snail<10> {
+        &mut self.0
+    }
+
+    fn scatter_point(&self) -> Vec2 {
+        Vec2 { x: 8, y: 8 }
+    }
+
+    fn chase(
+        &mut self,
+        _lfsr: &mut LFSR,
+        maze: &Maze<10>,
+        player_pos: Vec2,
+        player_direction: Direction,
+    ) {
+        let mut target_position = player_pos;
+
+        match player_direction.flip() {
+            Direction::Up => target_position.y = target_position.y.saturating_sub(1),
+            Direction::Down => target_position.y = (target_position.y + 1).min(9),
+            Direction::Left => target_position.x = target_position.x.saturating_sub(1),
+            Direction::Right => target_position.x = (target_position.x + 1).min(9),
+        }
+
+        let directions = maze.get_solve_sequence(self.0.pos.x, self.0.pos.y, target_position);
+
+        self.0.direction = match directions.first() {
+            Some(dir) => *dir,
+            None => maze.get_solve_sequence(self.0.pos.x, self.0.pos.y, player_pos)[0],
+        };
+
+        assert!(self.0.move_forward(maze));
+    }
+}
+
 fn pacman_maze() -> (Maze<10>, Vec<Pellet>, usize) {
     let mut maze = Maze::new();
     let mut pellets = vec![Pellet::None; 10 * 10];
@@ -338,11 +436,18 @@ fn pacman_maze() -> (Maze<10>, Vec<Pellet>, usize) {
 }
 
 fn all_ghosts() -> Vec<Box<dyn Ghost>> {
-    vec![
+    let mut ghosts: Vec<Box<dyn Ghost>> = vec![
         Box::new(Blinky(Snail::new())),
         Box::new(Pinky(Snail::new())),
         Box::new(Clyde(Snail::new())),
-    ]
+        Box::new(Inky(Snail::new())),
+    ];
+
+    for ghost in &mut ghosts {
+        ghost.reset();
+    }
+
+    ghosts
 }
 
 const PACMAN_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME * 1.5;
@@ -351,7 +456,6 @@ const POWERUP_TIME: f32 = SNAIL_MOVEMENT_TIME * 30.0;
 
 // Each entry represents 2 seconds
 const SCATTER_SCHEUDLE: &'static [GhostStatus] = &[
-    GhostStatus::Scatter,
     GhostStatus::Scatter,
     GhostStatus::Scatter,
     GhostStatus::Scatter,
@@ -406,19 +510,138 @@ enum Pellet {
     None,
 }
 
+struct Player {
+    pos: Vec2f,
+    direction: Option<Direction>,
+    just_moved: bool,
+}
+
+impl Player {
+    fn new() -> Player {
+        Player {
+            pos: Vec2f::new(45.0, 70.0),
+            direction: None,
+            just_moved: false,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.pos.x = 45.0;
+        self.pos.y = 70.0;
+        self.direction = None;
+        self.just_moved = false;
+    }
+
+    fn movement(&mut self, maze: &Maze<10>, keys: &Vec<u32>, dt: f32) {
+        let mut pos_tilewise = self.pos * 0.1;
+        pos_tilewise.x = pos_tilewise.x.round();
+        pos_tilewise.y = pos_tilewise.y.round();
+
+        let pos_i_tilewise = pos_tilewise.to_vec2i();
+
+        pos_tilewise = pos_tilewise * 10.0;
+        let diff = self.pos - pos_tilewise;
+
+        let cell = maze.get_cell(pos_i_tilewise.x as usize, pos_i_tilewise.y as usize);
+
+        const MOVEMENT_SPEED: f32 = 0.03;
+        const SNAPPINGS_SIZE: f32 = 2.0;
+
+        match keys.first() {
+            Some(1) if !cell.has_wall(Direction::Right) && diff.y.abs() < SNAPPINGS_SIZE => {
+                self.direction = Some(Direction::Right);
+            }
+
+            Some(2) if !cell.has_wall(Direction::Left) && diff.y.abs() < SNAPPINGS_SIZE => {
+                self.direction = Some(Direction::Left);
+            }
+
+            Some(4) if !cell.has_wall(Direction::Down) && diff.x.abs() < SNAPPINGS_SIZE => {
+                self.direction = Some(Direction::Down);
+            }
+
+            Some(8) if !cell.has_wall(Direction::Up) && diff.x.abs() < SNAPPINGS_SIZE => {
+                self.direction = Some(Direction::Up);
+            }
+            _ => {}
+        }
+
+        self.just_moved = false;
+
+        // if we are properly aligned horizontally and the first key is, we can move up
+        if diff.x.abs() < SNAPPINGS_SIZE {
+            match self.direction {
+                Some(Direction::Down)
+                    if !cell.has_wall(Direction::Down) || self.pos.y < pos_tilewise.y =>
+                {
+                    self.pos.x = pos_tilewise.x;
+                    self.pos.y = self.pos.y + MOVEMENT_SPEED * dt;
+                    self.just_moved = true;
+                }
+                Some(Direction::Up)
+                    if !cell.has_wall(Direction::Up) || self.pos.y > pos_tilewise.y =>
+                {
+                    self.pos.x = pos_tilewise.x;
+                    self.pos.y = self.pos.y - MOVEMENT_SPEED * dt;
+                    self.just_moved = true;
+                }
+                _ => {}
+            }
+        }
+
+        if diff.y.abs() < SNAPPINGS_SIZE {
+            match self.direction {
+                Some(Direction::Right)
+                    if !cell.has_wall(Direction::Right) || self.pos.x < pos_tilewise.x =>
+                {
+                    self.direction = Some(Direction::Right);
+                    self.pos.y = pos_tilewise.y;
+                    self.pos.x = self.pos.x + MOVEMENT_SPEED * dt;
+                    self.just_moved = true;
+                }
+                Some(Direction::Left)
+                    if !cell.has_wall(Direction::Left) || self.pos.x > pos_tilewise.x =>
+                {
+                    self.direction = Some(Direction::Left);
+                    self.pos.y = pos_tilewise.y;
+                    self.pos.x = self.pos.x - MOVEMENT_SPEED * dt;
+                    self.just_moved = true;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn draw(&self, buffer: &mut [u8], animation_cycle: bool) {
+        let mut image = Image {
+            buffer,
+            buffer_width: 101,
+        };
+
+        let pos = self.pos.to_vec2i();
+
+        image.draw_snail(
+            DEFAULT_PALETTE,
+            !self.just_moved || animation_cycle,
+            self.direction.unwrap_or(Direction::Right),
+            pos.x as usize,
+            pos.y as usize,
+        );
+    }
+}
+
 pub struct PacSnail {
     bg_buffer: Vec<u8>,
     pellets: Vec<Pellet>,
-    snail: Snail<10>,
+    player: Player,
     ghosts: Vec<Box<dyn Ghost>>,
-    maze: Maze<10>,
-    stuck: bool,
-    pellet_count: usize,
-    next_direction: Option<Direction>,
-    time: f32,
-    powerup_timer: f32,
-    player_movement_timer: f32,
+    locked_ghosts: Vec<Box<dyn Ghost>>,
     ghost_movement_timer: f32,
+    powerup_timer: f32,
+    powerup_streak: usize,
+    maze: Maze<10>,
+    pellet_count: usize,
+    time: f32,
 }
 
 impl PacSnail {
@@ -427,15 +650,14 @@ impl PacSnail {
             maze: Maze::new(),
             pellets: vec![],
             pellet_count: 0,
+            player: Player::new(),
             bg_buffer: vec![0; 4 * 101 * 101],
-            snail: Snail::new(),
-            stuck: true,
-            next_direction: None,
+            ghost_movement_timer: 0.0,
             powerup_timer: 0.0,
+            powerup_streak: 0,
             time: 0.0,
-            ghosts: all_ghosts(),
-            player_movement_timer: PACMAN_MOVEMENT_TIME,
-            ghost_movement_timer: GHOST_MOVEMENT_TIME,
+            ghosts: vec![],
+            locked_ghosts: vec![],
         };
         s.reset();
         s
@@ -490,8 +712,15 @@ impl PacSnail {
         self.maze = maze;
         self.pellets = pellets;
         self.pellet_count = pellet_count;
+        self.time = 0.0;
 
         self.ghosts = all_ghosts();
+        self.locked_ghosts.clear();
+        self.ghost_movement_timer = 0.0;
+        self.powerup_timer = 0.0;
+        self.powerup_streak = 0;
+
+        self.player.reset();
 
         let mut image = Image {
             buffer: &mut self.bg_buffer,
@@ -502,142 +731,102 @@ impl PacSnail {
             .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
 
         self.draw_pellets();
-
-        self.snail.direction = Direction::Right;
-        self.snail.pos = Vec2 { x: 4, y: 7 };
-        self.snail.prev_pos = self.snail.pos;
-
-        self.stuck = true;
-
-        self.powerup_timer = 0.0;
-
-        for ghost in &mut self.ghosts {
-            ghost.reset();
-        }
     }
 
     pub fn resolution(&self) -> Vec<u32> {
         vec![101, 101]
     }
 
-    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
+    pub fn tick(&mut self, lfsr: &mut LFSR, keys: &Vec<u32>, dt: f32) -> i32 {
         if self.pellet_count == 0 {
             self.reset();
-            return -1;
+            return -100;
         }
 
-        self.powerup_timer = (self.powerup_timer - dt).max(0.0);
-        self.ghost_movement_timer += dt;
-        let can_move = self.ghost_movement_timer / GHOST_MOVEMENT_TIME >= 1.0;
+        self.powerup_timer = self.powerup_timer - dt;
 
-        let mut score = 0;
+        if self.powerup_timer < 0.0 {
+            self.powerup_streak = 0;
+            self.powerup_timer = 0.0;
 
-        if can_move {
-            self.ghost_movement_timer %= GHOST_MOVEMENT_TIME;
-            let mut i = 0;
-            while i < self.ghosts.len() {
-                let ghost_snail = self.ghosts[i].get_snail();
-                if ghost_snail.pos == self.snail.pos
-                    || ghost_snail.prev_pos == self.snail.pos
-                    || ghost_snail.pos == self.snail.prev_pos
-                    || ghost_snail.prev_pos == self.snail.prev_pos
-                {
-                    if self.powerup_timer > 0.0 {
-                        self.ghosts.swap_remove(i);
-
-                        score += 200 * (1 << (3 - self.ghosts.len()));
-
-                        continue;
-                    } else {
-                        self.reset();
-                        return 0;
-                    }
-                }
-
-                let ghost_status = if self.powerup_timer > 0.0 {
-                    GhostStatus::Frightened
-                } else {
-                    SCATTER_SCHEUDLE
-                        [((self.time / 1000.0).floor() as usize).min(SCATTER_SCHEUDLE.len() - 1)]
-                };
-
-                self.ghosts[i].step(
-                    ghost_status,
-                    lfsr,
-                    &self.maze,
-                    self.snail.pos,
-                    self.snail.direction,
-                );
-
-                i += 1;
-            }
+            self.ghosts.extend(self.locked_ghosts.drain(..));
         }
 
         self.time += dt;
+        self.ghost_movement_timer += dt;
 
-        self.player_movement_timer += dt;
-        let can_move = self.player_movement_timer / PACMAN_MOVEMENT_TIME >= 1.0;
+        self.player.movement(&self.maze, &keys, dt);
 
-        match keys.first() {
-            Some(1) => {
-                self.next_direction = Some(Direction::Right);
-                self.stuck = false;
+        let mut score = 0;
+
+        let player_pos = Vec2 {
+            x: (self.player.pos.x * 0.1).round() as usize,
+            y: (self.player.pos.y * 0.1).round() as usize,
+        };
+
+        match self.pellets[player_pos.y * 10 + player_pos.x] {
+            Pellet::Pellet => {
+                self.pellets[player_pos.y * 10 + player_pos.x] = Pellet::None;
+                self.draw_pellet(player_pos.x, player_pos.y);
+                self.pellet_count -= 1;
+                score += 5;
             }
-            Some(2) => {
-                self.next_direction = Some(Direction::Left);
-                self.stuck = false;
+            Pellet::Powerup => {
+                self.pellets[player_pos.y * 10 + player_pos.x] = Pellet::None;
+                self.draw_pellet(player_pos.x, player_pos.y);
+                self.powerup_timer = POWERUP_TIME;
+                self.pellet_count -= 1;
+                score += 10;
             }
-            Some(4) => {
-                self.next_direction = Some(Direction::Down);
-                self.stuck = false;
+            Pellet::None => {}
+        };
+
+        if self.ghost_movement_timer > GHOST_MOVEMENT_TIME {
+            self.ghost_movement_timer -= GHOST_MOVEMENT_TIME;
+
+            let current_status = if self.powerup_timer > 0.0 {
+                GhostStatus::Frightened
+            } else {
+                SCATTER_SCHEUDLE
+                    [((self.time / 2000.0).floor() as usize).min(SCATTER_SCHEUDLE.len() - 1)]
+            };
+
+            for ghost in &mut self.ghosts {
+                ghost.step(
+                    current_status,
+                    lfsr,
+                    &mut self.maze,
+                    player_pos,
+                    self.player.direction.unwrap_or(Direction::Right),
+                );
             }
-            Some(8) => {
-                self.next_direction = Some(Direction::Up);
-                self.stuck = false;
-            }
-            _ => {}
         }
 
-        if !self.stuck && can_move {
-            if let Some(next_direction) = self.next_direction {
-                // only move if that direction is currently available
-                if self
-                    .maze
-                    .get_cell(self.snail.pos.x, self.snail.pos.y)
-                    .valid_directions()
-                    .contains(&next_direction)
-                {
-                    self.snail.direction = next_direction;
+        let mut i = 0;
+        while i < self.ghosts.len() {
+            // test if ghost collides with player
+            let ghost_pos = self.ghosts[i].pos(self.ghost_movement_timer / GHOST_MOVEMENT_TIME);
+
+            // test collision
+            if (ghost_pos.x - self.player.pos.x).powi(2) + (ghost_pos.y - self.player.pos.y).powi(2)
+                < 6.0 * 6.0
+            {
+                if self.powerup_timer > 0.0 {
+                    score += 200 * 1 << self.powerup_streak;
+                    self.powerup_streak += 1;
+
+                    let mut ghost = self.ghosts.swap_remove(i);
+                    ghost.reset();
+                    self.locked_ghosts.push(ghost);
+
+                    continue;
+                } else {
+                    self.reset();
+                    return 0;
                 }
-                self.next_direction = None;
             }
 
-            let pellet = self
-                .pellets
-                .get_mut(self.snail.pos.y * 10 + self.snail.pos.x)
-                .unwrap();
-
-            match *pellet {
-                Pellet::Pellet => score = 5,
-                Pellet::Powerup => {
-                    score = 10;
-                    self.powerup_timer = POWERUP_TIME;
-                }
-                Pellet::None => score = 0,
-            }
-
-            if *pellet != Pellet::None {
-                self.pellet_count -= 1;
-                *pellet = Pellet::None;
-                self.draw_pellet(self.snail.pos.x, self.snail.pos.y);
-            }
-
-            self.next_direction = None;
-            if !self.snail.move_forward(&self.maze) {
-                self.stuck = true;
-            } else {
-                self.player_movement_timer = 0.0;
-            }
+            i += 1;
         }
 
         score
@@ -646,22 +835,13 @@ impl PacSnail {
     pub fn render(&self, buffer: &mut [u8]) {
         buffer.copy_from_slice(&self.bg_buffer);
 
-        let animation_cycle =
-            self.stuck || (self.time / (ANIMATION_TIME / 4.0)).floor() as usize % 2 == 0;
-
         let mut image = Image {
             buffer,
             buffer_width: 101,
         };
 
-        self.snail.draw(
-            DEFAULT_PALETTE,
-            animation_cycle,
-            self.player_movement_timer / PACMAN_MOVEMENT_TIME,
-            &mut image,
-            0,
-            0,
-        );
+        // self.maze
+        //     .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
 
         let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;
         let ghost_status_draw = if self.powerup_timer > 3000.0 {
@@ -676,6 +856,7 @@ impl PacSnail {
             GhostStatus::Chase
         };
 
+        // draw ghosts
         for ghost in &self.ghosts {
             ghost.draw(
                 ghost_status_draw,
@@ -684,5 +865,9 @@ impl PacSnail {
                 &mut image,
             );
         }
+
+        // draw player
+        let animation_cycle = (self.time / (ANIMATION_TIME / 4.0)).floor() as usize % 2 == 0;
+        self.player.draw(buffer, animation_cycle);
     }
 }

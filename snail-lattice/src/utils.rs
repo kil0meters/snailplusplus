@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Mul, SubAssign};
+use std::ops::{Add, AddAssign, Mul, Sub, SubAssign};
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -46,7 +46,7 @@ impl Vec2f {
     }
 
     pub fn to_vec2i(self) -> Vec2i {
-        Vec2i::new(self.x as i32, self.y as i32)
+        Vec2i::new(self.x.round() as i32, self.y.round() as i32)
     }
 
     pub fn wrap(&mut self, wrapping: f32) {
@@ -99,6 +99,17 @@ impl Add for Vec2f {
     fn add(mut self, rhs: Self) -> Self::Output {
         self.x += rhs.x;
         self.y += rhs.y;
+
+        self
+    }
+}
+
+impl Sub for Vec2f {
+    type Output = Vec2f;
+
+    fn sub(mut self, rhs: Self) -> Self::Output {
+        self.x -= rhs.x;
+        self.y -= rhs.y;
 
         self
     }

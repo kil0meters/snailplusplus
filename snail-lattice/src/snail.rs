@@ -69,12 +69,6 @@ where
         bx: usize,
         by: usize,
     ) {
-        let snail_image = if animation_cycle || !self.active {
-            include_bytes!("../../assets/snail1_8x8.bin")
-        } else {
-            include_bytes!("../../assets/snail2_8x8.bin")
-        };
-
         let offset_y = if self.prev_pos.y != self.pos.y {
             lerp(
                 (self.prev_pos.y * 10) as i32,
@@ -95,48 +89,13 @@ where
             (self.pos.x * 10) as i32
         };
 
-        const SNAIL_IMAGE_SIZE: usize = 8;
-
-        // draw goal
-        for y in 0..SNAIL_IMAGE_SIZE {
-            for x in 0..SNAIL_IMAGE_SIZE {
-                let snail_px = y * SNAIL_IMAGE_SIZE + x;
-                // only draw if not transparent
-                if snail_image[snail_px] != 255 {
-                    // I'm so, so, sorry.
-                    let px = match self.direction {
-                        Direction::Up => {
-                            4 * (((by + (SNAIL_IMAGE_SIZE - y)) as i32 + offset_y) as usize
-                                * image.buffer_width
-                                + bx
-                                + x
-                                + offset_x as usize
-                                + 2)
-                        }
-                        Direction::Down => {
-                            4 * (((by + y + 2) as i32 + offset_y) as usize * image.buffer_width
-                                + bx
-                                + (SNAIL_IMAGE_SIZE - x)
-                                + offset_x as usize)
-                        }
-                        Direction::Left => {
-                            4 * ((by + x + offset_y as usize + 2) * image.buffer_width
-                                + ((bx + (SNAIL_IMAGE_SIZE - y)) as i32 + offset_x) as usize)
-                        }
-                        Direction::Right => {
-                            4 * ((by + x + offset_y as usize + 2) * image.buffer_width
-                                + ((bx + y + 2) as i32 + offset_x) as usize)
-                        }
-                    };
-
-                    let col = palette[snail_image[snail_px] as usize];
-
-                    image.buffer[px] = col[0];
-                    image.buffer[px + 1] = col[1];
-                    image.buffer[px + 2] = col[2];
-                }
-            }
-        }
+        image.draw_snail(
+            palette,
+            animation_cycle || !self.active,
+            self.direction,
+            bx + offset_x as usize,
+            by + offset_y as usize,
+        );
     }
 
     pub fn move_forward(&mut self, maze: &Maze<S>) -> bool {
