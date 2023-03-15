@@ -91,6 +91,7 @@ impl Game {
                 ret
             }
             ManualGame::Wolfenstein(game) => {
+                game.tick(keys, dt);
                 game.render(buffer);
                 0
             }
