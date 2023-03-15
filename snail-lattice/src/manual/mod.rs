@@ -61,7 +61,7 @@ impl Game {
             0 => self.game = ManualGame::SnailMaze(ManualMaze::new(&mut self.lfsr)),
             1 => self.game = ManualGame::PacSnail(PacSnail::new()),
             2 => self.game = ManualGame::Asteroids(AsteroidsGame::new()),
-            3 => self.game = ManualGame::Wolfenstein(WolfensteinGame::new()),
+            3 => self.game = ManualGame::Wolfenstein(WolfensteinGame::new(&mut self.lfsr)),
             _ => unreachable!(),
         }
     }
@@ -91,9 +91,9 @@ impl Game {
                 ret
             }
             ManualGame::Wolfenstein(game) => {
-                game.tick(keys, dt);
+                let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
-                0
+                ret
             }
         }
     }

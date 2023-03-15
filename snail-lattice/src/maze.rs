@@ -316,7 +316,7 @@ where
         for y in 0..S {
             for x in 0..S {
                 if !self.visited[y * S + x] {
-                    for direction in [0, 1, 2, 3] {
+                    for direction in lfsr.random_order() {
                         // right
                         if direction == 0 && x < S - 1 && self.visited[y * S + x + 1] {
                             self.set_cell_wall(x, y, Direction::Right);
