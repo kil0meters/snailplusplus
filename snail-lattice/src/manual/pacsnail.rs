@@ -4,7 +4,7 @@ use crate::{
     lfsr::LFSR,
     maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, INVERTED_PALETTE},
-    utils::{console_log, lerp, Vec2, Vec2f, Vec2i},
+    utils::{lerp, Vec2, Vec2f},
 };
 
 const PACMAN_BOARD: &[u8] = concat!(
@@ -450,7 +450,6 @@ fn all_ghosts() -> Vec<Box<dyn Ghost>> {
     ghosts
 }
 
-const PACMAN_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME * 1.5;
 const GHOST_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME * 1.6;
 const POWERUP_TIME: f32 = SNAIL_MOVEMENT_TIME * 30.0;
 

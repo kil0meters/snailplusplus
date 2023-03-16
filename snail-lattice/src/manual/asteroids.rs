@@ -1,11 +1,6 @@
 use std::f32::consts::PI;
 
-use crate::{
-    image::Image,
-    lfsr::LFSR,
-    snail::DEFAULT_PALETTE,
-    utils::{console_log, Vec2, Vec2f, Vec2i},
-};
+use crate::{image::Image, lfsr::LFSR, snail::DEFAULT_PALETTE, utils::Vec2f};
 
 struct Asteroid {
     pos: Vec2f,
@@ -187,7 +182,7 @@ pub struct AsteroidsGame {
     shoot_cooldown: f32,
 }
 
-const SHOOT_COOLDOWN: f32 = 500.0;
+const SHOOT_COOLDOWN: f32 = 300.0;
 
 impl AsteroidsGame {
     pub fn new() -> Self {

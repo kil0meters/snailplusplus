@@ -3,8 +3,8 @@ use std::f32::consts::PI;
 use crate::{
     image::Image,
     lfsr::LFSR,
-    snail::DEFAULT_PALETTE,
-    utils::{console_log, Vec2f, Vec2i},
+    snail::{DEFAULT_PALETTE, INVERTED_PALETTE},
+    utils::{Vec2f, Vec2i},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -14,6 +14,8 @@ struct Ray {
 }
 
 const FOV: f32 = PI / 2.0;
+const DEFAULT_MAZE_SIZE: usize = 5;
+const SHOOT_COOLDOWN: f32 = 500.0;
 const SCREEN_W: usize = 240;
 const SCREEN_H: usize = 240;
 const LINE_HEIGHT: usize = 180;
@@ -49,7 +51,6 @@ fn generate_maze_random_walk(grid: &mut Vec<u8>, size: usize, lfsr: &mut LFSR, x
     let width = 2 * size + 1;
 
     while let Some((x, y)) = next {
-        console_log!("visiting: {x},{y}");
         // set current tile to be visited
         grid[(2 * y + 1) * width + (2 * x + 1)] = 0;
         next = None;
@@ -148,6 +149,29 @@ fn generate_maze(grid: &mut Vec<u8>, lfsr: &mut LFSR, size: usize) {
     }
 }
 
+struct Enemy {
+    pos: Vec2f,
+    health: f32,
+    last_damaged: f32,
+}
+
+impl Enemy {
+    fn new(x: f32, y: f32) -> Enemy {
+        Enemy {
+            pos: Vec2f::new(x, y),
+            health: 100.0,
+            last_damaged: -1000.0,
+        }
+    }
+
+    fn damage(&mut self, amount: f32, time: f32) -> bool {
+        self.health -= amount;
+        self.last_damaged = time;
+
+        self.health < 0.0
+    }
+}
+
 pub struct WolfensteinGame {
     player_pos: Ray,
     goal_pos: Vec2f,
@@ -155,11 +179,13 @@ pub struct WolfensteinGame {
     width: usize,
     grid: Vec<u8>,
 
+    enemies: Vec<Enemy>,
     zbuffer: Vec<f32>,
     bg_buffer: Vec<u8>,
-}
 
-const DEFAULT_MAZE_SIZE: usize = 9;
+    shoot_cooldown: f32,
+    time: f32,
+}
 
 impl WolfensteinGame {
     pub fn new(lfsr: &mut LFSR) -> WolfensteinGame {
@@ -172,11 +198,21 @@ impl WolfensteinGame {
                 (2 * DEFAULT_MAZE_SIZE) as f32 - 0.5,
                 (2 * DEFAULT_MAZE_SIZE) as f32 - 0.5,
             ),
-            size: DEFAULT_MAZE_SIZE,
+            grid: vec![0; (2 * DEFAULT_MAZE_SIZE + 1).pow(2)],
             width: 2 * DEFAULT_MAZE_SIZE + 1,
+            size: DEFAULT_MAZE_SIZE,
+
             bg_buffer: generate_bg_buffer(SCREEN_W, SCREEN_H),
             zbuffer: vec![0.0; SCREEN_W],
-            grid: vec![0; (2 * DEFAULT_MAZE_SIZE + 1).pow(2)],
+            enemies: vec![
+                Enemy::new(2.5, 1.5),
+                Enemy::new(3.5, 1.5),
+                Enemy::new(1.5, 2.5),
+                Enemy::new(1.5, 3.5),
+            ],
+
+            shoot_cooldown: 0.0,
+            time: 0.0,
         };
 
         // print grid
@@ -270,6 +306,9 @@ impl WolfensteinGame {
     }
 
     pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
+        self.time += dt;
+        self.shoot_cooldown = (self.shoot_cooldown - dt).max(0.0);
+
         let keys_bits = keys.iter().fold(0, |acc, x| acc + x);
 
         // right
@@ -293,16 +332,68 @@ impl WolfensteinGame {
         self.player_pos.dir %= PI * 2.0;
 
         // test collision
-        if (self.player_pos.pos.x - self.goal_pos.x).powi(2)
-            + (self.player_pos.pos.y - self.goal_pos.y).powi(2)
-            < 0.5 * 0.5
-        {
+        if self.player_pos.pos.dist2(self.goal_pos) < 0.5 * 0.5 {
             self.reset(lfsr);
 
-            -100000
-        } else {
-            0
+            return -10_00_000;
         }
+
+        // down
+        if (keys_bits & 4) != 0 {
+            if self.shoot_cooldown <= 0.0 {
+                self.shoot_cooldown = SHOOT_COOLDOWN;
+
+                if self.fire_bullet() {
+                    return 1_000_000;
+                }
+            }
+        } else {
+            self.shoot_cooldown = 0.0;
+        }
+        if keys_bits & 4 != 0 {}
+
+        0
+    }
+
+    // returns true if an enemy was killed
+    pub fn fire_bullet(&mut self) -> bool {
+        let inc_dist = 0.1;
+        let inc = Vec2f::new(self.player_pos.dir.cos(), self.player_pos.dir.sin()) * inc_dist;
+        let mut cur_pos = self.player_pos.pos;
+        let max_dist = 10.0;
+        let mut dist = 0.0;
+
+        while dist < max_dist {
+            dist += inc_dist;
+            cur_pos += inc;
+
+            let map_pos = Vec2i::new(cur_pos.x.floor() as i32, cur_pos.y.floor() as i32);
+
+            // we stop when we run into in a wall
+            if map_pos.x > 0
+                && map_pos.x < self.width as i32
+                && map_pos.y > 0
+                && map_pos.y < self.width as i32
+            {
+                if self.grid[(map_pos.y * self.width as i32 + map_pos.x) as usize] != 0 {
+                    break;
+                }
+            }
+
+            // test if we collide with any enemies
+            for (i, enemy) in self.enemies.iter_mut().enumerate() {
+                if enemy.pos.dist2(cur_pos) < 0.25 * 0.25 {
+                    if enemy.damage(35.0, self.time) {
+                        self.enemies.swap_remove(i);
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
+        }
+
+        false
     }
 
     pub fn render(&mut self, buffer: &mut [u8]) {
@@ -339,29 +430,92 @@ impl WolfensteinGame {
             }
         }
 
-        // draw goal
-        let adj_goal_pos = (self.goal_pos - self.player_pos.pos).rot(-self.player_pos.dir);
+        self.draw_sprite(
+            &mut image,
+            DEFAULT_PALETTE,
+            self.goal_pos,
+            (self.time / 1000.0).cos() * 0.25 + 0.5,
+            include_bytes!("../../../assets/goal_7x7.bin"),
+            7,
+        );
 
-        let distance = adj_goal_pos.x;
+        // sort enemies by distance to player
+        let player_pos = self.player_pos.pos;
+        self.enemies.sort_unstable_by(|e1, e2| {
+            ((e2.pos.x - player_pos.x).powi(2) + (e2.pos.y - player_pos.y).powi(2))
+                .total_cmp(&((e1.pos.x - player_pos.x).powi(2) + (e1.pos.y - player_pos.y).powi(2)))
+        });
+
+        for enemy in &self.enemies {
+            // if damaged recently, draw with the damaged color palette
+            if (enemy.last_damaged - self.time).abs() < 100.0 {
+                self.draw_sprite(
+                    &mut image,
+                    INVERTED_PALETTE,
+                    enemy.pos,
+                    0.0,
+                    include_bytes!("../../../assets/snail1_8x8.bin"),
+                    8,
+                );
+            } else {
+                self.draw_sprite(
+                    &mut image,
+                    DEFAULT_PALETTE,
+                    enemy.pos,
+                    0.0,
+                    include_bytes!("../../../assets/snail1_8x8.bin"),
+                    8,
+                );
+            }
+        }
+
+        // crosshair
+        image.draw_line(
+            DEFAULT_PALETTE[4],
+            Vec2i::new(SCREEN_W as i32 / 2 - 4, SCREEN_H as i32 / 2),
+            Vec2i::new(SCREEN_W as i32 / 2 + 5, SCREEN_H as i32 / 2),
+        );
+        image.draw_line(
+            DEFAULT_PALETTE[4],
+            Vec2i::new(SCREEN_W as i32 / 2, SCREEN_H as i32 / 2 - 4),
+            Vec2i::new(SCREEN_W as i32 / 2, SCREEN_H as i32 / 2 + 5),
+        );
+    }
+
+    fn draw_sprite(
+        &self,
+        image: &mut Image,
+        palette: [[u8; 3]; 6],
+        pos: Vec2f,
+        height: f32,
+        texture: &[u8],
+        texture_size: usize,
+    ) {
+        let dist_to_plane = (SCREEN_W as f32 / 2.0) / (FOV / 2.0).tan();
+        let adj_pos = (pos - self.player_pos.pos).rot(-self.player_pos.dir);
+        let distance = adj_pos.x;
+
+        // something goes really bad if the distance is close and i don't want to investigate
+        // further so we just do an early return here
+        if distance < 0.2 {
+            return;
+        }
+
         let size = (dist_to_plane / 2.0) / distance;
 
-        let start_x =
-            (SCREEN_W as f32 / 2.0) - size / 2.0 + adj_goal_pos.y * (dist_to_plane / distance);
-        let start_y = dist_to_plane - size / 2.0;
+        let start_x = (SCREEN_W as f32 / 2.0) - size / 2.0 + adj_pos.y * (dist_to_plane / distance);
+        let start_y = dist_to_plane - size * height;
 
-        let goal_image = include_bytes!("../../../assets/goal_7x7.bin");
-
-        // draw goal, 7x7
         for x in start_x as usize..(start_x + size) as usize {
-            let texture_x = (((x as f32 - start_x) * 7.0) / size) as usize;
+            let texture_x = (((x as f32 - start_x) * texture_size as f32) / size) as usize;
 
             if x < SCREEN_W && distance < self.zbuffer[x] {
                 for y in start_y as usize..(start_y + size) as usize {
-                    let texture_y = (((y as f32 - start_y) * 7.0) / size) as usize;
+                    let texture_y = (((y as f32 - start_y) * texture_size as f32) / size) as usize;
 
-                    if goal_image[texture_x * 7 + texture_y] != 255 && x < SCREEN_W && y < SCREEN_H
-                    {
-                        image.draw_pixel_xy(DEFAULT_PALETTE[0], x, y);
+                    let px = texture[texture_x * texture_size + texture_y];
+                    if px != 255 && x < SCREEN_W && y < SCREEN_H {
+                        image.draw_pixel_xy(palette[px as usize], x, y);
                     }
                 }
             }

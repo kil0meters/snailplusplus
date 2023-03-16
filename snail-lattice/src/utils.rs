@@ -49,6 +49,10 @@ impl Vec2f {
         Vec2i::new(self.x.round() as i32, self.y.round() as i32)
     }
 
+    pub fn dist2(self, rhs: Self) -> f32 {
+        (self.x - rhs.x) * (self.x - rhs.x) + (self.y - rhs.y) * (self.y - rhs.y)
+    }
+
     pub fn wrap(&mut self, wrapping: f32) {
         if self.x > wrapping {
             self.x -= wrapping;

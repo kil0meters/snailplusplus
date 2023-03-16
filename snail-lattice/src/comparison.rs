@@ -1,10 +1,9 @@
 #![feature(generic_const_exprs)]
 
 use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
-use snail_lattice::maze::{AutoMaze, CELLS_PER_IDX};
+use snail_lattice::maze::AutoMaze;
 use snail_lattice::solvers::{
-    Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, Solver, TimeTravel,
-    Tremaux,
+    Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, TimeTravel, Tremaux,
 };
 
 const MICROSECONDS_PER_SECOND: usize = 1_000_000;

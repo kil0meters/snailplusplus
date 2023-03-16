@@ -1,6 +1,6 @@
 use crate::{
     direction::Direction,
-    utils::{console_log, Vec2, Vec2i},
+    utils::{Vec2, Vec2i},
 };
 
 pub struct Image<'a> {
@@ -112,8 +112,17 @@ impl<'a> Image<'a> {
         }
     }
 
-    pub fn draw_text(&mut self, text: &str, mut x: usize, y: usize) {
+    pub fn draw_text(&mut self, text: &str, mut x: usize, mut y: usize) {
+        let line_start = x;
+
         for c in text.chars() {
+            if c == '\n' {
+                y += 5;
+                x = line_start;
+
+                continue;
+            }
+
             if c != ' ' {
                 self.draw_char(c, x, y);
             }
