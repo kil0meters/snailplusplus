@@ -1,7 +1,7 @@
 import { Component, createEffect, createSignal, For, onCleanup, onMount, untrack, useContext } from "solid-js";
 import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
 import { ScoreContext } from "./ScoreProvider";
-import { createStoredSignal } from "./utils";
+import { createStoredSignal, formatNumber } from "./utils";
 import { latticePostMessage, LATTICES_FILLED, LATTICE_WORKER_STORE } from "./Game";
 import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
@@ -260,10 +260,9 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
         removeEventListener('fullscreenchange', togglefullscreen);
     });
 
-    const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
     const averageFps = () => {
         let average = averages.find((x) => x.key == props.key);
-        return fmt.format(average.count / average.seconds);
+        return average.count / average.seconds;
     };
 
     return (
@@ -273,7 +272,7 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
                     <span class="bg-black text-lg md:text-2xl my-auto font-bold">
                         {SHOP[props.key].name}
                     </span>
-                    <span>{averageFps} fragments per second</span>
+                    {averageFps() >= Number.EPSILON && <span>{formatNumber(averageFps(), false)} fragments per second</span>}
                 </div>
 
                 <div class="text-center ml-auto flex my-auto">

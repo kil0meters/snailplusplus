@@ -353,15 +353,21 @@ impl WolfensteinGame {
 
         self.enemies.clear();
 
+        let mut invalid_positions = HashSet::new();
+        invalid_positions.insert((goal_x, goal_y));
+        invalid_positions.insert((0, 0));
+
         // generate some random enemies in random locations
         for _ in 0..self.size {
             let mut x = 0;
             let mut y = 0;
 
-            while (x == 0 && y == 0) || (x == goal_x && y == goal_y) {
+            while invalid_positions.contains(&(x, y)) {
                 x = lfsr.big() % self.size;
                 y = lfsr.big() % self.size;
             }
+
+            invalid_positions.insert((x, y));
 
             self.enemies
                 .push(Enemy::new((x * 2) as f32 + 1.5, (y * 2) as f32 + 1.5));
