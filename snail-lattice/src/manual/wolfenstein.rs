@@ -1,4 +1,7 @@
-use std::f32::consts::PI;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    f32::consts::PI,
+};
 
 use crate::{
     image::Image,
@@ -25,7 +28,7 @@ fn generate_bg_buffer(width: usize, height: usize) -> Vec<u8> {
 
     // upper half is bright like the sky
     for y in 0..(height / 2) {
-        for x in (width / 2)..width {
+        for x in 0..width {
             buffer[4 * (y * width + x)] = DEFAULT_PALETTE[4][0];
             buffer[4 * (y * width + x) + 1] = DEFAULT_PALETTE[4][1];
             buffer[4 * (y * width + x) + 2] = DEFAULT_PALETTE[4][2];
@@ -33,12 +36,18 @@ fn generate_bg_buffer(width: usize, height: usize) -> Vec<u8> {
         }
     }
 
-    // lower half is our favorite blue
+    // lower half is a gradient
     for y in (height / 2)..height {
-        for x in (width / 2)..width {
-            buffer[4 * (y * width + x)] = DEFAULT_PALETTE[4][0];
-            buffer[4 * (y * width + x) + 1] = DEFAULT_PALETTE[4][1];
-            buffer[4 * (y * width + x) + 2] = DEFAULT_PALETTE[4][2];
+        let color = hsl_to_rgb(
+            0.56857,
+            0.95,
+            (0.48 * ((y/* - height / 2 */) as f32 / height as f32)).min(0.48),
+        );
+
+        for x in 0..width {
+            buffer[4 * (y * width + x)] = color[0];
+            buffer[4 * (y * width + x) + 1] = color[1];
+            buffer[4 * (y * width + x) + 2] = color[2];
             buffer[4 * (y * width + x) + 3] = 0xFF;
         }
     }
@@ -87,6 +96,45 @@ fn generate_maze_random_walk(grid: &mut Vec<u8>, size: usize, lfsr: &mut LFSR, x
             }
         }
     }
+}
+
+fn find_fartherst_point(grid: &[u8], size: usize, x: usize, y: usize) -> (usize, usize) {
+    let width = 2 * size + 1;
+    let mut queue = VecDeque::new();
+    let mut visited = HashSet::new(); // BTreeSet might be faster but idc
+    let mut last_point = (x, y);
+
+    queue.push_back((x, y));
+
+    while let Some((x, y)) = queue.pop_front() {
+        last_point = (x, y);
+        visited.insert(last_point);
+
+        // push all valid directions to the queue
+        if x < size - 1
+            && grid[(2 * y + 1) * width + (2 * x + 2)] == 0
+            && !visited.contains(&(x + 1, y))
+        {
+            queue.push_back((x + 1, y));
+        }
+        //left
+        if x > 0 && grid[(2 * y + 1) * width + (2 * x)] == 0 && !visited.contains(&(x - 1, y)) {
+            queue.push_back((x - 1, y));
+        }
+        // down
+        if y < size - 1
+            && grid[(2 * y + 2) * width + (2 * x + 1)] == 0
+            && !visited.contains(&(x, y + 1))
+        {
+            queue.push_back((x, y + 1));
+        }
+        // up
+        if y > 0 && grid[(2 * y) * width + (2 * x + 1)] == 0 && !visited.contains(&(x, y - 1)) {
+            queue.push_back((x, y - 1));
+        }
+    }
+
+    last_point
 }
 
 // assumes buffer is of size (2 * size + 1)^2
@@ -204,32 +252,11 @@ impl WolfensteinGame {
 
             bg_buffer: generate_bg_buffer(SCREEN_W, SCREEN_H),
             zbuffer: vec![0.0; SCREEN_W],
-            enemies: vec![
-                Enemy::new(2.5, 1.5),
-                Enemy::new(3.5, 1.5),
-                Enemy::new(1.5, 2.5),
-                Enemy::new(1.5, 3.5),
-            ],
+            enemies: vec![],
 
             shoot_cooldown: 0.0,
             time: 0.0,
         };
-
-        // print grid
-        // let mut grid_string = String::new();
-        //
-        // for i in 0..game.grid.len() {
-        //     if game.grid[i] == 0 {
-        //         grid_string.push('.');
-        //     } else {
-        //         grid_string.push('#');
-        //     }
-        //
-        //     if (i + 1) % (2 * DEFAULT_MAZE_SIZE + 1) == 0 {
-        //         grid_string.push('\n');
-        //     }
-        // }
-        // console_log!("{grid_string}");
 
         game.reset(lfsr);
 
@@ -293,11 +320,51 @@ impl WolfensteinGame {
         self.player_pos.pos.x = 1.5;
         self.player_pos.pos.y = 1.5;
 
+        // // print grid
+        // let mut grid_string = String::new();
+        //
+        // for i in 0..self.grid.len() {
+        //     if self.grid[i] == 0 {
+        //         grid_string.push('.');
+        //     } else {
+        //         grid_string.push('#');
+        //     }
+        //
+        //     if (i + 1) % (2 * DEFAULT_MAZE_SIZE + 1) == 0 {
+        //         grid_string.push('\n');
+        //     }
+        // }
+        // console_log!("{grid_string}");
+
+        // find the farthest point and put the goal there
+        let (goal_x, goal_y) = find_fartherst_point(&self.grid, self.size, 0, 0);
+
+        self.goal_pos.x = (2 * goal_x) as f32 + 1.5;
+        self.goal_pos.y = (2 * goal_y) as f32 + 1.5;
+
+        // console_log!("{:?}", self.goal_pos);
+
         // we add the little constants here because it looks ugly before you turn otherwise.
         if self.grid[self.width + 2] != 0 {
             self.player_pos.dir = PI / 2.0 + 0.001;
         } else {
             self.player_pos.dir = 0.001;
+        }
+
+        self.enemies.clear();
+
+        // generate some random enemies in random locations
+        for _ in 0..self.size {
+            let mut x = 0;
+            let mut y = 0;
+
+            while (x == 0 && y == 0) || (x == goal_x && y == goal_y) {
+                x = lfsr.big() % self.size;
+                y = lfsr.big() % self.size;
+            }
+
+            self.enemies
+                .push(Enemy::new((x * 2) as f32 + 1.5, (y * 2) as f32 + 1.5));
         }
     }
 
