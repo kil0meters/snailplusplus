@@ -1,4 +1,4 @@
-import { bigint_min, createStoredSignal } from './utils';
+import { bigint_min, createStoredSignal, formatNumber } from './utils';
 import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
 import Shop from './Shop';
@@ -199,9 +199,6 @@ const Game: Component = () => {
         requestAnimationFrame(animate);
     });
 
-    const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
-    const formattedScore = () => fmt.format(displayedScore());
-
     const fragmentsPerSecond = () => {
         let totalCount = 0;
         let seconds = averages[0].seconds;
@@ -210,7 +207,7 @@ const Game: Component = () => {
             totalCount += averages[i].count;
         }
 
-        return fmt.format(totalCount / seconds);
+        return formatNumber(totalCount / seconds, false);
     };
 
     return <>
@@ -219,8 +216,8 @@ const Game: Component = () => {
             <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 pb-16 xl:pb-0 md:overflow-auto'>
                 <div class='md:min-h-[50vh] xl:min-h-0 xl:border-r-2 border-black flex flex-col max-h-full overflow-hidden'>
                     <div class='p-8 bg-black flex flex-col justify-center h-[128px] content-center text-white font-display'>
-                        <span class='text-3xl text-center font-extrabold my-auto'>{formattedScore()} fragments</span>
-                        <span class='text-lg text-center'>{fragmentsPerSecond()} fragments/second</span>
+                        <span class='text-3xl text-center font-extrabold my-auto'>{formatNumber(displayedScore(), false)} fragments</span>
+                        <span class='text-lg text-center'>{fragmentsPerSecond()} fragments per second</span>
                         <button
                             class='font-display select-none font-bold bg-white text-black absolute md:hidden right-5 my-auto mt-2 px-4 py-2 rounded-md shadow-md border-2 border-black hover:bg-neutral-200 transition-colors'
                             onclick={() => setMenuShown((shown) => !shown)}

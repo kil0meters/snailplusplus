@@ -273,7 +273,7 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
                     <span class="bg-black text-lg md:text-2xl my-auto font-bold">
                         {SHOP[props.key].name}
                     </span>
-                    <span>{averageFps} fragments/second</span>
+                    <span>{averageFps} fragments per second</span>
                 </div>
 
                 <div class="text-center ml-auto flex my-auto">

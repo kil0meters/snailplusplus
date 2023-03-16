@@ -6,6 +6,7 @@ import { ScoreContext } from "./ScoreProvider";
 import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
 import { SnailInfoContext } from "./SnailInfoProvider";
 import { Upgrade, UPGRADES, UpgradesContext } from "./UpgradesProvider";
+import { formatNumber } from "./utils";
 
 const PRICE_SCALER = 1.13;
 
@@ -48,9 +49,6 @@ const ShopListingElement: Component<ShopListing> = (props) => {
         }
     };
 
-    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
-    const formattedPrice = () => fmt.format(price());
-
     return (
         <button
             onMouseEnter={() => setHover(true)}
@@ -59,7 +57,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
             class='flex hover:bg-neutral-100 p-4 transition-colors text-left'>
             <div class='flex flex-col'>
                 <span class='text-2xl font-extrabold'>{SHOP[props.key].name}</span>
-                <span class=''>{formattedPrice()} fragments</span>
+                <span class=''>{formatNumber(price(), true)} fragments</span>
             </div>
 
             {props.count > 0 && <span class='ml-auto font-extrabold text-3xl self-center'>{props.count}</span>}
@@ -77,9 +75,6 @@ const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
     const [hover, setHover] = createSignal(false);
 
     const upgrade = () => UPGRADES[props.key];
-
-    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
-    const formattedPrice = () => fmt.format(upgrade().price);
 
     const buy = () => {
         if (!props.owned && props.canBuy && (score() >= upgrade().price || document["devmode"])) {
@@ -111,7 +106,7 @@ const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
                 {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
                     {props.canBuy ? <>
                         <span class="font-bold text-lg">{upgrade().name}</span>
-                        {!props.owned && <span>{formattedPrice()} fragments</span>}
+                        {!props.owned && <span>{formatNumber(upgrade().price, true)} fragments</span>}
                         <span>{upgrade().description}</span>
                     </> : <>
                         <span class="font-bold text-lg italic">{upgrade().name}</span>
@@ -128,14 +123,11 @@ const MazeDescription: Component<{
     description: string,
     fragmentsPerCompletion: bigint
 }> = (props) => {
-    const fmt = new Intl.NumberFormat('en', { notation: "compact" });
-    const formattedFPC = () => fmt.format(props.fragmentsPerCompletion);
-
     return <>
         <h1 class="font-extrabold text-lg">{props.title}</h1>
 
         <div class="mb-2 flex flex-col gap-1">
-            <span class="text-sm">{formattedFPC()} fragments/solve</span>
+            <span class="text-sm">{formatNumber(props.fragmentsPerCompletion, true)} fragments per solve</span>
         </div>
 
         <span>{props.description}</span>

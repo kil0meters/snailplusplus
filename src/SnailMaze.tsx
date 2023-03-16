@@ -3,7 +3,7 @@ import { produce } from "solid-js/store";
 import init, { Game } from "../snail-lattice/pkg/snail_lattice";
 import { PowerupContext } from "./App";
 import { ScoreContext } from "./ScoreProvider";
-import { createStoredSignal, randomSeed } from "./utils";
+import { createStoredSignal, formatNumber, randomSeed } from "./utils";
 
 interface SnailMazeProps {
     class?: string;
@@ -278,7 +278,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             </div>
 
             <For each={recentScores()}>{(score) => {
-                return <span class="text-xl text-white drop-shadow-lg font-bold font-display absolute animate-slide-out mb-64">{score.bonus ? "Bonus!" : ""} {score.score.toString()} fragments</span>
+                return <span class="text-xl text-white drop-shadow-lg font-bold font-display absolute animate-slide-out mb-64">{score.bonus ? "Bonus!" : ""} {formatNumber(score.score, false)} fragments</span>
             }}</For>
 
             <canvas
