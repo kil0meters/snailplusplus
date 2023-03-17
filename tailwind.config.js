@@ -7,6 +7,9 @@ module.exports = {
     darkMode: 'class',
     theme: {
         extend: {
+            colors: {
+                'snailfg': '#068fef',
+            },
             boxShadow: {
                 'blue': '0 0px 10px 0px rgba(0, 0, 255, 0.5)'
             },

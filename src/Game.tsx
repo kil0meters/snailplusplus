@@ -2,7 +2,7 @@ import { bigint_min, createStoredSignal, formatNumber } from './utils';
 import AutoMazes from './AutoMazes';
 import SnailMaze from './SnailMaze';
 import Shop from './Shop';
-import { Component, createEffect, createSignal, onCleanup, onMount, untrack, useContext } from 'solid-js';
+import { Component, createEffect, createSignal, Match, onCleanup, onMount, Switch, untrack, useContext } from 'solid-js';
 import { produce } from 'solid-js/store';
 import { ScoreContext } from './ScoreProvider';
 import { LatticeWorkerMessage, LatticeWorkerResponse } from './latticeWorker';
@@ -202,9 +202,10 @@ const Game: Component = () => {
 
     return <>
         <Determination />
-        <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] xl:overflow-hidden md:max-h-screen bg-[#068fef]'>
-            <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 pb-16 xl:pb-0 md:overflow-auto'>
-                <div class='md:min-h-[50vh] xl:min-h-0 xl:border-r-2 border-black flex flex-col max-h-full overflow-hidden'>
+
+        <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] xl:overflow-hidden md:max-h-screen bg-snailfg'>
+            <div class='xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 pb-16 xl:pb-0 md:overflow-auto'>
+                <div class='md:min-h- xl:min-h-0 xl:border-r-2 border-black flex flex-col overflow-hidden'>
                     <div class='p-8 bg-black flex flex-col justify-center h-[128px] min-h-[128px] content-center text-white font-display'>
                         <span class='text-3xl text-center font-extrabold my-auto'>{formatNumber(displayedScore(), false)} fragments</span>
                         {fragmentsPerSecond() >= Number.EPSILON && <span class='text-lg text-center'>{formatNumber(fragmentsPerSecond(), true)} fragments per second</span>}

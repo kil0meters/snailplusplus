@@ -1,8 +1,8 @@
-import { batch, Component, createEffect, createMemo, createSignal, For, on, onCleanup, onMount, untrack, useContext } from "solid-js";
-import { produce } from "solid-js/store";
+import { Component, createEffect, createSignal, For, onMount, useContext } from "solid-js";
 import init, { Game } from "../snail-lattice/pkg/snail_lattice";
 import { PowerupContext } from "./App";
 import { ScoreContext } from "./ScoreProvider";
+import { UPGRADES, UpgradesContext } from "./UpgradesProvider";
 import { createStoredSignal, formatNumber, randomSeed } from "./utils";
 
 interface SnailMazeProps {
@@ -74,9 +74,93 @@ const keyReleased = (e: KeyboardEvent) => {
     }
 };
 
+const MobileControls: Component = () => {
+    return (
+        <div class="grid z-20 grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
+            <button
+                class="col-start-2 row-start-1 bg-white active:bg-neutral-200"
+                onmousedown={(e: any) => {
+                    e.key = 'ArrowUp';
+                    keyPressed(e);
+                }}
+                onmouseup={(e: any) => {
+                    e.key = 'ArrowUp';
+                    keyReleased(e);
+                }}
+                ontouchstart={(e: any) => {
+                    e.key = 'ArrowUp';
+                    keyPressed(e);
+                }}
+                ontouchend={(e: any) => {
+                    e.key = 'ArrowUp';
+                    keyReleased(e);
+                }}
+            >↑</button>
+            <button
+                class="col-start-2 row-start-3 bg-white active:bg-neutral-200"
+                onmousedown={(e: any) => {
+                    e.key = 'ArrowDown';
+                    keyPressed(e);
+                }}
+                onmouseup={(e: any) => {
+                    e.key = 'ArrowDown';
+                    keyReleased(e);
+                }}
+                ontouchstart={(e: any) => {
+                    e.key = 'ArrowDown';
+                    keyPressed(e);
+                }}
+                ontouchend={(e: any) => {
+                    e.key = 'ArrowDown';
+                    keyReleased(e);
+                }}
+            >↓</button>
+            <button
+                class="col-start-1 row-start-2 bg-white active:bg-neutral-200"
+                onmousedown={(e: any) => {
+                    e.key = 'ArrowLeft';
+                    keyPressed(e);
+                }}
+                onmouseup={(e: any) => {
+                    e.key = 'ArrowLeft';
+                    keyReleased(e);
+                }}
+                ontouchstart={(e: any) => {
+                    e.key = 'ArrowLeft';
+                    keyPressed(e);
+                }}
+                ontouchend={(e: any) => {
+                    e.key = 'ArrowLeft';
+                    keyReleased(e);
+                }}
+            >←</button>
+            <button
+                class="col-start-3 row-start-2 bg-white active:bg-neutral-200"
+                onmousedown={(e: any) => {
+                    e.key = 'ArrowRight';
+                    keyPressed(e);
+                }}
+                onmouseup={(e: any) => {
+                    e.key = 'ArrowRight';
+                    keyReleased(e);
+                }}
+                ontouchstart={(e: any) => {
+                    e.key = 'ArrowRight';
+                    keyPressed(e);
+                }}
+                ontouchend={(e: any) => {
+                    e.key = 'ArrowRight';
+                    keyReleased(e);
+                }}
+            >→</button>
+        </div>
+
+    );
+};
+
 const SnailMaze: Component<SnailMazeProps> = (props) => {
-    const [grid, setGrid] = createSignal(new Uint8Array);
     const [score, setScore] = useContext(ScoreContext);
+    const [upgrades, _setUpgrades] = useContext(UpgradesContext);
     const [_powerup, setPowerup] = useContext(PowerupContext);
     const [gameMode, setGameMode] = createStoredSignal("selected-game", 0);
     const [recentScores, setRecentScores] = createSignal<{ score: bigint, bonus: boolean }[]>([]);
@@ -94,7 +178,6 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         const scaleY = container.clientHeight / canvas.height;
         setScale(Math.min(scaleX, scaleY));
     }
-
 
     const render = () => {
         let [width, height] = game.resolution();
@@ -182,106 +265,20 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         });
     });
 
-    return (
+    return <>
+        <MobileControls />
+
         <div
             tabindex={-1}
             ref={container}
-            class={`flex items-center content-center justify-center outline-0 h-full group ${props.class}`}
+            class={`outline-0 h-full justify-center items-center flex flex-col relative ${props.class}`}
         >
-            <div class="grid z-20 grid-cols-3 grid-rows-3 fixed md:hidden aspect-square right-4 bottom-4 text-5xl w-[196px] h-[196px] opacity-70 select-none">
-                <button
-                    class="col-start-2 row-start-1 bg-white active:bg-neutral-200"
-                    onmousedown={(e: any) => {
-                        e.key = 'ArrowUp';
-                        keyPressed(e);
-                    }}
-                    onmouseup={(e: any) => {
-                        e.key = 'ArrowUp';
-                        keyReleased(e);
-                    }}
-                    ontouchstart={(e: any) => {
-                        e.key = 'ArrowUp';
-                        keyPressed(e);
-                    }}
-                    ontouchend={(e: any) => {
-                        e.key = 'ArrowUp';
-                        keyReleased(e);
-                    }}
-                >↑</button>
-                <button
-                    class="col-start-2 row-start-3 bg-white active:bg-neutral-200"
-                    onmousedown={(e: any) => {
-                        e.key = 'ArrowDown';
-                        keyPressed(e);
-                    }}
-                    onmouseup={(e: any) => {
-                        e.key = 'ArrowDown';
-                        keyReleased(e);
-                    }}
-                    ontouchstart={(e: any) => {
-                        e.key = 'ArrowDown';
-                        keyPressed(e);
-                    }}
-                    ontouchend={(e: any) => {
-                        e.key = 'ArrowDown';
-                        keyReleased(e);
-                    }}
-                >↓</button>
-                <button
-                    class="col-start-1 row-start-2 bg-white active:bg-neutral-200"
-                    onmousedown={(e: any) => {
-                        e.key = 'ArrowLeft';
-                        keyPressed(e);
-                    }}
-                    onmouseup={(e: any) => {
-                        e.key = 'ArrowLeft';
-                        keyReleased(e);
-                    }}
-                    ontouchstart={(e: any) => {
-                        e.key = 'ArrowLeft';
-                        keyPressed(e);
-                    }}
-                    ontouchend={(e: any) => {
-                        e.key = 'ArrowLeft';
-                        keyReleased(e);
-                    }}
-                >←</button>
-                <button
-                    class="col-start-3 row-start-2 bg-white active:bg-neutral-200"
-                    onmousedown={(e: any) => {
-                        e.key = 'ArrowRight';
-                        keyPressed(e);
-                    }}
-                    onmouseup={(e: any) => {
-                        e.key = 'ArrowRight';
-                        keyReleased(e);
-                    }}
-                    ontouchstart={(e: any) => {
-                        e.key = 'ArrowRight';
-                        keyPressed(e);
-                    }}
-                    ontouchend={(e: any) => {
-                        e.key = 'ArrowRight';
-                        keyReleased(e);
-                    }}
-                >→</button>
-            </div>
-            <div class="bg-white border-black border-2 p-4 group-hover:flex flex-col text-lg gap-2 absolute hidden bottom-4 shadow-md">
-                <span class="font-display font-bold">Game Mode</span>
-
-                <div class="grid grid-cols-4">
-                    <button class="p-2 hover:bg-black aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
-                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(1)}>🧀</button>
-                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(2)}>🚀</button>
-                    <button class="p-2 hover:bg-black aspect-square text-2xl" onClick={() => setGameMode(3)}>🔫</button>
-                </div>
-            </div>
-
             <For each={recentScores()}>{(score) => {
-                return <span class="text-xl text-white drop-shadow-lg font-bold font-display absolute animate-slide-out mb-64">{score.bonus ? "Bonus!" : ""} {formatNumber(score.score, false)} fragments</span>
+                return <span class="text-xl text-white drop-shadow-lg font-bold font-display absolute animate-slide-out top-[20%]">{score.bonus ? "Bonus!" : ""} {formatNumber(score.score, false)} fragments</span>
             }}</For>
 
             <canvas
+                class="my-auto max-w-full"
                 ref={canvas}
                 style={{
                     "image-rendering": "pixelated",
@@ -290,8 +287,26 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                 }}
             >
             </canvas>
+
+            {upgrades.find((upgrade) => UPGRADES[upgrade.key].mazeType == "manual" && upgrade.owned) != undefined && <div class="bg-black border-black border-2 text-lg py-4 gap-2 shadow-md w-full">
+                <span class="font-display text-white font-bold px-4">Manual Snail</span>
+
+                <div class="flex overflow-x-auto">
+                    <div class="grid grid-cols-4 grid-flow-col pl-4">
+                        <button class="p-2 hover:bg-white aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
+
+                        <For each={upgrades.filter((upgrade) => {
+                            return upgrade.owned && UPGRADES[upgrade.key].mazeType == "manual";
+                        })}>{(upgrade) =>
+                            <button class={`p-2 hover:bg-white aspect-square text-2xl transition-colors ${UPGRADES[upgrade.key].order + 1 === gameMode() ? "bg-white" : ""}`} onClick={() => setGameMode(UPGRADES[upgrade.key].order + 1)}>{UPGRADES[upgrade.key].icon}</button>
+                            }</For>
+                    </div>
+                </div>
+            </div>}
         </div>
-    );
+    </>;
 };
+
+
 
 export default SnailMaze;

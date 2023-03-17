@@ -499,7 +499,7 @@ impl WolfensteinGame {
 
             for y in 0..height.min(SCREEN_H / 2) {
                 image.draw_pixel_xy(color, x, 120 + y);
-                image.draw_pixel_xy(color, x, 120 - y);
+                image.draw_pixel_xy(color, x, 119 - y);
             }
         }
 
