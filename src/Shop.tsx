@@ -1,9 +1,10 @@
-import { children, Component, createSignal, For, JSX, onCleanup, onMount, useContext } from "solid-js";
+import { children, Component, createSignal, For, JSX, Match, onCleanup, onMount, Switch, useContext } from "solid-js";
 import { produce } from 'solid-js/store';
 import { NAMES } from "../assets/names";
+import Changelog from "./Changelog";
 import { LATTICE_WORKER_STORE } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
-import { SHOP, ShopContext, ShopItem, ShopListing } from "./ShopProvider";
+import { SHOP, ShopContext, ShopItem, ShopKey, ShopListing, SHOP_KEYS } from "./ShopProvider";
 import { SnailInfoContext } from "./SnailInfoProvider";
 import { Upgrade, UPGRADES, UpgradesContext } from "./UpgradesProvider";
 import { formatNumber } from "./utils";
@@ -12,7 +13,7 @@ const PRICE_SCALER = 1.13;
 
 document["devmode"] = false;
 
-const ShopListingElement: Component<ShopListing> = (props) => {
+const ShopListingElement: Component<{ key: ShopKey, count: number }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
     const [_shop, setShop] = useContext(ShopContext);
     const [_snailInfo, setSnailInfo] = useContext(SnailInfoContext);
@@ -71,7 +72,7 @@ const ShopListingElement: Component<ShopListing> = (props) => {
 
 const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
-    const [upgrades, setUpgrades] = useContext(UpgradesContext);
+    const [_upgrades, setUpgrades] = useContext(UpgradesContext);
     const [hover, setHover] = createSignal(false);
 
     const upgrade = () => UPGRADES[props.key];
@@ -104,14 +105,21 @@ const UpgradeListing: Component<Upgrade & { canBuy: boolean }> = (props) => {
                 {upgrade().icon}
 
                 {hover() && <ShopDescription onMouseEnter={() => setHover(false)}>
-                    {props.canBuy ? <>
-                        <span class="font-bold text-lg">{upgrade().name}</span>
-                        {!props.owned && <span>{formatNumber(upgrade().price, true)} fragments</span>}
-                        <span>{upgrade().description}</span>
-                    </> : <>
-                        <span class="font-bold text-lg italic">{upgrade().name}</span>
-                        <span class="italic">Unlocks after {upgrade().showAfter} {SHOP[upgrade().mazeType].name}s.</span>
-                    </>}
+                    <Switch>
+                        <Match when={props.canBuy}>
+                            <span class="font-bold text-lg">{upgrade().name}</span>
+                            {!props.owned && <span>{formatNumber(upgrade().price, true)} fragments</span>}
+                            <span>{upgrade().description}</span>
+                        </Match>
+                        <Match when={!props.canBuy && upgrade().mazeType != "manual"}>
+                            <span class="font-bold text-lg italic">{upgrade().name}</span>
+                            <span class="italic">Unlocks after {upgrade().showAfter} {SHOP[upgrade().mazeType].name}s.</span>
+                        </Match>
+                        <Match when={!props.canBuy && upgrade().mazeType == "manual"}>
+                            <span class="font-bold text-lg italic">{upgrade().name}</span>
+                            <span class="italic">Unlocks after you have {upgrade().showAfter} units.</span>
+                        </Match>
+                    </Switch>
                 </ShopDescription>}
             </div>
         </button>
@@ -176,32 +184,79 @@ const ShopDescription: Component<{
     );
 };
 
+// this code is so fucking gross. i'm doing so many linear searches through
+// for seemingly no reason, but it works i guess and we don't need to do it
+// very frequently
 const Shop: Component<{ class?: string }> = (props) => {
-    const [shop, setShop] = useContext(ShopContext);
-    const [_score, setScore] = useContext(ScoreContext);
-    const [upgrades, setUpgrades] = useContext(UpgradesContext);
+    const [shop, _setShop] = useContext(ShopContext);
+    const [upgrades, _setUpgrades] = useContext(UpgradesContext);
 
-    const reset = () => {
-        if (window.confirm("This will cause you to lose all of your progress. Are you sure?")) {
-            setShop(() => true, "count", () => 0);
-            setUpgrades(() => true, "owned", () => false);
-            setScore(0n);
+    const purchasedUpgrades = () =>
+        upgrades.filter((upgrade) => upgrade.owned);
 
-            shop.forEach(({ key }) => {
-                LATTICE_WORKER_STORE[key].postMessage({ type: "reset" });
-            });
-        }
-    };
+    const purchasableUpgrades = () =>
+        upgrades.filter((upgrade) => {
+            if (UPGRADES[upgrade.key].mazeType == "manual") {
+                let ownedMazeTypeCount = 0;
+
+                for (let i = 0; i < shop.length; i++) {
+                    if (shop[i].count > 0) {
+                        ownedMazeTypeCount += 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                return !upgrade.owned && ownedMazeTypeCount >= UPGRADES[upgrade.key].showAfter;
+            }
+            else {
+                let shopListing = shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType);
+                return !upgrade.owned && shopListing.count >= UPGRADES[upgrade.key].showAfter;
+            }
+        });
+
+    const shownUpgrades = () => {
+        let inOtherLists = [...purchasableUpgrades(), ...purchasedUpgrades()];
+
+        return upgrades.filter((upgrade) => {
+            if (inOtherLists.find((cur) => cur.key == upgrade.key) != undefined) {
+                return false;
+            }
+
+            if (UPGRADES[upgrade.key].mazeType == "manual") {
+                let order = UPGRADES[upgrade.key].order;
+
+                if (order == 0 && shop[0].count > 0) {
+                    return true;
+                }
+
+                for (let i = 0; i < upgrades.length; i++) {
+                    let upgrade = UPGRADES[upgrades[i].key];
+                    if (upgrades[i].owned && upgrade.mazeType == "manual" && upgrade.order == order - 1) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            else {
+                let shopListing = shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType);
+                return !upgrade.owned && shopListing.count > 0;
+            }
+        });
+    }
 
     return (
         <div
             id="shop-sidebar"
             class={`${props.class} bg-white overflow-x-hidden overflow-y-auto fixed top-[30%] bottom-0 left-0 right-0 md:static flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display`}>
             <div class='border-b-4 border-black p-4'>
-                <h1 class='font-extrabold text-2xl mb-4'>Upgrades</h1>
+                <h1 class='font-extrabold text-2xl mb-4'>
+                    {shop[0].count > 0 ? "Upgrades" : " "}
+                </h1>
 
                 <div class='grid grid-cols-7'>
-                    <For each={upgrades.filter((upgrade) => upgrade.owned)}>{item =>
+                    <For each={purchasedUpgrades()}>{item =>
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
@@ -210,7 +265,7 @@ const Shop: Component<{ class?: string }> = (props) => {
                     }</For>
                 </div>
                 <div class='grid grid-cols-7'>
-                    <For each={upgrades.filter((upgrade) => !upgrade.owned && shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType).count >= UPGRADES[upgrade.key].showAfter)}>{item =>
+                    <For each={purchasableUpgrades()}>{item =>
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
@@ -218,7 +273,7 @@ const Shop: Component<{ class?: string }> = (props) => {
                         />
                     }</For>
 
-                    <For each={upgrades.filter((upgrade) => !upgrade.owned && shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType).count < UPGRADES[upgrade.key].showAfter)}>{item =>
+                    <For each={shownUpgrades()}>{item =>
                         <UpgradeListing
                             key={item.key}
                             owned={item.owned}
@@ -228,19 +283,15 @@ const Shop: Component<{ class?: string }> = (props) => {
                 </div>
             </div>
 
-            <For each={shop}>{item => <ShopListingElement
+            <For each={shop.filter((_, i, shop) => i == 0 || shop[i - 1].count > 0)}>{item => <ShopListingElement
                 key={item.key}
                 count={item.count}
             />}</For>
 
-            <button onClick={reset} class="bg-red-700 p-4 hover text-red-50 hover:bg-red-600 transition-colors">
-                Reset
-            </button>
-
             <div class="text-center text-sm text-gray-500 my-8">
-                Made with 🐌 · <a class="hover:underline text-blue-600" href="https://github.com/kil0meters/snailplusplus" target="_blank">Star on GitHub</a>
+                Made with 🐌 · <Changelog /> · <a class="hover:underline text-blue-600" href="https://github.com/kil0meters/snailplusplus" target="_blank">Star on GitHub</a>
             </div>
-        </div>
+        </div >
     );
 }
 

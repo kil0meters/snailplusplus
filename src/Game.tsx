@@ -10,7 +10,7 @@ import LatticeWorker from './latticeWorker.ts?worker';
 import { SHOP, ShopContext, ShopKey, SHOP_KEYS } from './ShopProvider';
 import { PowerupContext } from './App';
 import { SnailInfoContext } from './SnailInfoProvider';
-import { Upgrade, UpgradeKey, UPGRADES, UpgradesContext } from './UpgradesProvider';
+import { Upgrade, AutoUpgradeKey, UPGRADES, UpgradesContext } from './UpgradesProvider';
 import { AverageContext } from './AverageProvider';
 import { NAMES } from "../assets/names";
 
@@ -83,9 +83,8 @@ function setUpgradeNumbers(upgrades: Upgrade[]) {
     let metaSnailUpgrades = 0;
 
     for (let i = 0; i < upgrades.length; i++) {
-        if (upgrades[i].owned) {
-            let upgrade = UPGRADES[upgrades[i].key];
-
+        let upgrade = UPGRADES[upgrades[i].key];
+        if (upgrades[i].owned && upgrade.mazeType != "manual") {
             metaSnailUpgrades |= 1 << (3 * SHOP_KEYS.indexOf(upgrade.mazeType) + upgrade.order);
 
             if (!upgradeNumbers[upgrade.mazeType]) {
@@ -206,7 +205,7 @@ const Game: Component = () => {
         <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] xl:overflow-hidden md:max-h-screen bg-[#068fef]'>
             <div class='flex flex-col xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 pb-16 xl:pb-0 md:overflow-auto'>
                 <div class='md:min-h-[50vh] xl:min-h-0 xl:border-r-2 border-black flex flex-col max-h-full overflow-hidden'>
-                    <div class='p-8 bg-black flex flex-col justify-center h-[128px] content-center text-white font-display'>
+                    <div class='p-8 bg-black flex flex-col justify-center h-[128px] min-h-[128px] content-center text-white font-display'>
                         <span class='text-3xl text-center font-extrabold my-auto'>{formatNumber(displayedScore(), false)} fragments</span>
                         {fragmentsPerSecond() >= Number.EPSILON && <span class='text-lg text-center'>{formatNumber(fragmentsPerSecond(), true)} fragments per second</span>}
                         <button
@@ -222,5 +221,11 @@ const Game: Component = () => {
         </div>
     </>;
 };
+
+// new snail ideas:
+// - mirror snail: moves based on player inputs
+// - demolitionist snail: destroys walls to get to the goal faster
+// - omnipotent snail: rearranges the maze to walk directly to the end
+// - super snail: flies directly above the end goal
 
 export default Game;

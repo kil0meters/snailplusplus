@@ -75,6 +75,7 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
     const renderloop = () => {
         while (workerMessageQueue.length > 0) {
             let data = workerMessageQueue.pop();
+
             if (data.type == "render") {
                 renderLocked = false;
 

@@ -5,7 +5,7 @@ import { createLocalStore } from "./utils";
 
 export const UpgradesContext = createContext<[Upgrade[], SetStoreFunction<Upgrade[]>]>();
 
-const UPGRADE_KEYS = [
+const AUTO_UPGRADE_KEYS = [
     "four-leaf-clover",
     "rabbits-foot",
     "horseshoe",
@@ -31,12 +31,21 @@ const UPGRADE_KEYS = [
     "self-improvement",
     "singularity"
 ] as const;
-export type UpgradeKey = typeof UPGRADE_KEYS[number];
+export type AutoUpgradeKey = typeof AUTO_UPGRADE_KEYS[number];
+
+const MANUAL_UPGRADE_KEYS = [
+    "pacsnail",
+    "asteroids",
+    "wolfensnail"
+] as const;
+export type ManualUpgradeKey = typeof MANUAL_UPGRADE_KEYS[number];
 
 export type Upgrade = {
     key: UpgradeKey;
     owned: boolean;
 };
+
+export type UpgradeKey = ManualUpgradeKey | AutoUpgradeKey
 
 export type UpgradeListing = {
     name: string;
@@ -44,14 +53,13 @@ export type UpgradeListing = {
     description: string;
     price: bigint;
     order: number; // where in the progression the upgrade is
-    mazeType: ShopKey;
+    mazeType: ShopKey | "manual";
     showAfter: number; // certain number of units of that type
 };
 
+const UPGRADES_DEFAULT: Upgrade[] = [...AUTO_UPGRADE_KEYS, ...MANUAL_UPGRADE_KEYS].map((key) => { return { key, owned: false } });
 
-const UPGRADES_DEFAULT: Upgrade[] = UPGRADE_KEYS.map((key) => { return { key, owned: false } });
-
-export const UPGRADES: { [key: string]: UpgradeListing } = {
+export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
     "four-leaf-clover": {
         name: "Four Leaf Clover",
         icon: "🍀",
@@ -74,7 +82,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Horseshoe",
         icon: "🧲",
         description: "Gives Random Walk Snails an additional 30% chance to go the right direction.",
-        price: 50_000n,
+        price: 50000n,
         order: 2,
         mazeType: "random-walk",
         showAfter: 50,
@@ -83,7 +91,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Fusion Reactor",
         icon: "☄️",
         description: "Random Teleport Snail uses a fusion reactor to charge up its teleports 20% faster.",
-        price: 2_000n,
+        price: 2000n,
         order: 0,
         mazeType: "random-teleport",
         showAfter: 5,
@@ -92,7 +100,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Homing Beacon",
         icon: "🔉",
         description: "Random Teleport Snail uses a homing beacon to get more accurate teleports over time.",
-        price: 20_000n,
+        price: 20000n,
         order: 1,
         mazeType: "random-teleport",
         showAfter: 25,
@@ -101,7 +109,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Advanced Homing Beacon",
         description: "Random Teleport Snail upgrades its homing beacon to get even more accurate teleports.",
         icon: "🔊",
-        price: 1_000_000n,
+        price: 1000000n,
         order: 2,
         mazeType: "random-teleport",
         showAfter: 50
@@ -110,7 +118,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Population Boom",
         description: "A recent population boom has lead to larger generations of Learning Snails.",
         icon: "👥",
-        price: 10_000n,
+        price: 10000n,
         order: 0,
         mazeType: "learning",
         showAfter: 5
@@ -119,7 +127,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Uranium Mine",
         description: "A nearby uranium mine leads to Learning Snails moving faster and having a higher mutation rate.",
         icon: "☢️",
-        price: 500_000n,
+        price: 500000n,
         order: 1,
         mazeType: "learning",
         showAfter: 25
@@ -128,7 +136,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Radium Mine",
         description: "A nearby radium mine leads to Learning Snails moving faster and having a higher mutation rate.",
         icon: "⚛️",
-        price: 2_500_000n,
+        price: 2500000n,
         order: 2,
         mazeType: "learning",
         showAfter: 50
@@ -137,7 +145,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Left Glove",
         description: "With a glove on its left hand, Hold Left Snail is able to move 20% faster.",
         icon: "🫲",
-        price: 50_000n,
+        price: 50000n,
         order: 0,
         mazeType: "hold-left",
         showAfter: 5,
@@ -146,7 +154,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Right Handed Snail",
         description: "Left Handed Snail recruits Right Handed Snail to help explore the maze faster.",
         icon: "👉",
-        price: 1_000_000n,
+        price: 1000000n,
         order: 1,
         mazeType: "hold-left",
         showAfter: 25,
@@ -155,7 +163,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Right Glove",
         description: "With a glove on its right hand, Hold Right Snail is able to move 20% faster.",
         icon: "🫱",
-        price: 500_000n,
+        price: 500000n,
         order: 0,
         mazeType: "inverted",
         showAfter: 5,
@@ -164,7 +172,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Left Handed Snail",
         description: "Right Handed Snail recruits Left Handed Snail to help explore the maze faster.",
         icon: "👈",
-        price: 10_000_000n,
+        price: 10000000n,
         order: 1,
         mazeType: "inverted",
         showAfter: 25,
@@ -173,7 +181,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Compass",
         description: "Using a compass, Segment Snail is able to make smarter decisions about where to go.",
         icon: "🧭",
-        price: 10_000_000n,
+        price: 10000000n,
         order: 0,
         mazeType: "tremaux",
         showAfter: 5,
@@ -182,7 +190,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Electromagnet",
         description: "Segment Snail installs an electromagnet near the goal to make its compass more accurate.",
         icon: "⚡",
-        price: 50_000_000n,
+        price: 50000000n,
         order: 1,
         mazeType: "tremaux",
         showAfter: 25,
@@ -191,7 +199,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Breadcrumbs",
         description: "The Segment Snail leaves breadcrumbs which allow it to backtrack twice as fast.",
         icon: "🍞",
-        price: 500_000_000n,
+        price: 500000000n,
         order: 2,
         mazeType: "tremaux",
         showAfter: 50,
@@ -200,7 +208,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Comradery",
         description: "RPG Snail gets along better with its party, gains +10% movement speed for each member",
         icon: "🫂",
-        price: 50_000_000n,
+        price: 50000000n,
         order: 0,
         mazeType: "rpg",
         showAfter: 5
@@ -209,7 +217,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Sidequests",
         description: "RPG Snail picks up any snails it runs into.",
         icon: "🛡️",
-        price: 150_000_000n,
+        price: 150000000n,
         order: 1,
         mazeType: "rpg",
         showAfter: 25
@@ -218,7 +226,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Recruitment",
         description: "Everyone comes to the RPG snail at once.",
         icon: "⚔️",
-        price: 3_000_000_000n,
+        price: 3000000000n,
         order: 2,
         mazeType: "rpg",
         showAfter: 50
@@ -227,7 +235,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Forward Time Travel",
         description: "Time Travel Snail moves 50% faster through time in the present.",
         icon: "⏲️",
-        price: 250_000_000n,
+        price: 250000000n,
         order: 0,
         mazeType: "time-travel",
         showAfter: 5
@@ -236,7 +244,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Improved Time Relay",
         description: "Time Travel Snail moves 50% faster through time in the past.",
         icon: "⏰",
-        price: 1_000_000_000n,
+        price: 1000000000n,
         order: 1,
         mazeType: "time-travel",
         showAfter: 25
@@ -245,7 +253,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Time Warp",
         description: "Time Travel Snail comes back to the present instantly.",
         icon: "🕰️",
-        price: 20_000_000_000n,
+        price: 20000000000n,
         order: 2,
         mazeType: "time-travel",
         showAfter: 50
@@ -254,7 +262,7 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Self-Improvement",
         description: "Cloning Snails improve themselves with each generation.",
         icon: "🤖",
-        price: 2_000_000_000n,
+        price: 2000000000n,
         order: 0,
         mazeType: "clone",
         showAfter: 5
@@ -263,10 +271,46 @@ export const UPGRADES: { [key: string]: UpgradeListing } = {
         name: "Singularity",
         description: "Cloning Snails approach the singularity.",
         icon: "🌎",
-        price: 100_000_000_000n,
+        price: 100000000000n,
         order: 1,
         mazeType: "clone",
         showAfter: 25
+    },
+
+    //////////////////////////
+    // MANUAL MAZE UPGRADES //
+    //////////////////////////
+
+    // In this context, showAfter means the number of different mazes you have
+    // to have unlocked before the upgrade shows up in the shop
+
+    "pacsnail": {
+        name: "Larger Maze",
+        icon: "🧀",
+        description: "The Manual Snail finds itself in a larger maze with abundant fragments. However, it's not alone.",
+        price: 10_000n,
+        showAfter: 3,
+
+        order: 0,
+        mazeType: "manual",
+    },
+    "asteroids": {
+        name: "Rocket Ship",
+        icon: "🚀",
+        description: "In search of fragments, The Manual Snail goes to space.",
+        price: 0n,
+        order: 1,
+        mazeType: "manual",
+        showAfter: 6
+    },
+    "wolfensnail": {
+        name: "Dimensional Recombobulator",
+        icon: "🔫",
+        description: "The Manual Snail alters the fabric of reality, entering the third dimension.",
+        price: 0n,
+        order: 2,
+        mazeType: "manual",
+        showAfter: 10
     }
 }
 
