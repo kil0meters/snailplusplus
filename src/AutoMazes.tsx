@@ -82,8 +82,8 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
                 for (let page of data.pages) {
                     let target = elements()[page.page];
 
-                    if (page.buffer.length != 4 * target.width * target.height) {
-                        console.log(page.buffer.length, target.width, target.height);
+                    if (!target || page.buffer.length != 4 * target.width * target.height) {
+                        // console.log(page.buffer.length, target.width, target.height);
                         break;
                     }
 
@@ -222,7 +222,6 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
     return (
         <div ref={container} class={`flex items-center justify-center w-full flex-col`}>
             {focusedIndex() !== null && <div ref={snailInfoElement} class="z-50 flex flex-col bg-black p-4 border-2 border-white shadow-md absolute text-white font-display" style={{
-                height: "108px",
                 top: `${snailInfoTop()}px`,
                 left: `${snailInfoLeft()}px`,
                 transform: "translateX(-50%)"

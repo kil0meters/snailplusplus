@@ -32,7 +32,7 @@ class LatticeList<T extends SnailLattice> {
     }
 
     get pageSize(): number {
-        return this.width * 4;
+        return this.width;
     }
 
     constructor(mazeType: ShopKey, lattice: T, baseMultiplier: number, width: number) {
