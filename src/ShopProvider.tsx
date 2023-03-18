@@ -62,7 +62,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "hold-left": {
         name: "Left Handed Snail",
         description: "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
-        price: 50_000,
+        price: 12_000,
         baseMultiplier: 5n * 81n,
         latticeWidth: 4,
         bgcolor: "#068fef",
@@ -70,7 +70,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "inverted": {
         name: "Right Handed Snail",
         description: "Holds the right wall instead. I wonder where he got that idea from.",
-        price: 500_000,
+        price: 200_000,
         baseMultiplier: 24n * 81n,
         latticeWidth: 4,
         bgcolor: "#f97010",
@@ -78,7 +78,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "tremaux": {
         name: "Segment Snail",
         description: "Uses marks on the ground to block off segments of the maze which have been explored.",
-        price: 3_000_000,
+        price: 1_800_000,
         baseMultiplier: 100n * 121n,
         latticeWidth: 3,
         bgcolor: "#068fef",

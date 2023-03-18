@@ -210,14 +210,14 @@ const Game: Component = () => {
                 </div>
                 <AutoMazes />
             </div>
-            <Shop class={`z-30 md:flex ${menuShown() ? '' : 'hidden'}`} />
+            <Shop class={`${menuShown() ? '' : 'hidden'}`} />
         </div>
     </>;
 };
 
 // new snail ideas:
-// - mirror snail: moves based on player inputs
 // - omnipotent snail: rearranges the maze to walk directly to the end
-// - super snail: flies directly above the end goal
+// - conway's snail: clones itself according to the rules of conway's game of life
+// - maze snail: each tile is a mini maze that solves itself
 
 export default Game;

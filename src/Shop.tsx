@@ -1,5 +1,6 @@
 import { children, Component, createSignal, For, JSX, Match, onCleanup, onMount, Switch, useContext } from "solid-js";
 import { produce } from 'solid-js/store';
+import { Portal } from "solid-js/web";
 import { NAMES } from "../assets/names";
 import Changelog from "./Changelog";
 import { LATTICE_WORKER_STORE } from "./Game";
@@ -175,13 +176,15 @@ const ShopDescription: Component<{
     })
 
     return (
-        <div
-            ref={hoverContainer}
-            onMouseEnter={props.onMouseEnter}
-            class="absolute bg-white p-4 border-4 border-black flex flex-col justify-left text-left w-96"
-        >
-            {props.children}
-        </div>
+        <Portal>
+            <div
+                ref={hoverContainer}
+                onMouseEnter={props.onMouseEnter}
+                class="z-50 absolute font-display bg-white p-4 border-4 border-black flex flex-col justify-left text-left w-96"
+            >
+                {props.children}
+            </div>
+        </Portal>
     );
 };
 
@@ -250,7 +253,7 @@ const Shop: Component<{ class?: string }> = (props) => {
     return (
         <div
             id="shop-sidebar"
-            class={`${props.class} bg-white overflow-x-hidden overflow-y-auto fixed top-[30%] bottom-0 left-0 right-0 md:static flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display`}>
+            class={`${props.class} bg-white overflow-x-hidden overflow-y-auto z-30 fixed top-[30%] bottom-0 left-0 right-0 md:static flex md:flex flex-col shadow-lg border-t-4 md:border-t-0 md:border-l-4 border-black font-display`}>
             <div class='border-b-4 border-black p-4'>
                 <h1 class='font-extrabold text-2xl mb-4'>
                     {shop[0].count > 0 ? "Upgrades" : " "}

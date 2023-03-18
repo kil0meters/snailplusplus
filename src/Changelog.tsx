@@ -1,4 +1,5 @@
 import { Component, createSignal, For, useContext } from "solid-js";
+import { Portal } from "solid-js/web";
 import { LATTICE_WORKER_STORE } from "./Game";
 import { ScoreContext } from "./ScoreProvider";
 import { ShopContext, SHOP_KEYS } from "./ShopProvider";
@@ -43,47 +44,51 @@ const Changelog: Component<{}> = () => {
     };
 
     return <>
-        {shown() && <div class="fixed left-0 top-0 bottom-0 right-0 bg-[#00000055]">
-            <div class="mx-auto max-w-3xl bg-white p-4 border-2 border-black text-black text-left grid grid-cols-3 mt-40">
-                <div class="col-span-2 flex flex-col text-lg">
-                    <h1 class="text-3xl font-extrabold mb-2">SnailMaze++</h1>
+        {shown() &&
+            <Portal>
+                <div class="z-50 font-display fixed left-0 top-0 bottom-0 right-0 bg-[#00000055]">
+                    <div class="mx-auto max-w-3xl bg-white p-4 border-2 border-black text-black text-left grid grid-cols-3 mt-40">
+                        <div class="col-span-2 flex flex-col text-lg">
+                            <h1 class="text-3xl font-extrabold mb-2">SnailMaze++</h1>
 
-                    <i>HOW TO PLAY:</i>
-                    <p>
-                        Use WASD or arrow keys to control your character. Click on things to purchase them.
-                    </p>
+                            <i>HOW TO PLAY:</i>
+                            <p>
+                                Use WASD or arrow keys to control your character. Click on things to purchase them.
+                            </p>
 
-                    <button onClick={reset} class="mt-auto rounded-full bg-red-700 py-2 px-4 mb-4 hover text-red-50 hover:bg-red-600 transition-colors">
-                        Reset
-                    </button>
+                            <button onClick={reset} class="mt-auto rounded-full bg-red-700 py-2 px-4 mb-4 hover text-red-50 hover:bg-red-600 transition-colors">
+                                Reset
+                            </button>
 
-                    <button
-                        class="bg-neutral-200 hover:bg-neutral-100 px-4 py-2 transition-colors rounded-full"
-                        onClick={() => setShown(false)}
-                    >Close</button>
+                            <button
+                                class="bg-neutral-200 hover:bg-neutral-100 px-4 py-2 transition-colors rounded-full"
+                                onClick={() => setShown(false)}
+                            >Close</button>
+                        </div>
+
+                        <div>
+                            <h2 class="font-bold text-2xl">Changelog</h2>
+
+                            <ul class="list-disc ml-4">
+                                <ChangelogEntry
+                                    version="v2.0-dev"
+                                    features={[
+                                        "Added 3 new manual snails",
+                                        "Added 10 new automatic snails",
+                                        "Added 30 new upgrades",
+                                        "Added changelog :)"
+                                    ]}
+                                    bugfixes={[
+                                        "Average calculations now remain accurate for long-running tabs",
+                                        "Fixed flicker when regenerating maze",
+                                    ]}
+                                />
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-
-                <div>
-                    <h2 class="font-bold text-2xl">Changelog</h2>
-
-                    <ul class="list-disc ml-4">
-                        <ChangelogEntry
-                            version="v2.0-dev"
-                            features={[
-                                "Added 3 new manual snails",
-                                "Added 10 new automatic snails",
-                                "Added 30 new upgrades",
-                                "Added changelog :)"
-                            ]}
-                            bugfixes={[
-                                "Average calculations now remain accurate for long-running tabs",
-                                "Fixed flicker when regenerating maze",
-                            ]}
-                        />
-                    </ul>
-                </div>
-            </div>
-        </div>}
+            </Portal>
+        }
         <button class="hover:underline text-blue-600" onClick={() => setShown((shown) => !shown)}>Changelog</button>
     </>;
 }
