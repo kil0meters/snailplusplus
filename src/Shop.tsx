@@ -215,7 +215,7 @@ const Shop: Component<{ class?: string }> = (props) => {
             }
             else {
                 let shopListing = shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType);
-                return !upgrade.owned && shopListing.count >= UPGRADES[upgrade.key].showAfter;
+                return !upgrade.owned && shopListing && shopListing.count >= UPGRADES[upgrade.key].showAfter;
             }
         });
 
@@ -245,7 +245,7 @@ const Shop: Component<{ class?: string }> = (props) => {
             }
             else {
                 let shopListing = shop.find((x) => x.key == UPGRADES[upgrade.key].mazeType);
-                return !upgrade.owned && shopListing.count > 0;
+                return !upgrade.owned && shopListing && shopListing.count > 0;
             }
         });
     }
