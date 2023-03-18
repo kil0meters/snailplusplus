@@ -1,4 +1,4 @@
-import init, { RandomWalkLattice, RandomTeleportLattice, LearningLattice, HoldLeftLattice, InvertedLattice, TremauxLattice, RpgLattice, TimeTravelLattice, CloneLattice, MetaLattice } from "../snail-lattice/pkg/snail_lattice";
+import init, { RandomWalkLattice, RandomTeleportLattice, LearningLattice, HoldLeftLattice, InvertedLattice, TremauxLattice, RpgLattice, TimeTravelLattice, CloneLattice, MetaLattice, DemolitionistLattice, FlyingLattice } from "../snail-lattice/pkg/snail_lattice";
 import type { ShopKey } from "./ShopProvider";
 import { randomSeed } from "./utils";
 
@@ -161,6 +161,12 @@ function setupLattice(mazeType: ShopKey) {
                 break;
             case "meta":
                 LATTICE = new LatticeList("meta", new MetaLattice(2, randomSeed()), 1, 2);
+                break;
+            case "demolitionist":
+                LATTICE = new LatticeList("demolitionist", new DemolitionistLattice(3, randomSeed()), 1, 3);
+                break;
+            case "flying":
+                LATTICE = new LatticeList("flying", new FlyingLattice(3, randomSeed()), 1, 3);
                 break;
         }
 

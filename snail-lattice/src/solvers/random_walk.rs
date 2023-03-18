@@ -7,6 +7,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 /// Random Walk Snail Upgrades:
 /// - Four Leaf Clover: Gives 10% chance to go the right way
 /// - Rabbit's Foot:    Gives an additional 20% to go the right way
@@ -57,10 +59,11 @@ where
     }
 
     fn setup(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) {
+        self.snail.reset();
         self.directions = maze.get_directions(maze.end_pos);
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         // chance to move in the right direction based on the upgrades provided
         let chance = (self.upgrades & 0b1)
             + (self.upgrades & 0b10)
@@ -88,10 +91,9 @@ where
         }
 
         if self.snail.pos == maze.end_pos {
-            self.snail.reset();
-            true
+            SolveStatus::Solved(1)
         } else {
-            false
+            SolveStatus::None
         }
     }
 

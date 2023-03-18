@@ -51,7 +51,7 @@ impl Asteroid {
         (self.pos.x - pos.x).powi(2) + (self.pos.y - pos.y).powi(2) <= (size + self.size).powi(2)
     }
 
-    fn draw(&self, buffer: &mut [u8]) {
+    fn draw(&self, image: &mut Image) {
         let point1 = (self.pos + Vec2f::new(0.0, self.size)).rot_around(self.pos, self.rot);
         let point2 = point1.rot_around(self.pos, (72.0 * PI) / 180.0).to_vec2i();
         let point3 = point1
@@ -64,11 +64,6 @@ impl Asteroid {
             .rot_around(self.pos, 4.0 * (72.0 * PI) / 180.0)
             .to_vec2i();
         let point1 = point1.to_vec2i();
-
-        let mut image = Image {
-            buffer,
-            buffer_width: 240,
-        };
 
         image.draw_line(DEFAULT_PALETTE[4], point1, point2);
         image.draw_line(DEFAULT_PALETTE[4], point2, point3);
@@ -98,12 +93,7 @@ impl Bullet {
         self.pos.wrap(240.0);
     }
 
-    fn draw(&self, buffer: &mut [u8]) {
-        let mut image = Image {
-            buffer,
-            buffer_width: 240,
-        };
-
+    fn draw(&self, image: &mut Image) {
         let point1 = self.pos.to_vec2i();
         let point2 = (self.pos + Vec2f::new(0.0, 5.0))
             .rot_around(self.pos, self.rot)
@@ -151,12 +141,7 @@ impl Player {
         self.pos.wrap(240.0);
     }
 
-    fn draw(&self, buffer: &mut [u8]) {
-        let mut image = Image {
-            buffer,
-            buffer_width: 240,
-        };
-
+    fn draw(&self, image: &mut Image) {
         // triangle ship
         let point1 = (self.pos + Vec2f::new(0.0, 10.0))
             .rot_around(self.pos, self.rot)
@@ -319,22 +304,28 @@ impl AsteroidsGame {
     }
 
     pub fn render(&self, buffer: &mut [u8]) {
+        let mut image = Image {
+            buffer,
+            width: 240,
+            height: 240,
+        };
+
         // clear buffer
-        for i in (0..buffer.len()).step_by(4) {
-            buffer[i] = DEFAULT_PALETTE[5][0];
-            buffer[i + 1] = DEFAULT_PALETTE[5][1];
-            buffer[i + 2] = DEFAULT_PALETTE[5][2];
-            buffer[i + 3] = 0xff;
+        for i in (0..image.buffer.len()).step_by(4) {
+            image.buffer[i] = DEFAULT_PALETTE[5][0];
+            image.buffer[i + 1] = DEFAULT_PALETTE[5][1];
+            image.buffer[i + 2] = DEFAULT_PALETTE[5][2];
+            image.buffer[i + 3] = 0xff;
         }
 
         for bullet in &self.bullets {
-            bullet.draw(buffer);
+            bullet.draw(&mut image);
         }
 
         for asteroid in &self.asteroids {
-            asteroid.draw(buffer);
+            asteroid.draw(&mut image);
         }
 
-        self.player.draw(buffer);
+        self.player.draw(&mut image);
     }
 }

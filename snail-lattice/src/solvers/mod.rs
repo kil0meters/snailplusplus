@@ -6,6 +6,8 @@ use crate::{
 };
 
 mod clones;
+mod demolitionist;
+mod flying;
 mod hold_left;
 mod inverted;
 mod learning;
@@ -16,6 +18,8 @@ mod time_travel;
 mod tremaux;
 
 pub use clones::Clones;
+pub use demolitionist::Demolitionist;
+pub use flying::Flying;
 pub use hold_left::HoldLeft;
 pub use inverted::Inverted;
 pub use learning::Learning;
@@ -24,6 +28,23 @@ pub use random_walk::RandomWalk;
 pub use rpg::Rpg;
 pub use time_travel::TimeTravel;
 pub use tremaux::Tremaux;
+
+#[derive(Clone, Copy)]
+pub enum SolveStatus {
+    Solved(usize),
+    Rerender,
+    None,
+}
+
+impl SolveStatus {
+    pub fn get_count(self) -> usize {
+        match self {
+            SolveStatus::Solved(count) => count,
+            SolveStatus::Rerender => 0,
+            SolveStatus::None => 0,
+        }
+    }
+}
 
 pub trait Solver<const S: usize>
 where
@@ -48,7 +69,8 @@ where
     fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {}
 
     // returns true if the step solved the maze
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool;
+    // run at a fixed step rate based on movement_time
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus;
 
     fn movement_time(&self) -> f32;
 

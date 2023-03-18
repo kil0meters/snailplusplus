@@ -4,8 +4,10 @@ use crate::{
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
-    utils::{lerp, Vec2},
+    utils::{lerpi, Vec2},
 };
+
+use super::SolveStatus;
 
 /// Random Teleport Snail Upgrades:
 /// - Fusion Reactor:         Random Teleport Snail uses a fusion reactor to charge up its teleportation 20% faster.
@@ -75,19 +77,16 @@ where
             by,
         );
 
-        let mut px = 4
-            * ((by + self.snail.pos.y * 10 + 11) * image.buffer_width
-                + bx
-                + self.snail.pos.x * 10
-                + 1);
+        let mut px =
+            4 * ((by + self.snail.pos.y * 10 + 11) * image.width + bx + self.snail.pos.x * 10 + 1);
 
         if px > image.buffer.len() {
-            px -= 44 * image.buffer_width;
+            px -= 44 * image.width;
         }
 
         let teleportation_progress =
             (self.teleport_timer + movement_timer) / self.teleportation_time();
-        let progress = lerp(0, 36, teleportation_progress) as usize;
+        let progress = lerpi(0, 36, teleportation_progress) as usize;
 
         // draw progress bar under snail
         for index in (px..(px + progress)).step_by(4) {
@@ -96,34 +95,34 @@ where
 
         // draw current teleportation bounds if homing beacon is enabled
         if (self.upgrades & 0b11) != 0 {
-            let y_start = lerp(
+            let y_start = lerpi(
                 10 * (S - self.prev_teleport_bounds.y) as i32,
                 10 * (S - self.teleport_bounds.y) as i32,
                 teleportation_progress,
             ) as usize;
 
-            let x_start = lerp(
+            let x_start = lerpi(
                 10 * (S - self.prev_teleport_bounds.x) as i32,
                 10 * (S - self.teleport_bounds.x) as i32,
                 teleportation_progress,
             ) as usize;
 
-            let start_px = 4 * (((by + y_start) * image.buffer_width) + bx + x_start);
+            let start_px = 4 * (((by + y_start) * image.width) + bx + x_start);
 
             for index in (start_px..(start_px + 4 * (S * 10 - x_start))).step_by(12) {
                 image.draw_pixel(index, [0xFF, 0x00, 0x00]);
             }
 
-            let start_px = 4 * (((by + y_start) * image.buffer_width) + bx + x_start);
+            let start_px = 4 * (((by + y_start) * image.width) + bx + x_start);
 
-            for index in (start_px..(start_px + (4 * (S * 10 - y_start) * image.buffer_width)))
-                .step_by(12 * image.buffer_width)
+            for index in (start_px..(start_px + (4 * (S * 10 - y_start) * image.width)))
+                .step_by(12 * image.width)
             {
                 image.draw_pixel(index, [0xFF, 0x00, 0x00]);
                 image.draw_pixel(index + 4 * (S * 10 - x_start), [0xFF, 0x00, 0x00]);
             }
 
-            let start_px = 4 * (((by + 10 * S) * image.buffer_width) + bx + x_start);
+            let start_px = 4 * (((by + 10 * S) * image.width) + bx + x_start);
 
             for index in (start_px..(start_px + 4 * (S * 10 - x_start))).step_by(12) {
                 image.draw_pixel(index, [0xFF, 0x00, 0x00]);
@@ -137,7 +136,7 @@ where
         self.prev_teleport_bounds = self.teleport_bounds;
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         self.snail.prev_pos.x = self.snail.pos.x;
         self.snail.prev_pos.y = self.snail.pos.y;
         self.teleport_timer += SNAIL_MOVEMENT_TIME;
@@ -164,12 +163,12 @@ where
             }
 
             if self.snail.pos == maze.end_pos {
-                true
+                SolveStatus::Solved(1)
             } else {
-                false
+                SolveStatus::None
             }
         } else {
-            false
+            SolveStatus::None
         }
     }
 

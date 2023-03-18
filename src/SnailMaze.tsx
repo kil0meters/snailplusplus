@@ -154,7 +154,6 @@ const MobileControls: Component = () => {
                 }}
             >→</button>
         </div>
-
     );
 };
 
@@ -288,21 +287,25 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
             >
             </canvas>
 
-            {upgrades.find((upgrade) => UPGRADES[upgrade.key].mazeType == "manual" && upgrade.owned) != undefined && <div class="bg-black border-black border-2 text-lg py-4 gap-2 shadow-md w-full">
-                <span class="font-display text-white font-bold px-4">Manual Snail</span>
+            {upgrades.find((upgrade) => UPGRADES[upgrade.key].mazeType == "manual" && upgrade.owned) != undefined ?
+                <div class="bg-black border-black border-2 text-lg py-4 gap-2 shadow-md w-full">
+                    <span class="font-display text-white font-bold px-4">Manual Snail</span>
 
-                <div class="flex overflow-x-auto">
-                    <div class="grid grid-cols-4 grid-flow-col pl-4">
-                        <button class="p-2 hover:bg-white aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
+                    <div class="flex overflow-x-auto">
+                        <div class="grid grid-cols-4 grid-flow-col pl-4">
+                            <button class="p-2 hover:bg-white aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
 
-                        <For each={upgrades.filter((upgrade) => {
-                            return upgrade.owned && UPGRADES[upgrade.key].mazeType == "manual";
-                        })}>{(upgrade) =>
-                            <button class={`p-2 hover:bg-white aspect-square text-2xl transition-colors ${UPGRADES[upgrade.key].order + 1 === gameMode() ? "bg-white" : ""}`} onClick={() => setGameMode(UPGRADES[upgrade.key].order + 1)}>{UPGRADES[upgrade.key].icon}</button>
-                            }</For>
+                            <For each={upgrades.filter((upgrade) => {
+                                return upgrade.owned && UPGRADES[upgrade.key].mazeType == "manual";
+                            })}>{(upgrade) =>
+                                <button class={`p-2 hover:bg-white aspect-square text-2xl transition-colors ${UPGRADES[upgrade.key].order + 1 === gameMode() ? "bg-white" : ""}`} onClick={() => setGameMode(UPGRADES[upgrade.key].order + 1)}>{UPGRADES[upgrade.key].icon}</button>
+                                }</For>
+                        </div>
                     </div>
                 </div>
-            </div>}
+                :
+                <div class="bg-snailfg py-4 w-full"></div>
+            }
         </div>
     </>;
 };

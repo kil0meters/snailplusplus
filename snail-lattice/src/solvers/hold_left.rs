@@ -6,7 +6,7 @@ use crate::{
     solvers::Solver,
 };
 
-use super::Inverted;
+use super::{Inverted, SolveStatus};
 
 /// Hold Left Snail Upgrades:
 /// - Left Glove:         With a glove on its left hand, Hold Left Snail is able to move 20% faster.
@@ -75,10 +75,11 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         if let Some(right_handed) = &mut self.alt_snail {
-            if right_handed.step(maze, lfsr) {
-                return true;
+            match right_handed.step(maze, lfsr) {
+                SolveStatus::Solved(count) => return SolveStatus::Solved(count),
+                _ => {}
             }
         }
 
@@ -99,7 +100,11 @@ where
 
         self.snail.move_forward(maze);
 
-        self.snail.pos == maze.end_pos
+        if self.snail.pos == maze.end_pos {
+            SolveStatus::Solved(1)
+        } else {
+            SolveStatus::None
+        }
     }
 
     fn movement_time(&self) -> f32 {

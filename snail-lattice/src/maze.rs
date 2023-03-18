@@ -1,7 +1,11 @@
 use std::{collections::VecDeque, mem::size_of};
 
 use crate::{
-    direction::Direction, image::Image, lattice::TilableMaze, lfsr::LFSR, solvers::Solver,
+    direction::Direction,
+    image::Image,
+    lattice::TilableMaze,
+    lfsr::LFSR,
+    solvers::{SolveStatus, Solver},
     utils::Vec2,
 };
 
@@ -65,30 +69,35 @@ where
     // progresses time a certain number of microseconds
     // notably, no rendering happens when we tick the time
     // returns true if the tick results in a new maze to be generated
-    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize {
-        let prev = self.clock;
-        let now = self.clock + dt;
-        self.clock = now;
-        let movement_time = self.solver.movement_time();
-
-        let mut num_movements = ((now - prev) / movement_time).floor() as usize;
-        self.movement_timer += (now - prev) % movement_time;
-        if self.movement_timer > movement_time {
-            num_movements += (self.movement_timer / movement_time).floor() as usize;
-            self.movement_timer %= movement_time;
-        }
-
+    fn tick(&mut self, mut dt: f32, lfsr: &mut LFSR) -> SolveStatus {
+        self.clock += dt;
         let mut total = 0;
+        let mut rerender = false;
 
-        for _ in 0..num_movements {
-            if self.solver.step(&self.maze, lfsr) {
-                total += 1;
-                self.generate(lfsr);
-                self.movement_timer = movement_time;
+        dt += self.movement_timer;
+
+        while dt > self.solver.movement_time() {
+            let movement_time = self.solver.movement_time();
+            dt -= movement_time;
+
+            match self.solver.step(&mut self.maze, lfsr) {
+                SolveStatus::Solved(count) => {
+                    total += count;
+                    self.movement_timer = movement_time;
+                    self.generate(lfsr);
+                }
+                SolveStatus::Rerender => rerender = true,
+                SolveStatus::None => {}
             }
         }
 
-        total
+        self.movement_timer = dt;
+
+        match (total, rerender) {
+            (0, true) => SolveStatus::Rerender,
+            (0, false) => SolveStatus::None,
+            (num, _) => SolveStatus::Solved(num),
+        }
     }
 
     fn set_upgrades(&mut self, upgrades: u32) {
@@ -140,8 +149,56 @@ where
         }
     }
 
+    pub fn remove_wall(&mut self, x: usize, y: usize, direction: Direction) {
+        let cell = self.get_cell(x, y);
+
+        if cell.has_wall(direction)
+            && !(direction == Direction::Left && x == 0)
+            && !(direction == Direction::Up && y == 0)
+            && !(direction == Direction::Right && x == S - 1)
+            && !(direction == Direction::Down && y == S - 1)
+        {
+            self.xor_cell(x, y, direction.to_wall());
+            match direction {
+                Direction::Up if y > 0 => self.xor_cell(x, y - 1, direction.flip().to_wall()),
+                Direction::Down if y < S - 1 => self.xor_cell(x, y + 1, direction.flip().to_wall()),
+                Direction::Left if x > 0 => self.xor_cell(x - 1, y, direction.flip().to_wall()),
+                Direction::Right if x < S - 1 => {
+                    self.xor_cell(x + 1, y, direction.flip().to_wall())
+                }
+                _ => {}
+            }
+        }
+    }
+
+    pub fn set_wall(&mut self, x: usize, y: usize, direction: Direction) {
+        self.xor_cell(x, y, direction.to_wall());
+        match direction {
+            Direction::Up if y > 0 => self.xor_cell(x, y - 1, direction.flip().to_wall()),
+            Direction::Down if y < S - 1 => self.xor_cell(x, y + 1, direction.flip().to_wall()),
+            Direction::Left if x > 0 => self.xor_cell(x - 1, y, direction.flip().to_wall()),
+            Direction::Right if x < S - 1 => self.xor_cell(x + 1, y, direction.flip().to_wall()),
+            _ => {}
+        }
+    }
+
+    // pub fn set_cell_checked(&mut self, x: usize, y: usize, data: usize) {
+    //     if x >= S || y >= S {
+    //         return;
+    //     }
+    //
+    //     let offset = y * S + x;
+    //     let shift_amount = 4 * (CELLS_PER_IDX - (offset % CELLS_PER_IDX) - 1);
+    //
+    //     let mask = usize::MAX & !(0b1111 << shift_amount);
+    //
+    //     // and + or has the desired effect here
+    //     self.walls[offset / CELLS_PER_IDX] &= mask;
+    //     self.walls[offset / CELLS_PER_IDX] |= data << shift_amount;
+    // }
+
     // 4 bytes
-    pub fn set_cell(&mut self, x: usize, y: usize, data: usize) {
+    pub fn xor_cell(&mut self, x: usize, y: usize, data: usize) {
         let offset = y * S + x;
 
         self.walls[offset / CELLS_PER_IDX] ^=
@@ -159,7 +216,7 @@ where
     }
 
     fn set_cell_wall(&mut self, x: usize, y: usize, direction: Direction) {
-        self.set_cell(x, y, 1 << (3 - direction as usize));
+        self.xor_cell(x, y, 1 << (3 - direction as usize));
     }
 
     fn random_walk(&mut self, x: usize, y: usize, lfsr: &mut LFSR) {
@@ -362,7 +419,7 @@ where
         for y in 0..(S * 10) {
             for x in 0..S {
                 let cell = self.get_cell(x, y / 10);
-                let px = ((by + y) * image.buffer_width + bx + (x * 10)) * 4;
+                let px = ((by + y) * image.width + bx + (x * 10)) * 4;
 
                 // Checking the bottom wall is redundant
                 if y % 10 == 0 && cell.has_wall(Direction::Up) {
@@ -384,11 +441,11 @@ where
             }
 
             // fill end pixel
-            let px = 4 * ((by + y) * image.buffer_width + bx + S * 10);
+            let px = 4 * ((by + y) * image.width + bx + S * 10);
             image.draw_pixel(px, fg_color);
         }
 
-        let px = 4 * ((by + S * 10) * image.buffer_width + bx);
+        let px = 4 * ((by + S * 10) * image.width + bx);
         for l in (px..(px + 4 * (1 + 10 * S))).step_by(4) {
             image.draw_pixel(l, fg_color);
         }

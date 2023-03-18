@@ -29,7 +29,13 @@ const AUTO_UPGRADE_KEYS = [
     "improved-time-relay",
     "time-warp",
     "self-improvement",
-    "singularity"
+    "singularity",
+    "lax-regulations",
+    "nitrogen-deposit",
+    "destructive-habits",
+    "carbon-fiber-exoskeleton",
+    "singing-lessons",
+    "microphone"
 ] as const;
 export type AutoUpgradeKey = typeof AUTO_UPGRADE_KEYS[number];
 
@@ -244,7 +250,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Improved Time Relay",
         description: "Time Travel Snail moves 50% faster through time in the past.",
         icon: "⏰",
-        price: 1000000000n,
+        price: 1_000_000_000n,
         order: 1,
         mazeType: "time-travel",
         showAfter: 25
@@ -253,7 +259,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Time Warp",
         description: "Time Travel Snail comes back to the present instantly.",
         icon: "🕰️",
-        price: 20000000000n,
+        price: 20_000_000_000n,
         order: 2,
         mazeType: "time-travel",
         showAfter: 50
@@ -262,7 +268,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Self-Improvement",
         description: "Cloning Snails improve themselves with each generation.",
         icon: "🤖",
-        price: 2000000000n,
+        price: 2_000_000_000n,
         order: 0,
         mazeType: "clone",
         showAfter: 5
@@ -271,10 +277,66 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Singularity",
         description: "Cloning Snails approach the singularity.",
         icon: "🌎",
-        price: 100000000000n,
+        price: 100_000_000_000n,
         order: 1,
         mazeType: "clone",
         showAfter: 25
+    },
+    "lax-regulations": {
+        name: "Lax Regulations",
+        description: "A recently passed explosives reform bill allows the Demolitionist Snail to shorten the fuses on its bombs.",
+        icon: "📜",
+        price: 15_000_000_000n,
+        order: 0,
+        mazeType: "demolitionist",
+        showAfter: 5
+    },
+    "nitrogen-deposit": {
+        name: "Nitrogen Deposit",
+        description: "A nearby nitrogen deposit allows the Demolitionist Snail to plant more bombs.",
+        icon: "🧨",
+        price: 85_000_000_000n,
+        order: 1,
+        mazeType: "demolitionist",
+        showAfter: 25
+    },
+    "destructive-habits": {
+        name: "Destructive Habits",
+        description: "Cognative behavioral therapy allows the Demolitionist Snail to view the havoc it has caused in a new light. Gains speed for each destroyed tile it walks over.",
+        icon: "🗑️",
+        price: 300_000_000_000n,
+        order: 2,
+        mazeType: "demolitionist",
+        showAfter: 50
+    },
+    "carbon-fiber-exoskeleton": {
+        name: "Carbon Fiber Exoskeleton",
+        description: "The Swarm Snails acquire an exoskeleton which increases their flying speed.",
+        icon: "🚶",
+        price: 500_000_000_000n,
+        order: 0,
+        mazeType: "flying",
+        showAfter: 5
+    },
+
+    "singing-lessons": {
+        name: "Singing Lessonss",
+        description: "The Swarm Snails take singing lessons to attract more members into their swarm.",
+        icon: "🧑‍🎤",
+        price: 4_000_000_000_000n,
+        order: 1,
+        mazeType: "flying",
+        showAfter: 25
+    },
+
+    "microphone": {
+        name: "Singing Lessonss",
+        description: "The Swarm Snails purchase a microphone to increase the range of their hymmn.",
+        icon: "🎤",
+        price: 25_000_000_000_000n,
+        order: 2,
+        mazeType: "flying",
+        showAfter: 50
     },
 
     //////////////////////////

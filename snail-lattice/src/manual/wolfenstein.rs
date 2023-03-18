@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{HashSet, VecDeque},
     f32::consts::PI,
 };
 
@@ -474,7 +474,8 @@ impl WolfensteinGame {
 
         let mut image = Image {
             buffer,
-            buffer_width: 240,
+            width: 240,
+            height: 240,
         };
 
         let dist_to_plane = (SCREEN_W as f32 / 2.0) / (FOV / 2.0).tan();

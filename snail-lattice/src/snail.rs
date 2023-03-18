@@ -1,7 +1,7 @@
 use crate::{
     image::Image,
     maze::CELLS_PER_IDX,
-    utils::{lerp, Vec2},
+    utils::{lerpi, Vec2},
 };
 
 use super::{direction::Direction, maze::Maze};
@@ -13,6 +13,15 @@ pub const DEFAULT_PALETTE: [[u8; 3]; 6] = [
     [0xff, 0xff, 0xff], // white
     [0x06, 0x8F, 0xEF], // light blue
     [0x11, 0x0A, 0xEF], // dark blue
+];
+
+pub const PHASE_2_PALETTE: [[u8; 3]; 6] = [
+    [0xf8, 0xfc, 0x00], // yellow
+    [0xa8, 0x54, 0x50], // purple
+    [0xf8, 0x54, 0x00], // orange
+    [0xff, 0xff, 0xff], // white
+    [0x55, 0x00, 0x00], // light purple
+    [0x55, 0x55, 0x00], // dark purple
 ];
 
 pub const INVERTED_PALETTE: [[u8; 3]; 6] = [
@@ -70,7 +79,7 @@ where
         by: usize,
     ) {
         let offset_y = if self.prev_pos.y != self.pos.y {
-            lerp(
+            lerpi(
                 (self.prev_pos.y * 10) as i32,
                 (self.pos.y * 10) as i32,
                 progress,
@@ -80,7 +89,7 @@ where
         };
 
         let offset_x = if self.prev_pos.x != self.pos.x {
-            lerp(
+            lerpi(
                 (self.prev_pos.x * 10) as i32,
                 (self.pos.x * 10) as i32,
                 progress,

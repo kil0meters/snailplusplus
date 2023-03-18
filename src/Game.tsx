@@ -17,18 +17,10 @@ import { NAMES } from "../assets/names";
 export const latticePostMessage = (worker: Worker, msg: LatticeWorkerMessage) => worker.postMessage(msg);
 
 export let LATTICES_FILLED = false;
-export const LATTICE_WORKER_STORE: { [key in ShopKey]: Worker } = {
-    "clone": new LatticeWorker(),
-    "hold-left": new LatticeWorker(),
-    "inverted": new LatticeWorker(),
-    "learning": new LatticeWorker(),
-    "meta": new LatticeWorker(),
-    "random-teleport": new LatticeWorker(),
-    "random-walk": new LatticeWorker(),
-    "rpg": new LatticeWorker(),
-    "time-travel": new LatticeWorker(),
-    "tremaux": new LatticeWorker(),
-};
+export const LATTICE_WORKER_STORE =
+    Object.fromEntries(SHOP_KEYS.map((key) =>
+        [key, new LatticeWorker()]
+    )) as { [key in ShopKey]: Worker };
 
 function setTickRate(tickRate: number) {
     for (let key in LATTICE_WORKER_STORE) {
@@ -204,8 +196,8 @@ const Game: Component = () => {
         <Determination />
 
         <div class='grid md:grid-rows-1 md:grid-cols-[minmax(0,auto)_minmax(0,450px)] xl:overflow-hidden md:max-h-screen bg-snailfg'>
-            <div class='xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 pb-16 xl:pb-0 md:overflow-auto'>
-                <div class='md:min-h- xl:min-h-0 xl:border-r-2 border-black flex flex-col overflow-hidden'>
+            <div class='xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 xl:gap-0 xl:pb-0 md:overflow-auto'>
+                <div class='xl:min-h-0 xl:border-r-2 border-black flex flex-col overflow-hidden'>
                     <div class='p-8 bg-black flex flex-col justify-center h-[128px] min-h-[128px] content-center text-white font-display'>
                         <span class='text-3xl text-center font-extrabold my-auto'>{formatNumber(displayedScore(), false)} fragments</span>
                         {fragmentsPerSecond() >= Number.EPSILON && <span class='text-lg text-center'>{formatNumber(fragmentsPerSecond(), true)} fragments per second</span>}
@@ -225,7 +217,6 @@ const Game: Component = () => {
 
 // new snail ideas:
 // - mirror snail: moves based on player inputs
-// - demolitionist snail: destroys walls to get to the goal faster
 // - omnipotent snail: rearranges the maze to walk directly to the end
 // - super snail: flies directly above the end goal
 

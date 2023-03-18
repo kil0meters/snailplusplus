@@ -9,6 +9,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 // This does not implement a real genetic algorithm because they seem to suck for mazes and end up
 // being both way too slow and computationally intensive to be viable for this game, so we instead
 // simulate it with something aesthetically similar.
@@ -182,7 +184,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         if self.new_maze {
             maze.get_distances(maze.end_pos.x, maze.end_pos.y, &mut self.distances);
             self.solve_sequence = maze.get_solve_sequence(0, 0, maze.end_pos);
@@ -246,14 +248,14 @@ where
 
                 if snail.snail.pos == maze.end_pos {
                     self.new_maze = true;
-                    return true;
+                    return SolveStatus::Solved(1);
                 }
             }
 
             self.generation_timer += 1;
         }
 
-        false
+        SolveStatus::None
     }
 
     fn movement_time(&self) -> f32 {

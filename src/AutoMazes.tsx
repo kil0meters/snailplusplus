@@ -266,7 +266,7 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
     };
 
     return (
-        <div class="w-full" ref={mazeDisplay}>
+        <div class="w-full group" ref={mazeDisplay}>
             <dt class="sticky z-10 top-0 p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-x-auto">
                 <div class="flex-col flex font-display">
                     <span class="bg-black text-lg md:text-2xl my-auto font-bold">
@@ -304,7 +304,9 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
             </dt>
 
             {!collapsed() &&
-                <dd class="p-2 h-full w-full bg-[#068fef]">
+                <dd class="p-2 h-full w-full group-last:pb-16" style={{
+                    "background-color": SHOP[props.key].bgcolor
+                }}>
                     <SnailLatticeElement key={props.key} count={props.count} displayWidth={displayWidth()} collapsed={collapsed()} />
                 </dd>}
         </div >

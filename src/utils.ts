@@ -62,8 +62,13 @@ const BASES = {
 export function formatNumber(num: bigint | number, roundUp: boolean): string {
     let value = Number(num);
 
-    if (value < 1_000_000) {
+
+    if (value < 10) {
         return value.toLocaleString('en', { maximumFractionDigits: 3 });
+    } else if (value < 1_000) {
+        return value.toLocaleString('en', { maximumFractionDigits: 2 });
+    } else if (value < 1_000_000) {
+        return value.toLocaleString('en', { maximumFractionDigits: 0 });
     } else if (value < 1e24) {
         let digits = 0;
 

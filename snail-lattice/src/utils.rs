@@ -157,8 +157,12 @@ pub fn set_panic_hook() {
 
 // discrete linear interpolation
 // returns a linear intepolation between v1 and v2 baded on fact1/fact2
-pub fn lerp(v1: i32, v2: i32, fact: f32) -> i32 {
+pub fn lerpi(v1: i32, v2: i32, fact: f32) -> i32 {
     v1 + (fact * (v2 - v1) as f32).floor() as i32
+}
+
+pub fn lerpf(v1: f32, v2: f32, fact: f32) -> f32 {
+    v1 + (fact * (v2 - v1) as f32)
 }
 
 /* pub fn draw_rectangle(

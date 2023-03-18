@@ -4,7 +4,7 @@ use crate::{
     lfsr::LFSR,
     maze::{Maze, ANIMATION_TIME, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, INVERTED_PALETTE},
-    utils::{lerp, Vec2, Vec2f},
+    utils::{lerpi, Vec2, Vec2f},
 };
 
 const PACMAN_BOARD: &[u8] = concat!(
@@ -49,8 +49,8 @@ trait Ghost {
         let snail = self.get_snail();
 
         Vec2f {
-            x: lerp(snail.prev_pos.x as i32 * 10, snail.pos.x as i32 * 10, fact) as f32,
-            y: lerp(snail.prev_pos.y as i32 * 10, snail.pos.y as i32 * 10, fact) as f32,
+            x: lerpi(snail.prev_pos.x as i32 * 10, snail.pos.x as i32 * 10, fact) as f32,
+            y: lerpi(snail.prev_pos.y as i32 * 10, snail.pos.y as i32 * 10, fact) as f32,
         }
     }
 
@@ -87,15 +87,7 @@ trait Ghost {
         let mut set_wall = false;
 
         if !maze.get_cell(pos.x, pos.y).has_wall(behind_dir) {
-            maze.set_cell(pos.x, pos.y, behind_dir.to_wall());
-            match behind_dir {
-                Direction::Up if pos.y > 0 => maze.set_cell(pos.x, pos.y - 1, dir.to_wall()),
-                Direction::Down if pos.y < 10 => maze.set_cell(pos.x, pos.y + 1, dir.to_wall()),
-                Direction::Left if pos.x > 0 => maze.set_cell(pos.x - 1, pos.y, dir.to_wall()),
-                Direction::Right if pos.x < 10 => maze.set_cell(pos.x + 1, pos.y, dir.to_wall()),
-                _ => {}
-            }
-
+            maze.set_wall(pos.x, pos.y, behind_dir);
             set_wall = true;
         }
 
@@ -115,14 +107,7 @@ trait Ghost {
         }
 
         if set_wall {
-            maze.set_cell(pos.x, pos.y, behind_dir.to_wall());
-            match behind_dir {
-                Direction::Up if pos.y > 0 => maze.set_cell(pos.x, pos.y - 1, dir.to_wall()),
-                Direction::Down if pos.y < 10 => maze.set_cell(pos.x, pos.y + 1, dir.to_wall()),
-                Direction::Left if pos.x > 0 => maze.set_cell(pos.x - 1, pos.y, dir.to_wall()),
-                Direction::Right if pos.x < 10 => maze.set_cell(pos.x + 1, pos.y, dir.to_wall()),
-                _ => {}
-            }
+            maze.set_wall(pos.x, pos.y, behind_dir);
         }
     }
 
@@ -428,7 +413,7 @@ fn pacman_maze() -> (Maze<10>, Vec<Pellet>, usize) {
                 cell |= 8;
             }
 
-            maze.set_cell(x, y, cell);
+            maze.xor_cell(x, y, cell);
         }
     }
 
@@ -611,12 +596,7 @@ impl Player {
         }
     }
 
-    fn draw(&self, buffer: &mut [u8], animation_cycle: bool) {
-        let mut image = Image {
-            buffer,
-            buffer_width: 101,
-        };
-
+    fn draw(&self, image: &mut Image, animation_cycle: bool) {
         let pos = self.pos.to_vec2i();
 
         image.draw_snail(
@@ -723,7 +703,8 @@ impl PacSnail {
 
         let mut image = Image {
             buffer: &mut self.bg_buffer,
-            buffer_width: 101,
+            width: 101,
+            height: 101,
         };
 
         self.maze
@@ -836,11 +817,9 @@ impl PacSnail {
 
         let mut image = Image {
             buffer,
-            buffer_width: 101,
+            width: 101,
+            height: 101,
         };
-
-        // self.maze
-        //     .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
 
         let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;
         let ghost_status_draw = if self.powerup_timer > 3000.0 {
@@ -867,6 +846,6 @@ impl PacSnail {
 
         // draw player
         let animation_cycle = (self.time / (ANIMATION_TIME / 4.0)).floor() as usize % 2 == 0;
-        self.player.draw(buffer, animation_cycle);
+        self.player.draw(&mut image, animation_cycle);
     }
 }

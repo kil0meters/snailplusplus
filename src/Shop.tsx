@@ -11,7 +11,8 @@ import { formatNumber } from "./utils";
 
 const PRICE_SCALER = 1.13;
 
-document["devmode"] = false;
+// TODO: set to false
+document["devmode"] = true;
 
 const ShopListingElement: Component<{ key: ShopKey, count: number }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
@@ -283,7 +284,7 @@ const Shop: Component<{ class?: string }> = (props) => {
                 </div>
             </div>
 
-            <For each={shop.filter((_, i, shop) => i == 0 || shop[i - 1].count > 0)}>{item => <ShopListingElement
+            <For each={shop.filter((_, i, shop) => document["devmode"] || i == 0 || shop[i - 1].count > 0)}>{item => <ShopListingElement
                 key={item.key}
                 count={item.count}
             />}</For>

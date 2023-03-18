@@ -1,11 +1,12 @@
 use crate::{
     direction::Direction,
-    utils::{Vec2, Vec2i},
+    utils::{console_log, Vec2, Vec2i},
 };
 
 pub struct Image<'a> {
     pub buffer: &'a mut [u8],
-    pub buffer_width: usize,
+    pub width: usize,
+    pub height: usize,
 }
 
 impl<'a> Image<'a> {
@@ -19,7 +20,26 @@ impl<'a> Image<'a> {
 
     #[inline(always)]
     pub fn draw_pixel_xy(&mut self, pixel: [u8; 3], x: usize, y: usize) {
-        self.draw_pixel(4 * (y * self.buffer_width + x), pixel);
+        self.draw_pixel(4 * (y * self.width + x), pixel);
+    }
+
+    pub fn draw_circle(&mut self, color: [u8; 3], x: usize, y: usize, radius: i32) {
+        for dx in (-radius)..radius {
+            for dy in (-radius)..radius {
+                if (dx * dx) + (dy * dy) < radius * radius {
+                    let draw_x = x as i32 + dx;
+                    let draw_y = y as i32 + dy;
+
+                    if draw_x > 0
+                        && draw_x < self.width as i32
+                        && draw_y > 0
+                        && draw_y < self.height as i32
+                    {
+                        self.draw_pixel_xy(color, draw_x as usize, draw_y as usize);
+                    }
+                }
+            }
+        }
     }
 
     pub fn draw_rectangle_with(
@@ -32,11 +52,11 @@ impl<'a> Image<'a> {
         bx: usize,
         by: usize,
     ) {
-        let px = 4 * ((y + by) * self.buffer_width + x + bx);
+        let px = 4 * ((y + by) * self.width + x + bx);
 
         for row in 0..h {
             for col in 0..w {
-                self.draw_pixel(px + 4 * (row * self.buffer_width + col), color());
+                self.draw_pixel(px + 4 * (row * self.width + col), color());
             }
         }
     }
@@ -84,7 +104,7 @@ impl<'a> Image<'a> {
             _ => unreachable!(),
         };
 
-        let px = 4 * (y * self.buffer_width + x);
+        let px = 4 * (y * self.width + x);
         for byte in character_buffer {
             let x = byte >> 6;
             let y = (byte >> 4) & 0b11;
@@ -94,7 +114,7 @@ impl<'a> Image<'a> {
             }
 
             self.draw_pixel(
-                px + 4 * (y as usize * self.buffer_width + x as usize),
+                px + 4 * (y as usize * self.width + x as usize),
                 [0xFF, 0xFF, 0xFF],
             );
 
@@ -106,7 +126,7 @@ impl<'a> Image<'a> {
             }
 
             self.draw_pixel(
-                px + 4 * (y as usize * self.buffer_width + x as usize),
+                px + 4 * (y as usize * self.width + x as usize),
                 [0xFF, 0xFF, 0xFF],
             );
         }
@@ -145,8 +165,8 @@ impl<'a> Image<'a> {
         for y in y0..y1 {
             self.draw_pixel_xy(
                 color,
-                x.rem_euclid(self.buffer_width as i32) as usize,
-                y.rem_euclid(self.buffer_width as i32) as usize,
+                x.rem_euclid(self.width as i32) as usize,
+                y.rem_euclid(self.height as i32) as usize,
             );
             if diff > 0 {
                 x += xi;
@@ -172,8 +192,8 @@ impl<'a> Image<'a> {
         for x in x0..x1 {
             self.draw_pixel_xy(
                 color,
-                x.rem_euclid(self.buffer_width as i32) as usize,
-                y.rem_euclid(self.buffer_width as i32) as usize,
+                x.rem_euclid(self.width as i32) as usize,
+                y.rem_euclid(self.height as i32) as usize,
             );
             if diff > 0 {
                 y += yi;
@@ -213,8 +233,7 @@ impl<'a> Image<'a> {
         for y in 0..GOAL_IMAGE_SIZE {
             for x in 0..GOAL_IMAGE_SIZE {
                 let goal_px = y * GOAL_IMAGE_SIZE + x;
-                let px =
-                    4 * ((by + x + pos.y * 10 + 2) * self.buffer_width + bx + y + pos.x * 10 + 2);
+                let px = 4 * ((by + x + pos.y * 10 + 2) * self.width + bx + y + pos.x * 10 + 2);
 
                 // not transparent
                 if goal_image[goal_px] != 255 {
@@ -251,15 +270,15 @@ impl<'a> Image<'a> {
                     // I'm so, so, sorry.
                     let px = match direction {
                         Direction::Up => {
-                            4 * ((dy + (SNAIL_IMAGE_SIZE - y)) * self.buffer_width + x + dx + 2)
+                            4 * ((dy + (SNAIL_IMAGE_SIZE - y)) * self.width + x + dx + 2)
                         }
                         Direction::Down => {
-                            4 * ((y + 2 + dy) * self.buffer_width + dx + SNAIL_IMAGE_SIZE - x)
+                            4 * ((y + 2 + dy) * self.width + dx + SNAIL_IMAGE_SIZE - x)
                         }
                         Direction::Left => {
-                            4 * ((dy + x + 2) * self.buffer_width + dx + SNAIL_IMAGE_SIZE - y)
+                            4 * ((dy + x + 2) * self.width + dx + SNAIL_IMAGE_SIZE - y)
                         }
-                        Direction::Right => 4 * ((dy + x + 2) * self.buffer_width + dx + y + 2),
+                        Direction::Right => 4 * ((dy + x + 2) * self.width + dx + y + 2),
                     };
 
                     let col = palette[snail_image[snail_px] as usize];

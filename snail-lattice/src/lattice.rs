@@ -7,7 +7,8 @@ use crate::{
     lfsr::LFSR,
     maze::AutoMaze,
     solvers::{
-        Clones, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg, TimeTravel, Tremaux,
+        Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk,
+        Rpg, SolveStatus, TimeTravel, Tremaux,
     },
     utils::set_panic_hook,
 };
@@ -26,7 +27,7 @@ pub trait TilableMaze {
     const SIZE: usize;
 
     fn new() -> Self;
-    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize;
+    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> SolveStatus;
     fn set_upgrades(&mut self, upgrades: u32);
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize);
     fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize);
@@ -104,13 +105,13 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         }
 
         let maze_size = LatticeElement::SIZE * 10 + 1;
-        let width = maze_size * self.width;
 
         let bg_buffer = match self.bg_buffers.get_mut(&((index << 16) + count)) {
             Some(buffer) => {
                 let mut bg_image = Image {
                     buffer,
-                    buffer_width: dimensions[0],
+                    width: dimensions[0],
+                    height: dimensions[1],
                 };
 
                 let indexes = self
@@ -136,7 +137,8 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
                 let mut bg_image = Image {
                     buffer: &mut bg_buffer,
-                    buffer_width: dimensions[0],
+                    width: dimensions[0],
+                    height: dimensions[1],
                 };
 
                 for (i, maze) in self.mazes.iter_mut().skip(index).take(count).enumerate() {
@@ -159,14 +161,15 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
         let mut image = Image {
             buffer,
-            buffer_width: width,
+            width: dimensions[0],
+            height: dimensions[1],
         };
 
         for maze in self.mazes.iter_mut().skip(index).take(count) {
             maze.draw_foreground(&mut self.lfsr, &mut image, cx, cy);
 
             cx += maze_size;
-            if cx >= width {
+            if cx >= dimensions[0] {
                 cx = 0;
                 cy += maze_size;
             }
@@ -208,11 +211,16 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         let mut total = 0;
 
         for (i, maze) in self.mazes.iter_mut().enumerate() {
-            let fragments = maze.tick(dt, &mut self.lfsr);
-            if fragments != 0 {
-                total += fragments;
-                self.solve_count[i] += 1;
-                self.render_marked.insert(i);
+            match maze.tick(dt, &mut self.lfsr) {
+                SolveStatus::Solved(count) => {
+                    total += count;
+                    self.solve_count[i] += 1;
+                    self.render_marked.insert(i);
+                }
+                SolveStatus::Rerender => {
+                    self.render_marked.insert(i);
+                }
+                SolveStatus::None => {}
             }
         }
 
@@ -291,20 +299,24 @@ impl TilableMaze for MetaMaze {
         self.clone.set_upgrades((upgrades >> 24) & 0b111);
     }
 
-    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> usize {
+    fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> SolveStatus {
         let mut total = 0;
 
-        total += self.random_walk.tick(dt, lfsr);
-        total += self.random_teleport.tick(dt, lfsr);
-        total += self.learning.tick(dt, lfsr);
-        total += self.hold_left.tick(dt, lfsr);
-        total += self.inverted.tick(dt, lfsr);
-        total += self.tremaux.tick(dt, lfsr);
-        total += self.time_travel.tick(dt, lfsr);
-        total += self.clone.tick(dt, lfsr);
-        total += self.rpg.tick(dt, lfsr);
+        total += self.random_walk.tick(dt, lfsr).get_count();
+        total += self.random_teleport.tick(dt, lfsr).get_count();
+        total += self.learning.tick(dt, lfsr).get_count();
+        total += self.hold_left.tick(dt, lfsr).get_count();
+        total += self.inverted.tick(dt, lfsr).get_count();
+        total += self.tremaux.tick(dt, lfsr).get_count();
+        total += self.time_travel.tick(dt, lfsr).get_count();
+        total += self.clone.tick(dt, lfsr).get_count();
+        total += self.rpg.tick(dt, lfsr).get_count();
 
-        total
+        if total > 0 {
+            SolveStatus::Solved(total)
+        } else {
+            SolveStatus::None
+        }
     }
 
     fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
@@ -411,3 +423,5 @@ lattice_impl!(RpgLattice, AutoMaze<11, Rpg<11>>);
 lattice_impl!(TimeTravelLattice, AutoMaze<13, TimeTravel<13>>);
 lattice_impl!(CloneLattice, AutoMaze<20, Clones<20>>);
 lattice_impl!(MetaLattice, MetaMaze);
+lattice_impl!(DemolitionistLattice, AutoMaze<15, Demolitionist<15>>);
+lattice_impl!(FlyingLattice, AutoMaze<15, Flying<15>>);

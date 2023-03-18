@@ -117,7 +117,8 @@ impl ManualMaze {
         let mut bg_buffer = vec![0; 4 * 71 * 71];
         let mut image = Image {
             buffer: &mut bg_buffer,
-            buffer_width: 71,
+            width: 71,
+            height: 71,
         };
 
         let mut maze = Maze::new();
@@ -181,7 +182,8 @@ impl ManualMaze {
 
             let mut image = Image {
                 buffer: &mut self.bg_buffer,
-                buffer_width: 71,
+                width: 71,
+                height: 71,
             };
 
             let solve_type = self.solve_type;
@@ -216,7 +218,8 @@ impl ManualMaze {
 
         let mut image = Image {
             buffer,
-            buffer_width: 71,
+            width: 71,
+            height: 71,
         };
 
         let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;

@@ -8,6 +8,8 @@ use crate::{
     utils::Vec2,
 };
 
+use super::SolveStatus;
+
 /// RPG Snail Upgrades:
 /// - Comradery:   RPG Snail gets a 10% speed boost for each snail in its party.
 /// - Sidequests:  Any snail RPG Snail runs into is automatically added to its party.
@@ -110,12 +112,12 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         // recruitment
         if (self.upgrades & 0b100) != 0 && !self.lost.is_empty() {
             if !(self.party[0].pos.x == 0 && self.party[0].pos.y == 0) {
                 self.setup(maze, lfsr);
-                return false;
+                return SolveStatus::None;
             }
 
             for lost_snail in &mut self.lost {
@@ -195,11 +197,11 @@ where
             }
 
             if self.party.is_empty() && self.lost.is_empty() {
-                return true;
+                return SolveStatus::Solved(1);
             }
         }
 
-        false
+        SolveStatus::None
     }
 
     fn movement_time(&self) -> f32 {

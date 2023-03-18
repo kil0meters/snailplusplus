@@ -6,6 +6,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 // Cloning Snail:
 // - Self-Improvement:  Each Cloning Snail moves slightly faster than the last.
 // - Snail Singularity: Each Cloning Snail moves even faster than the last.
@@ -78,7 +80,7 @@ where
         self.inactive_snails.clear();
     }
 
-    fn step(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
         self.move_count += 1;
         let mut new_snails = Vec::new();
 
@@ -113,7 +115,7 @@ where
                 self.inactive_snails.push(owned);
             } else {
                 if snail.pos == maze.end_pos {
-                    return true;
+                    return SolveStatus::Solved(1);
                 }
 
                 i += 1;
@@ -126,13 +128,13 @@ where
             }
 
             if snail.pos == maze.end_pos {
-                return true;
+                return SolveStatus::Solved(1);
             }
 
             self.active_snails.push(snail);
         }
 
-        false
+        SolveStatus::None
     }
 
     fn movement_time(&self) -> f32 {
