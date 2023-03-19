@@ -127,7 +127,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     },
     "flying": {
         name: "Swarm Snail",
-        description: "A flock of Swarm Snails use their powers of flight to complete mazes.",
+        description: "A flock of Swarm Snails use their powers of flight to complete mazes. Each member of the swarm gets credit for completion.",
         price: 200_000_000_000,
         baseMultiplier: 4_000_000n,
         latticeWidth: 3,

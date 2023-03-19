@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::{
     direction::Direction,
     image::Image,
@@ -166,7 +168,7 @@ where
             }
         }
 
-        self.grid = self.swap_grid;
+        mem::swap(&mut self.grid, &mut self.swap_grid);
 
         self.timeout += 1;
         if self.timeout == MAX_TIMEOUT {

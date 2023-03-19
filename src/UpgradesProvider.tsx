@@ -428,7 +428,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
     "falling-snails": {
         name: "Falling Snails",
         icon: "🧱",
-        description: "The Manual Snail finds itself mysteriously connected with other snails and falling... falling... falling..other snails and falling... falling... falling...",
+        description: "The Manual Snail finds itself mysteriously connected with other snails and falling... falling... falling...",
         price: 500_000_000_000n,
         order: 3,
         mazeType: "manual",

@@ -74,12 +74,12 @@ impl Game {
     }
 
     #[wasm_bindgen]
-    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, mut dt: f32) -> i32 {
+    pub fn render(&mut self, buffer: &mut [u8], keys: Vec<u32>, mut dt: f32) -> i64 {
         match &mut self.game {
             ManualGame::SnailMaze(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
-                ret
+                ret as i64
             }
             ManualGame::PacSnail(game) => {
                 let mut ret = 0;
@@ -90,17 +90,17 @@ impl Game {
                 ret += game.tick(&mut self.lfsr, &keys, dt);
 
                 game.render(buffer);
-                ret
+                ret as i64
             }
             ManualGame::Asteroids(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
-                ret
+                ret as i64
             }
             ManualGame::Wolfenstein(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
-                ret
+                ret as i64
             }
             ManualGame::FallingSnails(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);

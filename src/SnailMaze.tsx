@@ -195,8 +195,8 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
         // @ts-ignore: this does work, but due to a wasm-bindgen we cannot make the signature take a Uint8ClampedArray
         let solve = game.render(buffer, new Uint32Array(movement), dt);
 
-        if (solve != 0) {
-            let newScore = BigInt(Math.abs(solve))
+        if (solve != 0n) {
+            let newScore = solve < 0n ? -solve : solve;
             setScore(score() + newScore);
 
             setRecentScores((scores) => [...scores, { score: newScore, bonus: solve < 0 }]);

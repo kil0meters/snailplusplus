@@ -640,7 +640,7 @@ export class Game {
     * @param {Uint8Array} buffer
     * @param {Uint32Array} keys
     * @param {number} dt
-    * @returns {number}
+    * @returns {bigint}
     */
     render(buffer, keys, dt) {
         try {

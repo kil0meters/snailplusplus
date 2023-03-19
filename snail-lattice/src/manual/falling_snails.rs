@@ -1,12 +1,4 @@
-
-
-use crate::{
-    direction::Direction,
-    image::Image,
-    lfsr::{LFSR},
-    snail::{DEFAULT_PALETTE},
-    utils::{Vec2i},
-};
+use crate::{direction::Direction, image::Image, lfsr::LFSR, snail::DEFAULT_PALETTE, utils::Vec2i};
 
 // [2, 4, 1, 3]
 // based on https://codeincomplete.com/articles/javascript-tetris/
@@ -93,7 +85,7 @@ const FALL_TIME: f32 = 16.67 * 60.0;
 const AUTO_SHIFT_DELAY: f32 = 16.67 * 24.0;
 const PIECE_MOVE_DELAY: f32 = 16.67 * 2.0;
 
-const LINE_SCORES: [i32; 4] = [40, 100, 300, 1200];
+const LINE_SCORES: [i64; 4] = [40, 100, 300, 1200];
 
 fn for_each_block(
     block_id: usize,
@@ -162,7 +154,7 @@ impl FallingSnailsGame {
         vec![200, 200]
     }
 
-    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i32 {
+    pub fn tick(&mut self, lfsr: &mut LFSR, keys: Vec<u32>, dt: f32) -> i64 {
         self.time += dt;
 
         let mut keys_bits = 0;
@@ -293,7 +285,7 @@ impl FallingSnailsGame {
         );
     }
 
-    fn solve_check(&mut self) -> i32 {
+    fn solve_check(&mut self) -> i64 {
         let mut has_four_lines = false;
         let mut score = 0;
         let mut line_streak = 0;
@@ -323,7 +315,7 @@ impl FallingSnailsGame {
                         has_four_lines = true;
                     }
 
-                    score += 1_000_000 * LINE_SCORES[line_streak - 1];
+                    score += 2_000_000 * LINE_SCORES[line_streak - 1];
                     line_streak = 0;
                 }
             }
@@ -336,12 +328,16 @@ impl FallingSnailsGame {
                 has_four_lines = true;
             }
 
-            score += 1_000_000 * LINE_SCORES[line_streak - 1];
+            score += 2_000_000 * LINE_SCORES[line_streak - 1];
         }
 
         if has_four_lines {
+            if score != 0 {}
+
             -score
         } else {
+            if score != 0 {}
+
             score
         }
     }
