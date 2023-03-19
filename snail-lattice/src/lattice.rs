@@ -7,8 +7,8 @@ use crate::{
     lfsr::LFSR,
     maze::AutoMaze,
     solvers::{
-        Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk,
-        Rpg, SolveStatus, Telepathic, TimeTravel, Tremaux,
+        Automaton, Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport,
+        RandomWalk, Rpg, SolveStatus, Telepathic, TimeTravel, Tremaux,
     },
     utils::set_panic_hook,
 };
@@ -426,3 +426,4 @@ lattice_impl!(MetaLattice, MetaMaze);
 lattice_impl!(DemolitionistLattice, AutoMaze<15, Demolitionist<15>>);
 lattice_impl!(FlyingLattice, AutoMaze<15, Flying<15>>);
 lattice_impl!(TelepathicLattice, AutoMaze<11, Telepathic<11>>);
+lattice_impl!(AutomatonLattice, AutoMaze<20, Automaton<20>>);

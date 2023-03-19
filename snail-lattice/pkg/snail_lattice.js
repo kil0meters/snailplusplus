@@ -139,6 +139,118 @@ function passStringToWasm0(arg, malloc, realloc) {
 }
 /**
 */
+export class AutomatonLattice {
+
+    static __wrap(ptr) {
+        const obj = Object.create(AutomatonLattice.prototype);
+        obj.ptr = ptr;
+
+        return obj;
+    }
+
+    __destroy_into_raw() {
+        const ptr = this.ptr;
+        this.ptr = 0;
+
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_automatonlattice_free(ptr);
+    }
+    /**
+    * @param {number} width
+    * @param {number} seed
+    */
+    constructor(width, seed) {
+        const ret = wasm.automatonlattice_new(width, seed);
+        return AutomatonLattice.__wrap(ret);
+    }
+    /**
+    * @param {number} count
+    * @returns {Uint32Array}
+    */
+    get_dimensions(count) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.automatonlattice_get_dimensions(retptr, this.ptr, count);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @returns {Uint32Array}
+    */
+    get_solve_count() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
+            var r0 = getInt32Memory0()[retptr / 4 + 0];
+            var r1 = getInt32Memory0()[retptr / 4 + 1];
+            var v0 = getArrayU32FromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4);
+            return v0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+    * @param {number} upgrades
+    */
+    set_upgrades(upgrades) {
+        wasm.automatonlattice_set_upgrades(this.ptr, upgrades);
+    }
+    /**
+    * @param {Uint8Array} buffer
+    * @param {number} index
+    * @param {number} count
+    */
+    render(buffer, index, count) {
+        try {
+            var ptr0 = passArray8ToWasm0(buffer, wasm.__wbindgen_malloc);
+            var len0 = WASM_VECTOR_LEN;
+            wasm.automatonlattice_render(this.ptr, ptr0, len0, index, count);
+        } finally {
+            buffer.set(getUint8Memory0().subarray(ptr0 / 1, ptr0 / 1 + len0));
+            wasm.__wbindgen_free(ptr0, len0 * 1);
+        }
+    }
+    /**
+    * @param {number} dt
+    * @returns {number}
+    */
+    tick(dt) {
+        const ret = wasm.automatonlattice_tick(this.ptr, dt);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} difference
+    */
+    alter(difference) {
+        wasm.automatonlattice_alter(this.ptr, difference);
+    }
+    /**
+    * @returns {number}
+    */
+    count() {
+        const ret = wasm.automatonlattice_count(this.ptr);
+        return ret >>> 0;
+    }
+    /**
+    * @param {number} width
+    */
+    set_width(width) {
+        wasm.automatonlattice_set_width(this.ptr, width);
+    }
+}
+/**
+*/
 export class CloneLattice {
 
     static __wrap(ptr) {
@@ -164,7 +276,7 @@ export class CloneLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return CloneLattice.__wrap(ret);
     }
     /**
@@ -174,7 +286,7 @@ export class CloneLattice {
     get_dimensions(count) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_dimensions(retptr, this.ptr, count);
+            wasm.automatonlattice_get_dimensions(retptr, this.ptr, count);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -190,7 +302,7 @@ export class CloneLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -239,14 +351,14 @@ export class CloneLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -276,7 +388,7 @@ export class DemolitionistLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return DemolitionistLattice.__wrap(ret);
     }
     /**
@@ -302,7 +414,7 @@ export class DemolitionistLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -351,14 +463,14 @@ export class DemolitionistLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -388,7 +500,7 @@ export class FlyingLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return FlyingLattice.__wrap(ret);
     }
     /**
@@ -414,7 +526,7 @@ export class FlyingLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -463,14 +575,14 @@ export class FlyingLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -571,7 +683,7 @@ export class HoldLeftLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return HoldLeftLattice.__wrap(ret);
     }
     /**
@@ -597,7 +709,7 @@ export class HoldLeftLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -646,14 +758,14 @@ export class HoldLeftLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -683,7 +795,7 @@ export class InvertedLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return InvertedLattice.__wrap(ret);
     }
     /**
@@ -709,7 +821,7 @@ export class InvertedLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -758,14 +870,14 @@ export class InvertedLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -795,7 +907,7 @@ export class LearningLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return LearningLattice.__wrap(ret);
     }
     /**
@@ -821,7 +933,7 @@ export class LearningLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -870,14 +982,14 @@ export class LearningLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -933,7 +1045,7 @@ export class MetaLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -982,14 +1094,14 @@ export class MetaLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1035,7 +1147,7 @@ export class RandomTeleportLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return RandomTeleportLattice.__wrap(ret);
     }
     /**
@@ -1061,7 +1173,7 @@ export class RandomTeleportLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1110,14 +1222,14 @@ export class RandomTeleportLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1147,7 +1259,7 @@ export class RandomWalkLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return RandomWalkLattice.__wrap(ret);
     }
     /**
@@ -1173,7 +1285,7 @@ export class RandomWalkLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1222,14 +1334,14 @@ export class RandomWalkLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1259,7 +1371,7 @@ export class RpgLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return RpgLattice.__wrap(ret);
     }
     /**
@@ -1285,7 +1397,7 @@ export class RpgLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1334,14 +1446,14 @@ export class RpgLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1371,7 +1483,7 @@ export class TelepathicLattice {
     * @param {number} seed
     */
     constructor(width, seed) {
-        const ret = wasm.clonelattice_new(width, seed);
+        const ret = wasm.automatonlattice_new(width, seed);
         return TelepathicLattice.__wrap(ret);
     }
     /**
@@ -1397,7 +1509,7 @@ export class TelepathicLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1446,14 +1558,14 @@ export class TelepathicLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1509,7 +1621,7 @@ export class TimeTravelLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1558,14 +1670,14 @@ export class TimeTravelLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 /**
@@ -1621,7 +1733,7 @@ export class TremauxLattice {
     get_solve_count() {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.clonelattice_get_solve_count(retptr, this.ptr);
+            wasm.automatonlattice_get_solve_count(retptr, this.ptr);
             var r0 = getInt32Memory0()[retptr / 4 + 0];
             var r1 = getInt32Memory0()[retptr / 4 + 1];
             var v0 = getArrayU32FromWasm0(r0, r1).slice();
@@ -1670,14 +1782,14 @@ export class TremauxLattice {
     * @returns {number}
     */
     count() {
-        const ret = wasm.clonelattice_count(this.ptr);
+        const ret = wasm.automatonlattice_count(this.ptr);
         return ret >>> 0;
     }
     /**
     * @param {number} width
     */
     set_width(width) {
-        wasm.clonelattice_set_width(this.ptr, width);
+        wasm.automatonlattice_set_width(this.ptr, width);
     }
 }
 

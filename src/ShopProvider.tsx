@@ -16,6 +16,7 @@ export const SHOP_KEYS = [
     "demolitionist",
     "flying",
     "telepathic",
+    "automaton"
 ] as const;
 export type ShopKey = typeof SHOP_KEYS[number];
 
@@ -104,7 +105,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         name: "Cloning Snail",
         description: "Can't turn but clones itself facing another direction when it reaches a junction.",
         price: 800_000_000,
-        baseMultiplier: 4_000n * 400n,
+        baseMultiplier: 1_600_000n,
         latticeWidth: 2,
         bgcolor: "#068fef",
     },
@@ -112,7 +113,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         name: "Meta Snail",
         description: "All the snails that came before.",
         price: 6_000_000_000,
-        baseMultiplier: 14_000n * 49n,
+        baseMultiplier: 686_000n,
         latticeWidth: 2,
         bgcolor: "#068fef",
     },
@@ -120,7 +121,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         name: "Demolitionist Snail",
         description: "Destroys walls to make its way through the maze faster.",
         price: 32_000_000_000,
-        baseMultiplier: 25_000_000n,
+        baseMultiplier: 38_000_000n,
         latticeWidth: 3,
         bgcolor: "#550000",
     },
@@ -128,17 +129,24 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         name: "Swarm Snail",
         description: "A flock of Swarm Snails use their powers of flight to complete mazes.",
         price: 200_000_000_000,
-        baseMultiplier: 3_000_000n,
+        baseMultiplier: 4_000_000n,
         latticeWidth: 3,
         bgcolor: "#550000",
     },
-
     "telepathic": {
         name: "Telepathic Snail",
         description: "Uses its telepathic tiles to rearrange the maze for faster solving.",
         price: 1_500_000_000_000,
-        baseMultiplier: 280_000_000n,
+        baseMultiplier: 360_000_000n,
         latticeWidth: 3,
+        bgcolor: "#550000",
+    },
+    "automaton": {
+        name: "Automaton Snail",
+        description: "A hive mind that is able replicate itself according to the rules of a cellular automaton. Each snail which is created is counted as solving the maze.",
+        price: 20_00_000_000_000,
+        baseMultiplier: 3_000_000n,
+        latticeWidth: 2,
         bgcolor: "#550000",
     }
 };

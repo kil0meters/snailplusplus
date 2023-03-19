@@ -3,8 +3,8 @@
 use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
 use snail_lattice::maze::AutoMaze;
 use snail_lattice::solvers::{
-    Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg,
-    Telepathic, TimeTravel, Tremaux,
+    Automaton, Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport,
+    RandomWalk, Rpg, Telepathic, TimeTravel, Tremaux,
 };
 
 const MAZE_COUNT: i32 = 20;
@@ -44,19 +44,33 @@ fn main() {
     // run_bench::<AutoMaze<9, Inverted<9>>>("inverted", 200_000.0, 4000., 0b000);
     // run_bench::<AutoMaze<11, Tremaux<11>>>("tremaux", 1_800_000.0, 25000., 0b000);
     // run_bench::<AutoMaze<11, Rpg<11>>>("rpg", 10_000_000.0, 121_000., 0b000);
-    run_bench::<AutoMaze<13, TimeTravel<13>>>("time-travel", 70_000_000.0, 1500. * 169.0, 0b000);
+    // run_bench::<AutoMaze<13, TimeTravel<13>>>("time-travel", 70_000_000.0, 1500. * 169.0, 0b000);
     // run_bench::<AutoMaze<20, Clones<20>>>("clone", 800_000_000.0, 4_000. * 400.0, 0b000);
-    run_bench::<MetaMaze>(
-        "Meta",
-        6_000_000_000.0,
-        14_000. * 49.,
-        0b1111111111111111111111111111,
+    // run_bench::<MetaMaze>(
+    //     "Meta",
+    //     6_000_000_000.0,
+    //     14_000. * 49.,
+    //     0b1111111111111111111111111111,
+    // );
+    // run_bench::<AutoMaze<15, Demolitionist<15>>>(
+    //     "Demolitionist",
+    //     40_000_000_000.0,
+    //     38_000_000.,
+    //     0b000,
+    // );
+    // run_bench::<AutoMaze<15, Flying<15>>>("Flying", 200_000_000_000.0, 4_000_000., 0b000);
+    run_bench::<AutoMaze<10, Telepathic<10>>>(
+        "Telepathic",
+        1_500_000_000_000.0,
+        360_000_000.,
+        0b000,
     );
-    // run_bench::<AutoMaze<15, Demolitionist<15>>>("Demolitionist", 25_000_000., 0b000);
-    // run_bench::<AutoMaze<15, Flying<15>>>("Flying", 3_000_000., 0b000);
 
-    // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b000);
+    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b000);
+    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b001);
+    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b011);
     // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b001);
+
     // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b011);
     // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b111);
 }

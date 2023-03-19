@@ -5,6 +5,7 @@ use crate::{
     snail::DEFAULT_PALETTE,
 };
 
+mod automaton;
 mod clones;
 mod demolitionist;
 mod flying;
@@ -18,6 +19,7 @@ mod telepathic;
 mod time_travel;
 mod tremaux;
 
+pub use automaton::Automaton;
 pub use clones::Clones;
 pub use demolitionist::Demolitionist;
 pub use flying::Flying;

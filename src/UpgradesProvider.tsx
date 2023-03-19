@@ -38,7 +38,9 @@ const AUTO_UPGRADE_KEYS = [
     "microphone",
     "untested-surgery",
     "kinesiology-degree",
-    "split-brain"
+    "split-brain",
+    "high-speed-connectivity",
+    "algorithmic-improvement"
 ] as const;
 export type AutoUpgradeKey = typeof AUTO_UPGRADE_KEYS[number];
 
@@ -368,6 +370,26 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         showAfter: 50
     },
 
+    "high-speed-connectivity": {
+        name: "High Speed Connectivity",
+        icon: "📶",
+        description: "Automaton Snail installs a new 5G radio tower nearby to allow for faster communication between cells.",
+        price: 0n,
+        order: 0,
+        mazeType: "automaton",
+        showAfter: 5
+    },
+
+    "algorithmic-improvement": {
+        name: "Algorithmic Improvement",
+        icon: "🦠",
+        description: "Automaton Snail changes its replication method to one that is more effective.",
+        price: 0n,
+        order: 1,
+        mazeType: "automaton",
+        showAfter: 25
+    },
+
     //////////////////////////
     // MANUAL MAZE UPGRADES //
     //////////////////////////
@@ -398,20 +420,20 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Dimensional Recombobulator",
         icon: "🔫",
         description: "The Manual Snail alters the fabric of reality, entering the third dimension.",
-        price: 0n,
+        price: 1_000_000_000n,
         order: 2,
         mazeType: "manual",
-        showAfter: 10
+        showAfter: 9
     },
     "falling-snails": {
         name: "Falling Snails",
         icon: "🧱",
         description: "The Manual Snail finds itself mysteriously connected with other snails and falling... falling... falling..other snails and falling... falling... falling...",
-        price: 0n,
+        price: 500_000_000_000n,
         order: 3,
         mazeType: "manual",
         showAfter: 12
-    }
+    },
 }
 
 
