@@ -10,6 +10,8 @@ use crate::{
     utils::Vec2,
 };
 
+use super::SolveStatus;
+
 pub struct Mark {
     // [up, down, left, right]
     pub directions: Vec<u8>,
@@ -29,7 +31,7 @@ impl Mark {
     }
 
     fn draw(&self, pos: Vec2, image: &mut Image, bx: usize, by: usize) {
-        let px = 4 * ((by + pos.y * 10) * image.buffer_width + bx + pos.x * 10);
+        let px = 4 * ((by + pos.y * 10) * image.width + bx + pos.x * 10);
 
         if self.directions[0] > 0 {
             for index in ((px + 4)..(px + 40)).step_by(8) {
@@ -38,24 +40,21 @@ impl Mark {
         }
 
         if self.directions[1] > 0 {
-            for index in
-                ((px + 4 + 40 * image.buffer_width)..(px + 40 + 40 * image.buffer_width)).step_by(8)
-            {
+            for index in ((px + 4 + 40 * image.width)..(px + 40 + 40 * image.width)).step_by(8) {
                 image.draw_pixel(index, Mark::get_color(self.directions[1]));
             }
         }
 
         if self.directions[2] > 0 {
-            for index in ((px + 4 * image.buffer_width)..(px + 40 * image.buffer_width))
-                .step_by(8 * image.buffer_width)
+            for index in ((px + 4 * image.width)..(px + 40 * image.width)).step_by(8 * image.width)
             {
                 image.draw_pixel(index, Mark::get_color(self.directions[2]));
             }
         }
 
         if self.directions[3] > 0 {
-            for index in ((px + 4 * image.buffer_width + 40)..(px + 40 * image.buffer_width + 40))
-                .step_by(8 * image.buffer_width)
+            for index in
+                ((px + 4 * image.width + 40)..(px + 40 * image.width + 40)).step_by(8 * image.width)
             {
                 image.draw_pixel(index, Mark::get_color(self.directions[3]));
             }
@@ -84,15 +83,15 @@ where
     pub visited: HashMap<Vec2, Mark>,
     is_backtracking: bool,
     upgrades: u32,
-    directions: [Direction; S * S],
-    movement_time: usize,
+    directions: [Option<Direction>; S * S],
+    movement_time: f32,
 }
 
 impl<const S: usize> Tremaux<S>
 where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
-    pub fn set_movement_time(&mut self, movement_time: usize) {
+    pub fn set_movement_time(&mut self, movement_time: f32) {
         self.movement_time = movement_time;
     }
 }
@@ -106,7 +105,7 @@ where
             snail: Snail::new(),
             visited: HashMap::new(),
             upgrades: 0,
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             is_backtracking: false,
             movement_time: SNAIL_MOVEMENT_TIME,
         }
@@ -119,7 +118,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -132,8 +131,7 @@ where
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            movement_timer,
-            self.movement_time(),
+            movement_timer / self.movement_time(),
             image,
             bx,
             by,
@@ -146,7 +144,7 @@ where
         self.directions = maze.get_directions(maze.end_pos);
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         let cell = maze.get_cell(self.snail.pos.x, self.snail.pos.y);
         let valid_directions = cell.valid_directions();
 
@@ -204,7 +202,8 @@ where
 
                 let odds = (self.upgrades & 0b11) << 1;
                 if odds > 0 && lfsr.big() % 12 < odds as usize {
-                    self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];
+                    self.snail.direction =
+                        self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
                 } else {
                     self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
                 }
@@ -228,12 +227,16 @@ where
 
         self.snail.move_forward(maze);
 
-        self.snail.pos == maze.end_pos
+        if self.snail.pos == maze.end_pos {
+            SolveStatus::Solved(1)
+        } else {
+            SolveStatus::None
+        }
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         if self.is_backtracking && (self.upgrades & 0b100) != 0 {
-            self.movement_time / 2
+            self.movement_time / 2.0
         } else {
             self.movement_time
         }

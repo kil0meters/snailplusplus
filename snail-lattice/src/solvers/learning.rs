@@ -9,6 +9,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 // This does not implement a real genetic algorithm because they seem to suck for mazes and end up
 // being both way too slow and computationally intensive to be viable for this game, so we instead
 // simulate it with something aesthetically similar.
@@ -154,7 +156,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -174,8 +176,7 @@ where
             snail.snail.draw(
                 DEFAULT_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -183,7 +184,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         if self.new_maze {
             maze.get_distances(maze.end_pos.x, maze.end_pos.y, &mut self.distances);
             self.solve_sequence = maze.get_solve_sequence(0, 0, maze.end_pos);
@@ -247,27 +248,27 @@ where
 
                 if snail.snail.pos == maze.end_pos {
                     self.new_maze = true;
-                    return true;
+                    return SolveStatus::Solved(1);
                 }
             }
 
             self.generation_timer += 1;
         }
 
-        false
+        SolveStatus::None
     }
 
-    fn movement_time(&self) -> usize {
-        let mut movement_time = SNAIL_MOVEMENT_TIME / 2;
+    fn movement_time(&self) -> f32 {
+        let mut movement_time = SNAIL_MOVEMENT_TIME / 2.0;
 
         // Uranium
         if (self.upgrades & 0b10) != 0 {
-            movement_time = (movement_time * 2) / 3
+            movement_time *= 0.65;
         }
 
         // Radium
         if (self.upgrades & 0b100) != 0 {
-            movement_time = movement_time / 4
+            movement_time *= 0.25;
         }
 
         movement_time

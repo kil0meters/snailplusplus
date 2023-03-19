@@ -10,6 +10,7 @@ mod direction;
 mod image;
 pub mod lattice;
 mod lfsr;
+mod manual;
 pub mod maze;
 mod snail;
 pub mod solvers;

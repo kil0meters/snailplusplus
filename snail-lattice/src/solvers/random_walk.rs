@@ -7,6 +7,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 /// Random Walk Snail Upgrades:
 /// - Four Leaf Clover: Gives 10% chance to go the right way
 /// - Rabbit's Foot:    Gives an additional 20% to go the right way
@@ -17,7 +19,7 @@ where
     [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
 {
     snail: Snail<S>,
-    directions: [Direction; S * S],
+    directions: [Option<Direction>; S * S],
     upgrades: u32,
 }
 
@@ -28,7 +30,7 @@ where
     fn new() -> Self {
         RandomWalk {
             snail: Snail::new(),
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             upgrades: 0,
         }
     }
@@ -40,7 +42,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -49,8 +51,7 @@ where
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
-            movement_timer,
-            self.movement_time(),
+            movement_timer / self.movement_time(),
             image,
             bx,
             by,
@@ -58,10 +59,11 @@ where
     }
 
     fn setup(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) {
+        self.snail.reset();
         self.directions = maze.get_directions(maze.end_pos);
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         // chance to move in the right direction based on the upgrades provided
         let chance = (self.upgrades & 0b1)
             + (self.upgrades & 0b10)
@@ -69,7 +71,8 @@ where
             + ((self.upgrades & 0b100) >> 2);
 
         if (lfsr.big() % 10) < chance as usize {
-            self.snail.direction = self.directions[self.snail.pos.y * S + self.snail.pos.x];
+            self.snail.direction =
+                self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
             self.snail.move_forward(maze);
         } else {
             loop {
@@ -88,14 +91,13 @@ where
         }
 
         if self.snail.pos == maze.end_pos {
-            self.snail.reset();
-            true
+            SolveStatus::Solved(1)
         } else {
-            false
+            SolveStatus::None
         }
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         SNAIL_MOVEMENT_TIME
     }
 }

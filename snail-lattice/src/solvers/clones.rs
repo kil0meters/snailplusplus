@@ -6,6 +6,8 @@ use crate::{
     solvers::Solver,
 };
 
+use super::SolveStatus;
+
 // Cloning Snail:
 // - Self-Improvement:  Each Cloning Snail moves slightly faster than the last.
 // - Snail Singularity: Each Cloning Snail moves even faster than the last.
@@ -40,7 +42,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        mut movement_timer: usize,
+        mut movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -52,8 +54,7 @@ where
             snail.draw(
                 GRAYSCALE_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -64,8 +65,7 @@ where
             snail.draw(
                 DEFAULT_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -80,7 +80,7 @@ where
         self.inactive_snails.clear();
     }
 
-    fn step(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
         self.move_count += 1;
         let mut new_snails = Vec::new();
 
@@ -115,7 +115,7 @@ where
                 self.inactive_snails.push(owned);
             } else {
                 if snail.pos == maze.end_pos {
-                    return true;
+                    return SolveStatus::Solved(1);
                 }
 
                 i += 1;
@@ -128,31 +128,28 @@ where
             }
 
             if snail.pos == maze.end_pos {
-                return true;
+                return SolveStatus::Solved(1);
             }
 
             self.active_snails.push(snail);
         }
 
-        false
+        SolveStatus::None
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         let mut movement_time = SNAIL_MOVEMENT_TIME;
 
         // self-improvement
         if (self.upgrades & 0b1) != 0 {
-            let sub = 1_000 * self.move_count;
-            if movement_time > sub {
-                movement_time -= sub;
-            }
+            movement_time -= self.move_count as f32;
         }
 
         // singularity
         if (self.upgrades & 0b10) != 0 && self.move_count != 0 {
-            movement_time /= self.move_count;
+            movement_time /= self.move_count as f32;
         }
 
-        movement_time.max(10_000).min(SNAIL_MOVEMENT_TIME)
+        movement_time.max(10.0).min(SNAIL_MOVEMENT_TIME)
     }
 }

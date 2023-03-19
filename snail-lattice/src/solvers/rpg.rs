@@ -8,6 +8,8 @@ use crate::{
     utils::Vec2,
 };
 
+use super::SolveStatus;
+
 /// RPG Snail Upgrades:
 /// - Comradery:   RPG Snail gets a 10% speed boost for each snail in its party.
 /// - Sidequests:  Any snail RPG Snail runs into is automatically added to its party.
@@ -20,7 +22,7 @@ where
     party: Vec<Snail<S>>,
     lost: Vec<Snail<S>>,
     upgrades: u32,
-    directions: [Direction; S * S],
+    directions: [Option<Direction>; S * S],
 
     current_sequence: Vec<Direction>,
 }
@@ -56,7 +58,7 @@ where
             party: vec![],
             lost: vec![],
 
-            directions: [Direction::Left; S * S],
+            directions: [None; S * S],
             current_sequence: vec![],
             upgrades: 0,
         }
@@ -69,7 +71,7 @@ where
     fn draw(
         &mut self,
         animation_cycle: bool,
-        movement_timer: usize,
+        movement_timer: f32,
         _lfsr: &mut LFSR,
         image: &mut Image,
         bx: usize,
@@ -79,8 +81,7 @@ where
             snail.draw(
                 DEFAULT_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -91,8 +92,7 @@ where
             snail.draw(
                 GRAYSCALE_PALETTE,
                 animation_cycle,
-                movement_timer,
-                self.movement_time(),
+                movement_timer / self.movement_time(),
                 image,
                 bx,
                 by,
@@ -112,16 +112,23 @@ where
         }
     }
 
-    fn step(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) -> bool {
+    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
         // recruitment
         if (self.upgrades & 0b100) != 0 && !self.lost.is_empty() {
             if !(self.party[0].pos.x == 0 && self.party[0].pos.y == 0) {
                 self.setup(maze, lfsr);
-                return false;
+                return SolveStatus::None;
             }
 
             for lost_snail in &mut self.lost {
-                lost_snail.direction = self.directions[lost_snail.pos.y * S + lost_snail.pos.x];
+                lost_snail.direction =
+                    match self.directions[lost_snail.pos.y * S + lost_snail.pos.x] {
+                        Some(x) => x,
+                        None => {
+                            self.setup(maze, lfsr);
+                            return SolveStatus::None;
+                        }
+                    };
                 lost_snail.move_forward(maze);
             }
 
@@ -196,17 +203,17 @@ where
             }
 
             if self.party.is_empty() && self.lost.is_empty() {
-                return true;
+                return SolveStatus::Solved(1);
             }
         }
 
-        false
+        SolveStatus::None
     }
 
-    fn movement_time(&self) -> usize {
+    fn movement_time(&self) -> f32 {
         // Comradery
         if (self.upgrades & 0b1) != 0 {
-            SNAIL_MOVEMENT_TIME * 10 / (9 + self.party.len())
+            SNAIL_MOVEMENT_TIME * 10.0 / (9.0 + self.party.len() as f32)
         } else {
             SNAIL_MOVEMENT_TIME
         }

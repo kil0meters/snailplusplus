@@ -23,13 +23,8 @@ export function createStoredSignal<T>(
     return [value, setValueAndStore];
 }
 
-export function generateMaze(width: number, height: number, then: (maze: Uint8Array) => void) {
-    let mazeGenerationWorker = new Worker(new URL("./generateMaze.ts", import.meta.url));
-    mazeGenerationWorker.postMessage({ width, height });
-    mazeGenerationWorker.onmessage = (msg: MessageEvent<Uint8Array>) => {
-        then(msg.data);
-        mazeGenerationWorker.terminate();
-    };
+export function randomSeed(): number {
+    return self.crypto.getRandomValues(new Uint16Array(1))[0];
 }
 
 export function createLocalStore<T extends object>(
@@ -50,4 +45,51 @@ export function createLocalStore<T extends object>(
 
 export function bigint_min(a: bigint, b: bigint) {
     return a < b ? a : b;
+}
+
+
+const BASES = {
+    6: "million",
+    9: "billion",
+    12: "trillion",
+    15: "quadrillion",
+    18: "quintillion",
+};
+
+// can't use Intl.NumberFormat because we can't control the rounding behavior.
+// we want all prices in the shop to round up, but all prices the user owns to
+// round down
+export function formatNumber(num: bigint | number, roundUp: boolean): string {
+    let value = Number(num);
+
+
+    if (value < 10) {
+        return value.toLocaleString('en', { maximumFractionDigits: 3 });
+    } else if (value < 1_000) {
+        return value.toLocaleString('en', { maximumFractionDigits: 2 });
+    } else if (value < 1_000_000) {
+        return value.toLocaleString('en', { maximumFractionDigits: 0 });
+    } else if (value < 1e24) {
+        let digits = 0;
+
+        while (value >= 1_000) {
+            digits += 3;
+
+            value /= 1_000;
+        }
+
+        let rounded: number;
+
+        if (roundUp) {
+            rounded = Math.ceil(value * 1000) / 1000;
+        } else {
+            rounded = Math.floor(value * 1000) / 1000;
+        }
+
+
+        return `${rounded} ${BASES[digits]}`;
+
+    } else {
+        return value.toExponential(5)
+    }
 }

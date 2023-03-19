@@ -1,5 +1,6 @@
-import init, { CloneLattice, HoldLeftLattice, RandomTeleportLattice, RandomWalkLattice, TimeTravelLattice, TremauxLattice, LearningLattice, RpgLattice, MetaLattice, InvertedLattice } from "../snail-lattice/pkg/snail_lattice";
+import init, { RandomWalkLattice, RandomTeleportLattice, LearningLattice, HoldLeftLattice, InvertedLattice, TremauxLattice, RpgLattice, TimeTravelLattice, CloneLattice, MetaLattice, DemolitionistLattice, FlyingLattice, TelepathicLattice, AutomatonLattice } from "../snail-lattice/pkg/snail_lattice";
 import type { ShopKey } from "./ShopProvider";
+import { randomSeed } from "./utils";
 
 // see lattice.rs
 interface SnailLattice {
@@ -31,7 +32,7 @@ class LatticeList<T extends SnailLattice> {
     }
 
     get pageSize(): number {
-        return this.width * 4;
+        return this.width;
     }
 
     constructor(mazeType: ShopKey, lattice: T, baseMultiplier: number, width: number) {
@@ -61,7 +62,7 @@ class LatticeList<T extends SnailLattice> {
     // tick everything
     tick(): number {
         let now = performance.now();
-        let dt = Math.round((now - this.prevTick) * 1000);
+        let dt = now - this.prevTick;
         this.prevTick = performance.now();
 
         return this.lattice.tick(dt * this.tickRate);
@@ -128,10 +129,6 @@ export type LatticeWorkerResponse =
 
 let LATTICE: LatticeList<SnailLattice>;
 
-function randomSeed(): number {
-    return self.crypto.getRandomValues(new Uint16Array(1))[0];
-}
-
 function setupLattice(mazeType: ShopKey) {
     init().then(() => {
         switch (mazeType) {
@@ -164,6 +161,18 @@ function setupLattice(mazeType: ShopKey) {
                 break;
             case "meta":
                 LATTICE = new LatticeList("meta", new MetaLattice(2, randomSeed()), 1, 2);
+                break;
+            case "demolitionist":
+                LATTICE = new LatticeList("demolitionist", new DemolitionistLattice(3, randomSeed()), 1, 3);
+                break;
+            case "flying":
+                LATTICE = new LatticeList("flying", new FlyingLattice(3, randomSeed()), 1, 3);
+                break;
+            case "telepathic":
+                LATTICE = new LatticeList("telepathic", new TelepathicLattice(3, randomSeed()), 1, 3);
+                break;
+            case "automaton":
+                LATTICE = new LatticeList("automaton", new AutomatonLattice(3, randomSeed()), 1, 3);
                 break;
         }
 

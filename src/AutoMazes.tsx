@@ -1,7 +1,7 @@
 import { Component, createEffect, createSignal, For, onCleanup, onMount, untrack, useContext } from "solid-js";
 import { SHOP, ShopContext, ShopKey, ShopListing } from "./ShopProvider";
 import { ScoreContext } from "./ScoreProvider";
-import { createStoredSignal } from "./utils";
+import { createStoredSignal, formatNumber } from "./utils";
 import { latticePostMessage, LATTICES_FILLED, LATTICE_WORKER_STORE } from "./Game";
 import { LatticeWorkerResponse } from "./latticeWorker";
 import { render } from "solid-js/web";
@@ -75,14 +75,15 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
     const renderloop = () => {
         while (workerMessageQueue.length > 0) {
             let data = workerMessageQueue.pop();
+
             if (data.type == "render") {
                 renderLocked = false;
 
                 for (let page of data.pages) {
                     let target = elements()[page.page];
 
-                    if (page.buffer.length != 4 * target.width * target.height) {
-                        console.log(page.buffer.length, target.width, target.height);
+                    if (!target || page.buffer.length != 4 * target.width * target.height) {
+                        // console.log(page.buffer.length, target.width, target.height);
                         break;
                     }
 
@@ -221,7 +222,6 @@ const SnailLatticeElement: Component<ShopListing> = (props) => {
     return (
         <div ref={container} class={`flex items-center justify-center w-full flex-col`}>
             {focusedIndex() !== null && <div ref={snailInfoElement} class="z-50 flex flex-col bg-black p-4 border-2 border-white shadow-md absolute text-white font-display" style={{
-                height: "108px",
                 top: `${snailInfoTop()}px`,
                 left: `${snailInfoLeft()}px`,
                 transform: "translateX(-50%)"
@@ -260,20 +260,19 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
         removeEventListener('fullscreenchange', togglefullscreen);
     });
 
-    const fmt = new Intl.NumberFormat('en', { notation: "compact", maximumSignificantDigits: 3, minimumSignificantDigits: 3 });
     const averageFps = () => {
         let average = averages.find((x) => x.key == props.key);
-        return fmt.format(average.count / average.seconds);
+        return average.count / average.seconds;
     };
 
     return (
-        <div class="w-full" ref={mazeDisplay}>
+        <div class="w-full group" ref={mazeDisplay}>
             <dt class="sticky z-10 top-0 p-8 text-white bg-black min-h-[128px] my-auto font-diplsay flex font-pixelated overflow-x-auto">
                 <div class="flex-col flex font-display">
                     <span class="bg-black text-lg md:text-2xl my-auto font-bold">
                         {SHOP[props.key].name}
                     </span>
-                    <span>{averageFps} fragments/second</span>
+                    {averageFps() >= Number.EPSILON && <span>{formatNumber(averageFps(), false)} fragments per second</span>}
                 </div>
 
                 <div class="text-center ml-auto flex my-auto">
@@ -305,7 +304,9 @@ const AutoMazeDisplay: Component<{ key: ShopKey, count: number }> = (props) => {
             </dt>
 
             {!collapsed() &&
-                <dd class="p-2 h-full w-full bg-[#068fef]">
+                <dd class="p-2 h-full w-full group-last:pb-16" style={{
+                    "background-color": SHOP[props.key].bgcolor
+                }}>
                     <SnailLatticeElement key={props.key} count={props.count} displayWidth={displayWidth()} collapsed={collapsed()} />
                 </dd>}
         </div >
