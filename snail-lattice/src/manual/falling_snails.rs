@@ -1,33 +1,90 @@
-use std::mem;
+
 
 use crate::{
     direction::Direction,
     image::Image,
-    lfsr::{self, LFSR},
-    snail::{DEFAULT_PALETTE, GRAYSCALE_PALETTE, INVERTED_PALETTE},
-    utils::{console_log, Vec2, Vec2i},
+    lfsr::{LFSR},
+    snail::{DEFAULT_PALETTE},
+    utils::{Vec2i},
 };
 
 // [2, 4, 1, 3]
 // based on https://codeincomplete.com/articles/javascript-tetris/
 const BLOCKS: [[u16; 4]; 7] = [
-    [0x2222, 0x4444, 0x0F00, 0x00F0], // I
+    // [0x2222, 0x4444, 0x0F00, 0x00F0], // I
+    [0x2222, 0x2222, 0x00F0, 0x00F0], // I
     [0x8E00, 0x0E20, 0x44C0, 0x6440], // J
     [0x0E80, 0x2E00, 0x4460, 0xC440], // L
     [0xCC00, 0xCC00, 0xCC00, 0xCC00], // O
-    [0x8C40, 0x4620, 0x06C0, 0x6C00], // S
+    // [0x8C40, 0x4620, 0x06C0, 0x6C00], // S
+    [0x8C40, 0x8C40, 0x06C0, 0x06C0], // S
     [0x4C40, 0x4640, 0x0E40, 0x4E00], // T
-    [0x4C80, 0x2640, 0x0C60, 0xC600], // Z
+    // [0x4C80, 0x2640, 0x0C60, 0xC600], // Z
+    [0x4C80, 0x4C80, 0x0C60, 0x0C60], // Z
+];
+
+const J_PALETTE: [[u8; 3]; 6] = [
+    [0xff, 0x00, 0x00], // yellow
+    [0xff, 0xff, 0xff], // purple
+    [0xff, 0xff, 0xff], // orange
+    [0xff, 0xff, 0xff], // white
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
+];
+
+const L_PALETTE: [[u8; 3]; 6] = [
+    [0xaa, 0x00, 0x55],
+    [0xff, 0xaa, 0x00],
+    [0xff, 0xff, 0x55],
+    [0xff, 0xff, 0xff],
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
+];
+
+const O_PALETTE: [[u8; 3]; 6] = [
+    [0x00, 0x55, 0xaa],
+    [0x00, 0xaa, 0xaa],
+    [0xff, 0xff, 0x55],
+    [0xff, 0xff, 0xff],
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
+];
+
+const S_PALETTE: [[u8; 3]; 6] = [
+    [0xaa, 0xaa, 0x00],
+    [0xaa, 0xff, 0xaa],
+    [0x00, 0xff, 0xaa],
+    [0xff, 0xff, 0xff],
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
+];
+
+const T_PALETTE: [[u8; 3]; 6] = [
+    [0xff, 0x55, 0xff],
+    [0xff, 0xaa, 0xaa],
+    [0xaa, 0x55, 0xaa],
+    [0xff, 0xff, 0xff],
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
+];
+
+const Z_PALETTE: [[u8; 3]; 6] = [
+    [0x55, 0x00, 0xff],
+    [0x55, 0xff, 0xaa],
+    [0xaa, 0x55, 0x55],
+    [0xff, 0xff, 0xff],
+    [0x00, 0x00, 0x00],
+    [0x00, 0x00, 0x00],
 ];
 
 const COLORS: [[[u8; 3]; 6]; 7] = [
-    DEFAULT_PALETTE,
-    DEFAULT_PALETTE,
-    GRAYSCALE_PALETTE,
-    GRAYSCALE_PALETTE,
-    DEFAULT_PALETTE,
-    DEFAULT_PALETTE,
-    GRAYSCALE_PALETTE,
+    DEFAULT_PALETTE, // I
+    J_PALETTE,       // J
+    L_PALETTE,       // L
+    O_PALETTE,       // O
+    S_PALETTE,       // S
+    T_PALETTE,       // T
+    Z_PALETTE,       // Z
 ];
 
 const WIDTH: usize = 10;
@@ -35,6 +92,8 @@ const HEIGHT: usize = 20;
 const FALL_TIME: f32 = 16.67 * 60.0;
 const AUTO_SHIFT_DELAY: f32 = 16.67 * 24.0;
 const PIECE_MOVE_DELAY: f32 = 16.67 * 2.0;
+
+const LINE_SCORES: [i32; 4] = [40, 100, 300, 1200];
 
 fn for_each_block(
     block_id: usize,
@@ -84,12 +143,12 @@ pub struct FallingSnailsGame {
 }
 
 impl FallingSnailsGame {
-    pub fn new() -> FallingSnailsGame {
+    pub fn new(lfsr: &mut LFSR) -> FallingSnailsGame {
         FallingSnailsGame {
             grid: [0; _],
-            held_piece_pos: Vec2i::new(0, 0),
+            held_piece_pos: Vec2i::new(4, 0),
             held_piece_dir: Direction::Right,
-            selected_piece: 0,
+            selected_piece: lfsr.big() % BLOCKS.len(),
             can_rotate: true,
             right_held: -1000.0,
             left_held: -1000.0,
@@ -235,7 +294,7 @@ impl FallingSnailsGame {
     }
 
     fn solve_check(&mut self) -> i32 {
-        // let mut has_tetris =
+        let mut has_four_lines = false;
         let mut score = 0;
         let mut line_streak = 0;
 
@@ -260,14 +319,31 @@ impl FallingSnailsGame {
                 self.shift_down(y);
             } else {
                 if line_streak > 0 {
-                    score += 1_000_000 * 1 << line_streak;
+                    if line_streak == 4 {
+                        has_four_lines = true;
+                    }
+
+                    score += 1_000_000 * LINE_SCORES[line_streak - 1];
                     line_streak = 0;
                 }
-                y += 1;
             }
+
+            y += 1;
         }
 
-        score
+        if line_streak > 0 {
+            if line_streak == 4 {
+                has_four_lines = true;
+            }
+
+            score += 1_000_000 * LINE_SCORES[line_streak - 1];
+        }
+
+        if has_four_lines {
+            -score
+        } else {
+            score
+        }
     }
 
     fn shift_down(&mut self, start_y: usize) {
@@ -317,6 +393,16 @@ impl FallingSnailsGame {
         self.held_piece_pos = Vec2i::new(4, 0);
         self.held_piece_dir = Direction::Right;
         self.selected_piece = lfsr.big() % BLOCKS.len();
+
+        // if piece collides, we reset the whole board
+
+        if self.held_piece_collides(
+            self.held_piece_pos.x,
+            self.held_piece_pos.y,
+            self.held_piece_dir,
+        ) {
+            self.grid.fill(0);
+        }
     }
 
     fn held_piece_collides(&self, px: i32, py: i32, dir: Direction) -> bool {

@@ -1,6 +1,6 @@
 use crate::{
     direction::Direction,
-    utils::{console_log, Vec2, Vec2i},
+    utils::{Vec2i},
 };
 
 pub struct Image<'a> {

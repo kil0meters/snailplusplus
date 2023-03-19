@@ -164,7 +164,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
         if !self.bombs.is_empty() {
             let mut bomb_exploded = false;
 

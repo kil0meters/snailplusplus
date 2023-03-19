@@ -223,7 +223,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
         let mut rerender = false;
 
         if self.ball_sequence_index < self.ball_sequence.len() {

@@ -12,8 +12,7 @@ import { formatNumber } from "./utils";
 
 const PRICE_SCALER = 1.13;
 
-// TODO: set to false
-document["devmode"] = true;
+document["devmode"] = false;
 
 const ShopListingElement: Component<{ key: ShopKey, count: number }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);

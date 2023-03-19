@@ -292,7 +292,7 @@ const SnailMaze: Component<SnailMazeProps> = (props) => {
                     <span class="font-display text-white font-bold px-4">Manual Snail</span>
 
                     <div class="flex overflow-x-auto">
-                        <div class="grid grid-cols-4 grid-flow-col pl-4">
+                        <div class="grid grid-cols-5 grid-flow-col pl-4">
                             <button class="p-2 hover:bg-white aspect-square px-4 text-2xl" onClick={() => setGameMode(0)}>🐌</button>
 
                             <For each={upgrades.filter((upgrade) => {

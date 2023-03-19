@@ -3,9 +3,8 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::{Snail, DEFAULT_PALETTE, PHASE_2_PALETTE},
+    snail::{PHASE_2_PALETTE},
     solvers::Solver,
-    utils::{lerpf, Vec2f},
 };
 
 use super::SolveStatus;
@@ -75,7 +74,7 @@ where
     }
 
     //
-    fn setup(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) {
+    fn setup(&mut self, _maze: &Maze<S>, lfsr: &mut LFSR) {
         self.swarm_weights.clear();
 
         let mut swarm_count = 6;

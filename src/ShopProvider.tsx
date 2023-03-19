@@ -14,7 +14,8 @@ export const SHOP_KEYS = [
     "clone",
     "meta",
     "demolitionist",
-    "flying"
+    "flying",
+    "telepathic",
 ] as const;
 export type ShopKey = typeof SHOP_KEYS[number];
 
@@ -40,7 +41,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         description: "Randomly walks around until it happens to stumble its way to the end.",
         price: 25,
         baseMultiplier: 25n,
-        latticeWidth: 8,
+        latticeWidth: 4,
         bgcolor: "#068fef",
     },
     "random-teleport": {
@@ -48,7 +49,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         description: "Randomly teleports to another location.",
         price: 100,
         baseMultiplier: 74n,
-        latticeWidth: 5,
+        latticeWidth: 4,
         bgcolor: "#068fef",
     },
     "learning": {
@@ -64,22 +65,22 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         description: "Holds the left wall of the maze until it finds its way to the end. At least it's not unbounded!",
         price: 12_000,
         baseMultiplier: 5n * 81n,
-        latticeWidth: 4,
+        latticeWidth: 3,
         bgcolor: "#068fef",
     },
     "inverted": {
         name: "Right Handed Snail",
         description: "Holds the right wall instead. I wonder where he got that idea from.",
         price: 200_000,
-        baseMultiplier: 24n * 81n,
-        latticeWidth: 4,
+        baseMultiplier: 4_000n,
+        latticeWidth: 3,
         bgcolor: "#f97010",
     },
     "tremaux": {
         name: "Segment Snail",
         description: "Uses marks on the ground to block off segments of the maze which have been explored.",
         price: 1_800_000,
-        baseMultiplier: 100n * 121n,
+        baseMultiplier: 25_000n,
         latticeWidth: 3,
         bgcolor: "#068fef",
     },
@@ -94,7 +95,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "time-travel": {
         name: "Time Travel Snail",
         description: "The segment snail has developed time travel. It travels back in time to when the maze was first conceived, then solves it using the method it previously invented. When it returns to the present it is able to use the markings to walk directly to the exit.",
-        price: 50_000_000,
+        price: 70_000_000,
         baseMultiplier: 1_500n * 169n,
         latticeWidth: 3,
         bgcolor: "#068fef",
@@ -118,7 +119,7 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "demolitionist": {
         name: "Demolitionist Snail",
         description: "Destroys walls to make its way through the maze faster.",
-        price: 25_000_000_000,
+        price: 32_000_000_000,
         baseMultiplier: 25_000_000n,
         latticeWidth: 3,
         bgcolor: "#550000",
@@ -126,8 +127,17 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "flying": {
         name: "Swarm Snail",
         description: "A flock of Swarm Snails use their powers of flight to complete mazes.",
-        price: 100_000_000_000,
-        baseMultiplier: 2_500_000n,
+        price: 200_000_000_000,
+        baseMultiplier: 3_000_000n,
+        latticeWidth: 3,
+        bgcolor: "#550000",
+    },
+
+    "telepathic": {
+        name: "Telepathic Snail",
+        description: "Uses its telepathic tiles to rearrange the maze for faster solving.",
+        price: 1_500_000_000_000,
+        baseMultiplier: 280_000_000n,
         latticeWidth: 3,
         bgcolor: "#550000",
     }

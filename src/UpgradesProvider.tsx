@@ -35,14 +35,18 @@ const AUTO_UPGRADE_KEYS = [
     "destructive-habits",
     "carbon-fiber-exoskeleton",
     "singing-lessons",
-    "microphone"
+    "microphone",
+    "untested-surgery",
+    "kinesiology-degree",
+    "split-brain"
 ] as const;
 export type AutoUpgradeKey = typeof AUTO_UPGRADE_KEYS[number];
 
 const MANUAL_UPGRADE_KEYS = [
     "pacsnail",
     "asteroids",
-    "wolfensnail"
+    "wolfensnail",
+    "falling-snails"
 ] as const;
 export type ManualUpgradeKey = typeof MANUAL_UPGRADE_KEYS[number];
 
@@ -318,7 +322,6 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         mazeType: "flying",
         showAfter: 5
     },
-
     "singing-lessons": {
         name: "Singing Lessonss",
         description: "The Swarm Snails take singing lessons to attract more members into their swarm.",
@@ -328,7 +331,6 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         mazeType: "flying",
         showAfter: 25
     },
-
     "microphone": {
         name: "Singing Lessonss",
         description: "The Swarm Snails purchase a microphone to increase the range of their hymmn.",
@@ -336,6 +338,33 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         price: 25_000_000_000_000n,
         order: 2,
         mazeType: "flying",
+        showAfter: 50
+    },
+    "untested-surgery": {
+        name: "Untested Surgery",
+        description: "The Telepathic Snail undergoes an experimental surgery which allows it to move and use its telepathy at the same time.",
+        icon: "🏥",
+        price: 10_000_000_000_000n,
+        order: 0,
+        mazeType: "telepathic",
+        showAfter: 5
+    },
+    "kinesiology-degree": {
+        name: "Kinesiology Degree",
+        description: "The Telepathic Snail goes to college to study kinesiology. With a newfound understanding of snail kinematics, it is able to use its telepathic abilities to move faster.",
+        icon: "🎓",
+        price: 50_000_000_000_000n,
+        order: 1,
+        mazeType: "telepathic",
+        showAfter: 25
+    },
+    "split-brain": {
+        name: "Split Brain",
+        description: "The Telepathic Snail fully separates its brain, allowing it to simultaneously move itself and the goal.",
+        icon: "🧠",
+        price: 1_000_000_000_000_000n,
+        order: 2,
+        mazeType: "telepathic",
         showAfter: 50
     },
 
@@ -360,7 +389,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Rocket Ship",
         icon: "🚀",
         description: "In search of fragments, The Manual Snail goes to space.",
-        price: 0n,
+        price: 5_000_000n,
         order: 1,
         mazeType: "manual",
         showAfter: 6
@@ -373,6 +402,15 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         order: 2,
         mazeType: "manual",
         showAfter: 10
+    },
+    "falling-snails": {
+        name: "Falling Snails",
+        icon: "🧱",
+        description: "The Manual Snail finds itself mysteriously connected with other snails and falling... falling... falling..other snails and falling... falling... falling...",
+        price: 0n,
+        order: 3,
+        mazeType: "manual",
+        showAfter: 12
     }
 }
 

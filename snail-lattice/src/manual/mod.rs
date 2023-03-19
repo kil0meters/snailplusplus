@@ -68,7 +68,7 @@ impl Game {
             1 => self.game = ManualGame::PacSnail(PacSnail::new()),
             2 => self.game = ManualGame::Asteroids(AsteroidsGame::new()),
             3 => self.game = ManualGame::Wolfenstein(WolfensteinGame::new(&mut self.lfsr)),
-            4 => self.game = ManualGame::FallingSnails(FallingSnailsGame::new()),
+            4 => self.game = ManualGame::FallingSnails(FallingSnailsGame::new(&mut self.lfsr)),
             _ => unreachable!(),
         }
     }

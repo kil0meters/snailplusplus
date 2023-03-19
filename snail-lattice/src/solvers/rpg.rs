@@ -122,7 +122,13 @@ where
 
             for lost_snail in &mut self.lost {
                 lost_snail.direction =
-                    self.directions[lost_snail.pos.y * S + lost_snail.pos.x].unwrap();
+                    match self.directions[lost_snail.pos.y * S + lost_snail.pos.x] {
+                        Some(x) => x,
+                        None => {
+                            self.setup(maze, lfsr);
+                            return SolveStatus::None;
+                        }
+                    };
                 lost_snail.move_forward(maze);
             }
 
