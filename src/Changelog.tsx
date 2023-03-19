@@ -75,8 +75,8 @@ const Changelog: Component<{}> = () => {
     return <>
         {shown() &&
             <Portal>
-                <div class="z-50 font-display fixed left-0 top-0 bottom-0 right-0 bg-[#00000055]">
-                    <div class="mx-auto max-w-3xl bg-white p-4 border-2 border-black text-black text-left grid grid-cols-3 mt-40">
+                <div class="z-50 font-display flex content-center justify-center fixed left-0 top-0 bottom-0 right-0 bg-[#00000055]">
+                    <div class="mx-auto max-w-3xl bg-white p-4 border-2 border-black text-black text-left grid grid-cols-3 my-auto">
                         <div class="col-span-2 flex flex-col text-lg gap-4">
                             <h1 class="text-3xl font-extrabold">SnailMaze++</h1>
 
