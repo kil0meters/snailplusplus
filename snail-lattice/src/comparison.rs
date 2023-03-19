@@ -4,17 +4,17 @@ use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
 use snail_lattice::maze::AutoMaze;
 use snail_lattice::solvers::{
     Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk, Rpg,
-    TimeTravel, Tremaux,
+    Telepathic, TimeTravel, Tremaux,
 };
 
 const MAZE_COUNT: i32 = 20;
 const SECONDS: f64 = 10_000.0;
 const TICK_AMOUNT: f32 = SECONDS as f32 * 1000.0;
 
-fn run_bench<T: TilableMaze>(name: &str, multiplier: f64) {
+fn run_bench<T: TilableMaze>(name: &str, multiplier: f64, upgrades: u32) {
     let mut lattice = SnailLattice::<T>::new(5, 0xDEAD);
     lattice.alter(MAZE_COUNT);
-    lattice.set_upgrades(0b111);
+    lattice.set_upgrades(upgrades);
 
     let solves = lattice.tick(TICK_AMOUNT);
     println!(
@@ -40,7 +40,12 @@ fn main() {
     // run_bench::<AutoMaze<11, Rpg<11>>>("rpg", 100000.);
     // run_bench::<AutoMaze<13, TimeTravel<13>>>("time-travel", 150000.);
     // run_bench::<AutoMaze<20, Clones<20>>>("clone", 400000.);
-    run_bench::<MetaMaze>("Meta", 14_000. * 49.);
-    run_bench::<AutoMaze<15, Demolitionist<15>>>("Demolitionist", 25_000_000.);
-    run_bench::<AutoMaze<15, Flying<15>>>("Flying", 2_500_000.);
+    // run_bench::<MetaMaze>("Meta", 14_000. * 49.);
+    run_bench::<AutoMaze<15, Demolitionist<15>>>("Demolitionist", 25_000_000., 0b000);
+    run_bench::<AutoMaze<15, Flying<15>>>("Flying", 3_000_000., 0b000);
+
+    run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b000);
+    run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b001);
+    run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b011);
+    run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b111);
 }

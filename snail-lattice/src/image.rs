@@ -23,6 +23,31 @@ impl<'a> Image<'a> {
         self.draw_pixel(4 * (y * self.width + x), pixel);
     }
 
+    pub fn draw_circle_with(
+        &mut self,
+        mut color: impl FnMut() -> [u8; 3],
+        x: usize,
+        y: usize,
+        radius: i32,
+    ) {
+        for dx in (-radius)..radius {
+            for dy in (-radius)..radius {
+                if (dx * dx) + (dy * dy) < radius * radius {
+                    let draw_x = x as i32 + dx;
+                    let draw_y = y as i32 + dy;
+
+                    if draw_x > 0
+                        && draw_x < self.width as i32
+                        && draw_y > 0
+                        && draw_y < self.height as i32
+                    {
+                        self.draw_pixel_xy(color(), draw_x as usize, draw_y as usize);
+                    }
+                }
+            }
+        }
+    }
+
     pub fn draw_circle(&mut self, color: [u8; 3], x: usize, y: usize, radius: i32) {
         for dx in (-radius)..radius {
             for dy in (-radius)..radius {
@@ -225,7 +250,7 @@ impl<'a> Image<'a> {
         }
     }
 
-    pub fn draw_goal(&mut self, color: [u8; 3], pos: Vec2, bx: usize, by: usize) {
+    pub fn draw_goal(&mut self, color: [u8; 3], dx: usize, dy: usize) {
         const GOAL_IMAGE_SIZE: usize = 7;
 
         let goal_image = include_bytes!("../../assets/goal_7x7.bin");
@@ -233,7 +258,7 @@ impl<'a> Image<'a> {
         for y in 0..GOAL_IMAGE_SIZE {
             for x in 0..GOAL_IMAGE_SIZE {
                 let goal_px = y * GOAL_IMAGE_SIZE + x;
-                let px = 4 * ((by + x + pos.y * 10 + 2) * self.width + bx + y + pos.x * 10 + 2);
+                let px = 4 * ((dy + x + 2) * self.width + dx + y + 2);
 
                 // not transparent
                 if goal_image[goal_px] != 255 {

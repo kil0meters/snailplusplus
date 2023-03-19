@@ -110,8 +110,11 @@ where
         // draw "snail"
         self.solver
             .draw(animation_cycle, self.movement_timer, lfsr, image, bx, by);
-        self.maze
-            .draw_foreground(T::palette()[0], animation_cycle, image, bx, by);
+
+        if !T::custom_goal() {
+            self.maze
+                .draw_foreground(T::palette()[0], animation_cycle, image, bx, by);
+        }
     }
 
     fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
@@ -158,16 +161,15 @@ where
             && !(direction == Direction::Right && x == S - 1)
             && !(direction == Direction::Down && y == S - 1)
         {
-            self.xor_cell(x, y, direction.to_wall());
-            match direction {
-                Direction::Up if y > 0 => self.xor_cell(x, y - 1, direction.flip().to_wall()),
-                Direction::Down if y < S - 1 => self.xor_cell(x, y + 1, direction.flip().to_wall()),
-                Direction::Left if x > 0 => self.xor_cell(x - 1, y, direction.flip().to_wall()),
-                Direction::Right if x < S - 1 => {
-                    self.xor_cell(x + 1, y, direction.flip().to_wall())
-                }
-                _ => {}
-            }
+            self.set_wall(x, y, direction);
+        }
+    }
+
+    pub fn add_wall(&mut self, x: usize, y: usize, direction: Direction) {
+        let cell = self.get_cell(x, y);
+
+        if !cell.has_wall(direction) {
+            self.set_wall(x, y, direction);
         }
     }
 
@@ -461,7 +463,11 @@ where
     ) {
         // draw goal
         if animation_cycle {
-            image.draw_goal(goal_color, self.end_pos, bx, by);
+            image.draw_goal(
+                goal_color,
+                bx + self.end_pos.x * 10,
+                by + self.end_pos.y * 10,
+            );
         }
     }
 }

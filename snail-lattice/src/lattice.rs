@@ -8,7 +8,7 @@ use crate::{
     maze::AutoMaze,
     solvers::{
         Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport, RandomWalk,
-        Rpg, SolveStatus, TimeTravel, Tremaux,
+        Rpg, SolveStatus, Telepathic, TimeTravel, Tremaux,
     },
     utils::set_panic_hook,
 };
@@ -214,7 +214,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             match maze.tick(dt, &mut self.lfsr) {
                 SolveStatus::Solved(count) => {
                     total += count;
-                    self.solve_count[i] += 1;
+                    self.solve_count[i] += count as u32;
                     self.render_marked.insert(i);
                 }
                 SolveStatus::Rerender => {
@@ -425,3 +425,4 @@ lattice_impl!(CloneLattice, AutoMaze<20, Clones<20>>);
 lattice_impl!(MetaLattice, MetaMaze);
 lattice_impl!(DemolitionistLattice, AutoMaze<15, Demolitionist<15>>);
 lattice_impl!(FlyingLattice, AutoMaze<15, Flying<15>>);
+lattice_impl!(TelepathicLattice, AutoMaze<11, Telepathic<11>>);

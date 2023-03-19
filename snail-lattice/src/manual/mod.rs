@@ -9,9 +9,13 @@ use crate::{
     utils::{set_panic_hook, Vec2},
 };
 
-use self::{asteroids::AsteroidsGame, pacsnail::PacSnail, wolfenstein::WolfensteinGame};
+use self::{
+    asteroids::AsteroidsGame, falling_snails::FallingSnailsGame, pacsnail::PacSnail,
+    wolfenstein::WolfensteinGame,
+};
 
 mod asteroids;
+mod falling_snails;
 mod pacsnail;
 mod wolfenstein;
 
@@ -22,6 +26,7 @@ enum ManualGame {
     PacSnail(PacSnail),
     Asteroids(AsteroidsGame),
     Wolfenstein(WolfensteinGame),
+    FallingSnails(FallingSnailsGame),
 }
 
 #[wasm_bindgen]
@@ -52,6 +57,7 @@ impl Game {
             ManualGame::Asteroids(game) => game.resolution(),
             ManualGame::PacSnail(game) => game.resolution(),
             ManualGame::Wolfenstein(game) => game.resolution(),
+            ManualGame::FallingSnails(game) => game.resolution(),
         }
     }
 
@@ -62,6 +68,7 @@ impl Game {
             1 => self.game = ManualGame::PacSnail(PacSnail::new()),
             2 => self.game = ManualGame::Asteroids(AsteroidsGame::new()),
             3 => self.game = ManualGame::Wolfenstein(WolfensteinGame::new(&mut self.lfsr)),
+            4 => self.game = ManualGame::FallingSnails(FallingSnailsGame::new()),
             _ => unreachable!(),
         }
     }
@@ -91,6 +98,11 @@ impl Game {
                 ret
             }
             ManualGame::Wolfenstein(game) => {
+                let ret = game.tick(&mut self.lfsr, keys, dt);
+                game.render(buffer);
+                ret
+            }
+            ManualGame::FallingSnails(game) => {
                 let ret = game.tick(&mut self.lfsr, keys, dt);
                 game.render(buffer);
                 ret
@@ -234,7 +246,7 @@ impl ManualMaze {
         );
 
         if animation_cycle {
-            image.draw_goal(DEFAULT_PALETTE[0], self.end_pos, 0, 0);
+            image.draw_goal(DEFAULT_PALETTE[0], self.end_pos.x * 10, self.end_pos.y * 10);
         }
     }
 }

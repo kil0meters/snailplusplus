@@ -408,7 +408,7 @@ impl WolfensteinGame {
         if self.player_pos.pos.dist2(self.goal_pos) < 0.5 * 0.5 {
             self.reset(lfsr);
 
-            return -10_00_000;
+            return -10_000_000;
         }
 
         // down
