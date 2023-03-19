@@ -129,17 +129,19 @@ const Changelog: Component<{}> = () => {
 
                             <ul class="list-disc ml-4">
                                 <ChangelogEntry
-                                    version="v2.0-dev"
+                                    version="v2.0"
                                     features={[
-                                        "Added 3 new manual snails",
-                                        "Added 10 new automatic snails",
-                                        "Added 30 new upgrades",
+                                        "Added 4 new manual snails",
+                                        "Added 4 new automatic snails",
+                                        "Added 11 new upgrades",
                                         "You can now save your game locally.",
                                         "Added changelog :)"
                                     ]}
                                     bugfixes={[
                                         "Average calculations now remain accurate for long-running tabs",
-                                        "Fixed flicker when regenerating maze",
+                                        "Fixed shop descriptions not working on Safari",
+                                        "Fixed rare crash when upgrading RPG Snail",
+                                        "Fixed flicker when regenerating manual maze",
                                     ]}
                                 />
                             </ul>

@@ -163,7 +163,6 @@ const ShopProvider: Component<{ children: JSX.Element }> = (props) => {
     for (let listing of SHOP_LISTINGS_DEFAULT) {
         if (!shop.find(x => x.key == listing.key)) {
             setShop([...shop, listing]);
-            break;
         }
     }
 
