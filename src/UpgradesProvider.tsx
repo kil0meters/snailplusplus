@@ -374,7 +374,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "High Speed Connectivity",
         icon: "📶",
         description: "Automaton Snail installs a new 5G radio tower nearby to allow for faster communication between cells.",
-        price: 0n,
+        price: 15_000_000_000_000_000n,
         order: 0,
         mazeType: "automaton",
         showAfter: 5
@@ -384,7 +384,7 @@ export const UPGRADES: { [key in UpgradeKey]: UpgradeListing } = {
         name: "Algorithmic Improvement",
         icon: "🦠",
         description: "Automaton Snail changes its replication method to one that is more effective.",
-        price: 0n,
+        price: 50_000_000_000_000_000n,
         order: 1,
         mazeType: "automaton",
         showAfter: 25
