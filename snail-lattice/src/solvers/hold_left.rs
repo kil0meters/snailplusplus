@@ -1,7 +1,7 @@
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
 };
@@ -12,27 +12,23 @@ use super::{Inverted, SolveStatus};
 /// - Left Glove:         With a glove on its left hand, Hold Left Snail is able to move 20% faster.
 /// - Right Handed Snail: Left Handed Snail Enlists the help of Right Handed Snail to solve mazes faster.
 
-pub struct HoldLeft<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    snail: Snail<S>,
-    alt_snail: Option<Box<Inverted<S>>>,
+pub struct HoldLeft {
+    snail: Snail,
+    alt_snail: Option<Box<Inverted>>,
     upgrades: u32,
 }
 
-impl<const S: usize> Solver<S> for HoldLeft<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl HoldLeft {
+    pub fn new() -> Self {
         HoldLeft {
             snail: Snail::new(),
             alt_snail: None,
             upgrades: 0,
         }
     }
+}
 
+impl Solver for HoldLeft {
     fn set_upgrades(&mut self, upgrades: u32) {
         if (upgrades & 0b10) != 0 {
             let mut alt_snail = Box::new(Inverted::new());
@@ -49,13 +45,12 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        maze: &Maze,
         lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         if let Some(right_handed) = &mut self.alt_snail {
-            right_handed.draw(animation_cycle, movement_timer, lfsr, image, bx, by);
+            right_handed.draw(animation_cycle, movement_timer, maze, lfsr, image);
         }
 
         self.snail.draw(
@@ -63,19 +58,17 @@ where
             animation_cycle,
             movement_timer / self.movement_time(),
             image,
-            bx,
-            by,
         );
     }
 
-    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {
+    fn setup(&mut self, _maze: &Maze, _lfsr: &mut LFSR) {
         self.snail.reset();
         if let Some(right_handed) = &mut self.alt_snail {
             right_handed.setup(_maze, _lfsr);
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         if let Some(right_handed) = &mut self.alt_snail {
             match right_handed.step(maze, lfsr) {
                 SolveStatus::Solved(count) => return SolveStatus::Solved(count),

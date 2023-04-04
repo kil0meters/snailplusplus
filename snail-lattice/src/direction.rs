@@ -17,8 +17,8 @@ impl Direction {
         }
     }
 
-    pub fn to_wall(self) -> usize {
-        1 << (3 - self as usize)
+    pub fn to_wall(self) -> u8 {
+        1 << (3 - self as u8)
     }
 
     pub fn rotate(self) -> Direction {

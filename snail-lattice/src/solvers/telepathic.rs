@@ -2,7 +2,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, INVERTED_PALETTE, PHASE_2_PALETTE},
     solvers::Solver,
     utils::{lerpi, Vec2},
@@ -37,7 +37,7 @@ impl TelepathyBall {
         }
     }
 
-    fn draw(&self, image: &mut Image, progress: f32, lfsr: &mut LFSR, bx: usize, by: usize) {
+    fn draw(&self, image: &mut Image, progress: f32, lfsr: &mut LFSR) {
         let x = lerpi(
             10 * (self.prev_pos.x as i32),
             10 * (self.pos.x as i32),
@@ -59,7 +59,7 @@ impl TelepathyBall {
             }
         };
 
-        image.draw_circle_with(random_color, bx + x, by + y, 7);
+        image.draw_circle_with(random_color, x, y, 7);
     }
 }
 
@@ -76,6 +76,12 @@ impl Goal {
         }
     }
 
+    fn set_pos(&mut self, x: usize, y: usize) {
+        self.pos.x = x;
+        self.pos.y = y;
+        self.prev_pos = self.pos;
+    }
+
     fn step(&mut self, dir: Direction) {
         self.prev_pos = self.pos;
 
@@ -87,7 +93,7 @@ impl Goal {
         }
     }
 
-    fn draw(&self, image: &mut Image, animation_cycle: bool, progress: f32, bx: usize, by: usize) {
+    fn draw(&self, image: &mut Image, animation_cycle: bool, progress: f32) {
         let x = lerpi(
             10 * (self.prev_pos.x as i32),
             10 * (self.pos.x as i32),
@@ -100,9 +106,9 @@ impl Goal {
         ) as usize;
 
         if animation_cycle {
-            image.draw_goal(DEFAULT_PALETTE[0], bx + x, by + y);
+            image.draw_goal(DEFAULT_PALETTE[0], x, y);
         } else {
-            image.draw_goal(INVERTED_PALETTE[0], bx + x, by + y);
+            image.draw_goal(INVERTED_PALETTE[0], x, y);
         }
     }
 }
@@ -112,11 +118,8 @@ impl Goal {
 /// - Kinesiology Degree: The Telepathic Snail goes to college to study kinesiology. With a newfound understanding of snail kinematics, it is able to use its telepathic abilities to move faster.
 /// - Split Brain: The Telepathic Snail attracts the goal to it at the same rate.
 
-pub struct Telepathic<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    snail: Snail<S>,
+pub struct Telepathic {
+    snail: Snail,
     forward_ball: TelepathyBall,
     goal: Goal,
     upgrades: u32,
@@ -128,27 +131,11 @@ where
     goal_sequence_index: usize,
 }
 
-impl<const S: usize> Telepathic<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn move_cooldown(&self) -> usize {
-        if self.upgrades & 0b10 != 0 {
-            2
-        } else {
-            3
-        }
-    }
-}
-
-impl<const S: usize> Solver<S> for Telepathic<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl Telepathic {
+    pub fn new() -> Self {
         Telepathic {
             snail: Snail::new(),
-            goal: Goal::new(S - 1, S - 1),
+            goal: Goal::new(0, 0),
             upgrades: 0,
             forward_ball: TelepathyBall::new(0, 0),
             ball_sequence: vec![],
@@ -159,6 +146,16 @@ where
         }
     }
 
+    fn move_cooldown(&self) -> usize {
+        if self.upgrades & 0b10 != 0 {
+            2
+        } else {
+            3
+        }
+    }
+}
+
+impl Solver for Telepathic {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -167,10 +164,9 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        _maze: &Maze,
         lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         let progress = movement_timer / self.movement_time();
         let cooldown = self.move_cooldown() as f32;
@@ -180,23 +176,22 @@ where
             animation_cycle,
             progress / cooldown + self.snail_move_timer as f32 / cooldown,
             image,
-            bx,
-            by,
         );
 
         if self.ball_sequence_index < self.ball_sequence.len() {
-            self.forward_ball.draw(image, progress, lfsr, bx, by);
+            self.forward_ball.draw(image, progress, lfsr);
         }
 
-        self.goal.draw(image, animation_cycle, progress, bx, by);
+        if self.upgrades & 0b100 != 0 {
+            self.goal.draw(image, animation_cycle, progress);
+        }
     }
 
-    fn setup(&mut self, _maze: &Maze<S>, lfsr: &mut LFSR) {
+    fn setup(&mut self, maze: &Maze, lfsr: &mut LFSR) {
         self.snail.reset();
         self.forward_ball.pos.x = 0;
         self.forward_ball.pos.y = 0;
-        self.goal.pos.x = S - 1;
-        self.goal.pos.y = S - 1;
+        self.goal.set_pos(maze.size - 1, maze.size - 1);
         self.goal.prev_pos = self.goal.pos;
         self.ball_sequence.clear();
         self.ball_sequence_index = 0;
@@ -206,10 +201,10 @@ where
         let mut right_moves = 0;
         let mut down_moves = 0;
 
-        while self.ball_sequence.len() < S * 2 - 2 {
-            if right_moves == S - 1 {
+        while self.ball_sequence.len() < maze.size * 2 - 2 {
+            if right_moves == maze.size - 1 {
                 self.ball_sequence.push(Direction::Down);
-            } else if down_moves == S - 1 {
+            } else if down_moves == maze.size - 1 {
                 self.ball_sequence.push(Direction::Right)
             } else {
                 if lfsr.next() < 2 {
@@ -223,7 +218,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, _lfsr: &mut LFSR) -> SolveStatus {
         let mut rerender = false;
 
         if self.ball_sequence_index < self.ball_sequence.len() {
@@ -361,11 +356,11 @@ where
         }
     }
 
-    fn custom_goal() -> bool {
-        true
+    fn custom_goal(&self) -> bool {
+        self.upgrades & 0b100 != 0
     }
 
-    fn palette() -> [[u8; 3]; 6] {
+    fn palette(&self) -> [[u8; 3]; 6] {
         PHASE_2_PALETTE
     }
 

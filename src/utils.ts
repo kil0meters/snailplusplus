@@ -37,9 +37,11 @@ export function createLocalStore<T extends object>(
     );
 
     // save score only periodically, saves a lot of updates
+    // we can't use createEffect here because it is expensive to track a whole store :(
     setInterval(() => {
         localStorage.setItem(name, JSON.stringify(state));
     }, 500);
+
     return [state, setState];
 }
 

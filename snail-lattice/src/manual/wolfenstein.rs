@@ -472,11 +472,7 @@ impl WolfensteinGame {
     pub fn render(&mut self, buffer: &mut [u8]) {
         buffer.copy_from_slice(&self.bg_buffer);
 
-        let mut image = Image {
-            buffer,
-            width: 240,
-            height: 240,
-        };
+        let mut image = Image::new(buffer, 240, 240);
 
         let dist_to_plane = (SCREEN_W as f32 / 2.0) / (FOV / 2.0).tan();
         let mut ray = self.player_pos;

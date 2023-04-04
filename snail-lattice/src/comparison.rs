@@ -1,40 +1,40 @@
 #![feature(generic_const_exprs)]
 
-use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
-use snail_lattice::maze::AutoMaze;
-use snail_lattice::solvers::{
-    Automaton, Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport,
-    RandomWalk, Rpg, Telepathic, TimeTravel, Tremaux,
-};
+// use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
+// use snail_lattice::maze::AutoMaze;
+// use snail_lattice::solvers::{
+//     Automaton, Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport,
+//     RandomWalk, Rpg, Telepathic, TimeTravel, Tremaux,
+// };
 
 const MAZE_COUNT: i32 = 20;
 const SECONDS: f64 = 10_000.0;
 const TICK_AMOUNT: f32 = SECONDS as f32 * 1000.0;
 
-fn run_bench<T: TilableMaze>(name: &str, price: f64, multiplier: f64, upgrades: u32) {
-    let mut lattice = SnailLattice::<T>::new(5, 0xDEAD);
-    lattice.alter(MAZE_COUNT);
-    lattice.set_upgrades(upgrades);
-
-    let solves = lattice.tick(TICK_AMOUNT);
-    // println!(
-    //     "{name} solved an average of {} mazes over {SECONDS} seconds",
-    //     solves as f64 / MAZE_COUNT as f64
-    // );
-
-    let fragments = (solves as f64 * multiplier).floor() as usize;
-    let fragments_per_second = (fragments as f64 / SECONDS as f64) / MAZE_COUNT as f64;
-    println!(
-        "{name} generated an average of {:.2} fragments/second",
-        fragments_per_second
-    );
-
-    println!(
-        "Time to repayment: {} minutes",
-        (price / fragments_per_second) / 60.0,
-    );
-    println!("---");
-}
+// fn run_bench<T: TilableMaze>(name: &str, price: f64, multiplier: f64, upgrades: u32) {
+//     let mut lattice = SnailLattice::<T>::new(5, 0xDEAD);
+//     lattice.alter(MAZE_COUNT);
+//     lattice.set_upgrades(upgrades);
+//
+//     let solves = lattice.tick(TICK_AMOUNT);
+//     // println!(
+//     //     "{name} solved an average of {} mazes over {SECONDS} seconds",
+//     //     solves as f64 / MAZE_COUNT as f64
+//     // );
+//
+//     let fragments = (solves as f64 * multiplier).floor() as usize;
+//     let fragments_per_second = (fragments as f64 / SECONDS as f64) / MAZE_COUNT as f64;
+//     println!(
+//         "{name} generated an average of {:.2} fragments/second",
+//         fragments_per_second
+//     );
+//
+//     println!(
+//         "Time to repayment: {} minutes",
+//         (price / fragments_per_second) / 60.0,
+//     );
+//     println!("---");
+// }
 
 fn main() {
     // run_bench::<AutoMaze<5, RandomWalk<5>>>("random-walk", 25.0, 25.0, 0b000);
@@ -59,16 +59,16 @@ fn main() {
     //     0b000,
     // );
     // run_bench::<AutoMaze<15, Flying<15>>>("Flying", 200_000_000_000.0, 4_000_000., 0b000);
-    run_bench::<AutoMaze<10, Telepathic<10>>>(
-        "Telepathic",
-        1_500_000_000_000.0,
-        360_000_000.,
-        0b000,
-    );
-
-    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b000);
-    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b001);
-    run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b011);
+    // run_bench::<AutoMaze<10, Telepathic<10>>>(
+    //     "Telepathic",
+    //     1_500_000_000_000.0,
+    //     360_000_000.,
+    //     0b000,
+    // );
+    //
+    // run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b000);
+    // run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b001);
+    // run_bench::<AutoMaze<20, Automaton<20>>>("Automaton", 20_000_000_000_000.0, 3_000_000., 0b011);
     // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b001);
 
     // run_bench::<AutoMaze<10, Telepathic<10>>>("Telepathic", 280_000_000., 0b011);

@@ -4,7 +4,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, PHASE_2_PALETTE},
     solvers::Solver,
     utils::Vec2,
@@ -50,12 +50,12 @@ impl Bomb {
         false
     }
 
-    fn draw(&self, image: &mut Image, movement_progress: f32, bx: usize, by: usize) {
+    fn draw(&self, image: &mut Image, movement_progress: f32) {
         if self.fuse > 0 {
             image.draw_circle(
                 [0xff, 0x00, 0x00],
-                self.pos.x * 10 + 5 + bx,
-                self.pos.y * 10 + 5 + by,
+                self.pos.x * 10 + 5,
+                self.pos.y * 10 + 5,
                 ((movement_progress * PI / 2.0).cos() * 4.0) as i32,
             );
         } else if !self.exploded {
@@ -65,15 +65,15 @@ impl Bomb {
 
             image.draw_circle(
                 [0xff, 0x00, 0x00],
-                self.pos.x * 10 + 5 + bx,
-                self.pos.y * 10 + 5 + by,
+                self.pos.x * 10 + 5,
+                self.pos.y * 10 + 5,
                 (exploded_so_far + (movement_progress * explosion_per_time)) as i32,
             );
         } else {
             image.draw_circle(
                 [0xff, 0x00, 0x00],
-                self.pos.x * 10 + 5 + bx,
-                self.pos.y * 10 + 5 + by,
+                self.pos.x * 10 + 5,
+                self.pos.y * 10 + 5,
                 (self.radius as f32 - (movement_progress * self.radius as f32)) as i32,
             );
         }
@@ -85,11 +85,8 @@ impl Bomb {
 /// - Nitogen Deposit: Place more bombs (5 -> 20) measured 25% throughput improvement
 /// - Distructive Habits: Gets a bit faster for each solve. Roughly 65% improvement.
 
-pub struct Demolitionist<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    snail: Snail<S>,
+pub struct Demolitionist {
+    snail: Snail,
     upgrades: u32,
     solve_sequence: Vec<Direction>,
     bombs: Vec<Bomb>,
@@ -97,21 +94,20 @@ where
     walked_tiles: f32,
 }
 
-impl<const S: usize> Solver<S> for Demolitionist<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl Demolitionist {
+    pub fn new() -> Self {
         Demolitionist {
             snail: Snail::new(),
             upgrades: 0,
-            solve_sequence: vec![],
-            bombs: vec![],
-            destroyed_squares: vec![false; S * S],
+            solve_sequence: Vec::new(),
+            bombs: Vec::new(),
+            destroyed_squares: Vec::new(),
             walked_tiles: 0.0,
         }
     }
+}
 
+impl Solver for Demolitionist {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -120,42 +116,41 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        _maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         let progress = movement_timer / self.movement_time();
 
         self.snail
-            .draw(DEFAULT_PALETTE, animation_cycle, progress, image, bx, by);
+            .draw(DEFAULT_PALETTE, animation_cycle, progress, image);
 
         for bomb in &self.bombs {
-            bomb.draw(image, progress, bx, by);
+            bomb.draw(image, progress);
         }
     }
 
-    fn setup(&mut self, _maze: &Maze<S>, lfsr: &mut LFSR) {
+    fn setup(&mut self, maze: &Maze, lfsr: &mut LFSR) {
         self.bombs.clear();
         self.snail.reset();
         self.destroyed_squares.fill(false);
+        self.destroyed_squares.resize(maze.size * maze.size, false);
+
         self.walked_tiles = 0.0;
 
         let mut invalid_positions = HashSet::new();
-        //
-        // console_log!("{:b}", self.upgrades);
 
         let bomb_count = if self.upgrades & 0b10 != 0 { 20 } else { 5 };
         let fuse_time = if self.upgrades & 0b1 != 0 { 5 } else { 10 };
 
         // generate some random enemies in random locations
         for _ in 0..bomb_count {
-            let mut x = lfsr.big() % S;
-            let mut y = lfsr.big() % S;
+            let mut x = lfsr.big() % maze.size;
+            let mut y = lfsr.big() % maze.size;
 
             while invalid_positions.contains(&(x, y)) {
-                x = lfsr.big() % S;
-                y = lfsr.big() % S;
+                x = lfsr.big() % maze.size;
+                y = lfsr.big() % maze.size;
             }
 
             invalid_positions.insert((x, y));
@@ -164,7 +159,7 @@ where
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, _lfsr: &mut LFSR) -> SolveStatus {
         if !self.bombs.is_empty() {
             let mut bomb_exploded = false;
 
@@ -180,7 +175,7 @@ where
                     maze.remove_wall(pos.x, pos.y, Direction::Right);
                     bomb_exploded = true;
 
-                    self.destroyed_squares[pos.y * S + pos.x] = true;
+                    self.destroyed_squares[pos.y * maze.size + pos.x] = true;
                 }
 
                 if res {
@@ -205,9 +200,8 @@ where
             self.snail.direction = self.solve_sequence.pop().unwrap();
             self.snail.move_forward(maze);
 
-            if self.destroyed_squares[self.snail.pos.y * S + self.snail.pos.x] {
+            if self.destroyed_squares[self.snail.pos.y * maze.size + self.snail.pos.x] {
                 self.walked_tiles += 1.0;
-                // println!("{}", self.walked_tiles);
             }
 
             if self.snail.pos == maze.end_pos {
@@ -218,7 +212,7 @@ where
         }
     }
 
-    fn palette() -> [[u8; 3]; 6] {
+    fn palette(&self) -> [[u8; 3]; 6] {
         PHASE_2_PALETTE
     }
 

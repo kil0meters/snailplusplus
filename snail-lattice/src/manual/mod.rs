@@ -114,8 +114,8 @@ impl Game {
 const MANUAL_MOVEMENT_TIME: f32 = SNAIL_MOVEMENT_TIME / 2.0;
 
 struct ManualMaze {
-    snail: Snail<7>,
-    maze: Maze<7>,
+    snail: Snail,
+    maze: Maze,
     end_pos: Vec2,
     bg_buffer: Vec<u8>,
 
@@ -127,16 +127,11 @@ struct ManualMaze {
 impl ManualMaze {
     fn new(lfsr: &mut LFSR) -> Self {
         let mut bg_buffer = vec![0; 4 * 71 * 71];
-        let mut image = Image {
-            buffer: &mut bg_buffer,
-            width: 71,
-            height: 71,
-        };
-
-        let mut maze = Maze::new();
+        let mut image = Image::new(&mut bg_buffer, 71, 71);
+        let mut maze = Maze::new(7);
         maze.generate(lfsr);
 
-        maze.draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
+        maze.draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image);
 
         ManualMaze {
             snail: Snail::new(),
@@ -192,11 +187,7 @@ impl ManualMaze {
 
             self.maze.generate(lfsr);
 
-            let mut image = Image {
-                buffer: &mut self.bg_buffer,
-                width: 71,
-                height: 71,
-            };
+            let mut image = Image::new(&mut self.bg_buffer, 71, 71);
 
             let solve_type = self.solve_type;
 
@@ -208,15 +199,10 @@ impl ManualMaze {
 
             if self.solve_type > 0 {
                 self.maze
-                    .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
+                    .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image);
             } else {
-                self.maze.draw_background(
-                    GRAYSCALE_PALETTE[4],
-                    GRAYSCALE_PALETTE[5],
-                    &mut image,
-                    0,
-                    0,
-                );
+                self.maze
+                    .draw_background(GRAYSCALE_PALETTE[4], GRAYSCALE_PALETTE[5], &mut image);
             }
 
             solve_type
@@ -228,11 +214,7 @@ impl ManualMaze {
     fn render(&mut self, buffer: &mut [u8]) {
         buffer.copy_from_slice(&self.bg_buffer);
 
-        let mut image = Image {
-            buffer,
-            width: 71,
-            height: 71,
-        };
+        let mut image = Image::new(buffer, 71, 71);
 
         let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;
 
@@ -241,8 +223,6 @@ impl ManualMaze {
             animation_cycle,
             self.movement_timer / MANUAL_MOVEMENT_TIME,
             &mut image,
-            0,
-            0,
         );
 
         if animation_cycle {

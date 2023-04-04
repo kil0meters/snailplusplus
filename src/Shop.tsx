@@ -12,7 +12,7 @@ import { formatNumber } from "./utils";
 
 const PRICE_SCALER = 1.13;
 
-document["devmode"] = false;
+document["devmode"] = true;
 
 const ShopListingElement: Component<{ key: ShopKey, count: number }> = (props) => {
     const [score, setScore] = useContext(ScoreContext);
@@ -150,28 +150,34 @@ const ShopDescription: Component<{
     let hoverContainer: HTMLDivElement;
     let onResize: () => void;
     let onMouseMove: (event: MouseEvent) => void;
+    let timeout: number;
+
 
     onMount(() => {
         let shopContainer = document.getElementById("shop-sidebar");
 
-        hoverContainer.style.right = `${shopContainer.offsetWidth + 4}px`;
-
-        onResize = () => {
+        // sometimes the onMount can run before the Portal actually generates the component if we don't have the timeout here. very strange indeed
+        timeout = setTimeout(() => {
             hoverContainer.style.right = `${shopContainer.offsetWidth + 4}px`;
-        };
 
-        onMouseMove = (event: MouseEvent) => {
-            let top = Math.max(0, event.clientY - hoverContainer.clientHeight / 2);
-            hoverContainer.style.top = `${top}px`;
-        };
+            onResize = () => {
+                hoverContainer.style.right = `${shopContainer.offsetWidth + 4}px`;
+            };
 
-        addEventListener("resize", onResize);
-        addEventListener("mousemove", onMouseMove);
+            onMouseMove = (event: MouseEvent) => {
+                let top = Math.max(0, event.clientY - hoverContainer.clientHeight / 2);
+                hoverContainer.style.top = `${top}px`;
+            };
+
+            addEventListener("resize", onResize);
+            addEventListener("mousemove", onMouseMove);
+        }, 0);
     });
 
     onCleanup(() => {
         removeEventListener("resize", onResize);
         removeEventListener("resize", onMouseMove);
+        clearTimeout(timeout);
     })
 
     return (
@@ -183,7 +189,7 @@ const ShopDescription: Component<{
             >
                 {props.children}
             </div>
-        </Portal>
+        </Portal >
     );
 };
 

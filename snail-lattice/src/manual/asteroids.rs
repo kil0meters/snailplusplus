@@ -304,11 +304,7 @@ impl AsteroidsGame {
     }
 
     pub fn render(&self, buffer: &mut [u8]) {
-        let mut image = Image {
-            buffer,
-            width: 240,
-            height: 240,
-        };
+        let mut image = Image::new(buffer, 240, 240);
 
         // clear buffer
         for i in (0..image.buffer.len()).step_by(4) {

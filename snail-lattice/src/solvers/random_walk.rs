@@ -2,7 +2,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
 };
@@ -14,27 +14,23 @@ use super::SolveStatus;
 /// - Rabbit's Foot:    Gives an additional 20% to go the right way
 /// - Horseshoe:        Gives an additional 30% to go the right way
 
-pub struct RandomWalk<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    snail: Snail<S>,
-    directions: [Option<Direction>; S * S],
+pub struct RandomWalk {
+    snail: Snail,
+    directions: Vec<Option<Direction>>,
     upgrades: u32,
 }
 
-impl<const S: usize> Solver<S> for RandomWalk<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl RandomWalk {
+    pub fn new() -> Self {
         RandomWalk {
             snail: Snail::new(),
-            directions: [None; S * S],
+            directions: vec![],
             upgrades: 0,
         }
     }
+}
 
+impl Solver for RandomWalk {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -43,27 +39,24 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        _maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         self.snail.draw(
             DEFAULT_PALETTE,
             animation_cycle,
             movement_timer / self.movement_time(),
             image,
-            bx,
-            by,
         );
     }
 
-    fn setup(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) {
+    fn setup(&mut self, maze: &Maze, _lfsr: &mut LFSR) {
         self.snail.reset();
-        self.directions = maze.get_directions(maze.end_pos);
+        maze.get_directions(maze.end_pos, &mut self.directions);
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         // chance to move in the right direction based on the upgrades provided
         let chance = (self.upgrades & 0b1)
             + (self.upgrades & 0b10)
@@ -72,7 +65,7 @@ where
 
         if (lfsr.big() % 10) < chance as usize {
             self.snail.direction =
-                self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
+                self.directions[self.snail.pos.y * maze.size + self.snail.pos.x].unwrap();
             self.snail.move_forward(maze);
         } else {
             loop {

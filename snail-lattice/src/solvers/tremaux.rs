@@ -4,7 +4,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
     utils::Vec2,
@@ -30,7 +30,10 @@ impl Mark {
         }
     }
 
-    fn draw(&self, pos: Vec2, image: &mut Image, bx: usize, by: usize) {
+    fn draw(&self, pos: Vec2, image: &mut Image) {
+        let bx = image.bx;
+        let by = image.by;
+
         let px = 4 * ((by + pos.y * 10) * image.width + bx + pos.x * 10);
 
         if self.directions[0] > 0 {
@@ -75,42 +78,33 @@ impl Default for Mark {
 /// - Electromagnet: Installs an electromagnet near the goal to make Segment Snails compass more accurate.
 /// - Breadcrumbs:   Segment Snail is twice as fast while backtracking.
 
-pub struct Tremaux<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    pub snail: Snail<S>,
+pub struct Tremaux {
+    pub snail: Snail,
     pub visited: HashMap<Vec2, Mark>,
     is_backtracking: bool,
     upgrades: u32,
-    directions: [Option<Direction>; S * S],
+    directions: Vec<Option<Direction>>,
     movement_time: f32,
 }
 
-impl<const S: usize> Tremaux<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    pub fn set_movement_time(&mut self, movement_time: f32) {
-        self.movement_time = movement_time;
-    }
-}
-
-impl<const S: usize> Solver<S> for Tremaux<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl Tremaux {
+    pub fn new() -> Self {
         Tremaux {
             snail: Snail::new(),
             visited: HashMap::new(),
             upgrades: 0,
-            directions: [None; S * S],
+            directions: Vec::new(),
             is_backtracking: false,
             movement_time: SNAIL_MOVEMENT_TIME,
         }
     }
 
+    pub fn set_movement_time(&mut self, movement_time: f32) {
+        self.movement_time = movement_time;
+    }
+}
+
+impl Solver for Tremaux {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -119,13 +113,12 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        _maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         for (pos, mark) in self.visited.iter() {
-            mark.draw(*pos, image, bx, by);
+            mark.draw(*pos, image);
         }
 
         self.snail.draw(
@@ -133,18 +126,16 @@ where
             animation_cycle,
             movement_timer / self.movement_time(),
             image,
-            bx,
-            by,
         );
     }
 
-    fn setup(&mut self, maze: &Maze<S>, _lfsr: &mut LFSR) {
+    fn setup(&mut self, maze: &Maze, _lfsr: &mut LFSR) {
         self.snail.reset();
         self.visited.clear();
-        self.directions = maze.get_directions(maze.end_pos);
+        maze.get_directions(maze.end_pos, &mut self.directions);
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         let cell = maze.get_cell(self.snail.pos.x, self.snail.pos.y);
         let valid_directions = cell.valid_directions();
 
@@ -203,7 +194,7 @@ where
                 let odds = (self.upgrades & 0b11) << 1;
                 if odds > 0 && lfsr.big() % 12 < odds as usize {
                     self.snail.direction =
-                        self.directions[self.snail.pos.y * S + self.snail.pos.x].unwrap();
+                        self.directions[self.snail.pos.y * maze.size + self.snail.pos.x].unwrap();
                 } else {
                     self.snail.direction = choices[(lfsr.next() % choices.len() as u16) as usize];
                 }

@@ -42,7 +42,7 @@ enum GhostStatus {
 
 trait Ghost {
     fn draw(&self, status: GhostStatus, animation_cycle: bool, progress: f32, image: &mut Image);
-    fn get_snail(&mut self) -> &mut Snail<10>;
+    fn get_snail(&mut self) -> &mut Snail;
     fn scatter_point(&self) -> Vec2;
 
     fn pos(&mut self, fact: f32) -> Vec2f {
@@ -57,7 +57,7 @@ trait Ghost {
     fn chase(
         &mut self,
         lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &Maze,
         player_pos: Vec2,
         player_direction: Direction,
     );
@@ -73,7 +73,7 @@ trait Ghost {
         &mut self,
         status: GhostStatus,
         lfsr: &mut LFSR,
-        maze: &mut Maze<10>,
+        maze: &mut Maze,
         player_pos: Vec2,
         player_direction: Direction,
     ) {
@@ -111,7 +111,7 @@ trait Ghost {
         }
     }
 
-    fn scatter(&mut self, lfsr: &mut LFSR, maze: &Maze<10>) {
+    fn scatter(&mut self, lfsr: &mut LFSR, maze: &Maze) {
         let scatter_point = self.scatter_point();
         let mut snail = self.get_snail();
 
@@ -130,7 +130,7 @@ trait Ghost {
         snail.move_forward(maze);
     }
 
-    fn frightened(&mut self, lfsr: &mut LFSR, maze: &Maze<10>) {
+    fn frightened(&mut self, lfsr: &mut LFSR, maze: &Maze) {
         let mut snail = self.get_snail();
 
         let cell = maze.get_cell(snail.pos.x, snail.pos.y);
@@ -154,7 +154,7 @@ trait Ghost {
 
 // Scatters to top right
 // Targets player directly during chase
-struct Blinky(Snail<10>);
+struct Blinky(Snail);
 
 pub const BLINKY_PALETTE: [[u8; 3]; 6] = [
     [0xff, 0x00, 0x00], // orange
@@ -172,10 +172,10 @@ impl Ghost for Blinky {
             GhostStatus::Frightened => INVERTED_PALETTE,
         };
 
-        self.0.draw(palette, animation_cycle, progress, image, 0, 0);
+        self.0.draw(palette, animation_cycle, progress, image);
     }
 
-    fn get_snail(&mut self) -> &mut Snail<10> {
+    fn get_snail(&mut self) -> &mut Snail {
         &mut self.0
     }
 
@@ -186,7 +186,7 @@ impl Ghost for Blinky {
     fn chase(
         &mut self,
         _lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &Maze,
         player_pos: Vec2,
         _player_direction: Direction,
     ) {
@@ -200,7 +200,7 @@ impl Ghost for Blinky {
 
 // Scatters to top right
 // Targets 1 tile in front of pacman during chase mode
-struct Pinky(Snail<10>);
+struct Pinky(Snail);
 
 pub const PINKY_PALETTE: [[u8; 3]; 6] = [
     [0xff, 0x00, 0xff], // orange
@@ -218,10 +218,10 @@ impl Ghost for Pinky {
             GhostStatus::Frightened => INVERTED_PALETTE,
         };
 
-        self.0.draw(palette, animation_cycle, progress, image, 0, 0);
+        self.0.draw(palette, animation_cycle, progress, image);
     }
 
-    fn get_snail(&mut self) -> &mut Snail<10> {
+    fn get_snail(&mut self) -> &mut Snail {
         &mut self.0
     }
 
@@ -232,7 +232,7 @@ impl Ghost for Pinky {
     fn chase(
         &mut self,
         _lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &Maze,
         player_pos: Vec2,
         player_direction: Direction,
     ) {
@@ -258,7 +258,7 @@ impl Ghost for Pinky {
 
 // Scatters to bottom left
 // Targets pacman during chase mode, if closer than 1 tile, instead targets his scatter point
-struct Clyde(Snail<10>);
+struct Clyde(Snail);
 
 pub const CLYDE_PALETTE: [[u8; 3]; 6] = [
     [0xaa, 0xaa, 0x00], // orange
@@ -276,10 +276,10 @@ impl Ghost for Clyde {
             GhostStatus::Frightened => INVERTED_PALETTE,
         };
 
-        self.0.draw(palette, animation_cycle, progress, image, 0, 0);
+        self.0.draw(palette, animation_cycle, progress, image);
     }
 
-    fn get_snail(&mut self) -> &mut Snail<10> {
+    fn get_snail(&mut self) -> &mut Snail {
         &mut self.0
     }
 
@@ -290,7 +290,7 @@ impl Ghost for Clyde {
     fn chase(
         &mut self,
         lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &Maze,
         player_pos: Vec2,
         _player_direction: Direction,
     ) {
@@ -318,7 +318,7 @@ impl Ghost for Clyde {
 // should target an extended vector from blinky's line of sight to the snail, but that would be
 // annoying to implenment which how I have things structured right now, so we instead target one
 // space behind the snail.
-struct Inky(Snail<10>);
+struct Inky(Snail);
 
 pub const INKY_PALETTE: [[u8; 3]; 6] = [
     [0x55, 0xaa, 0xff], // light blue
@@ -336,10 +336,10 @@ impl Ghost for Inky {
             GhostStatus::Frightened => INVERTED_PALETTE,
         };
 
-        self.0.draw(palette, animation_cycle, progress, image, 0, 0);
+        self.0.draw(palette, animation_cycle, progress, image);
     }
 
-    fn get_snail(&mut self) -> &mut Snail<10> {
+    fn get_snail(&mut self) -> &mut Snail {
         &mut self.0
     }
 
@@ -350,7 +350,7 @@ impl Ghost for Inky {
     fn chase(
         &mut self,
         _lfsr: &mut LFSR,
-        maze: &Maze<10>,
+        maze: &Maze,
         player_pos: Vec2,
         player_direction: Direction,
     ) {
@@ -374,8 +374,8 @@ impl Ghost for Inky {
     }
 }
 
-fn pacman_maze() -> (Maze<10>, Vec<Pellet>, usize) {
-    let mut maze = Maze::new();
+fn pacman_maze() -> (Maze, Vec<Pellet>, usize) {
+    let mut maze = Maze::new(10);
     let mut pellets = vec![Pellet::None; 10 * 10];
     let mut pellet_count = 0;
     let width = 21;
@@ -516,7 +516,7 @@ impl Player {
         self.just_moved = false;
     }
 
-    fn movement(&mut self, maze: &Maze<10>, keys: &Vec<u32>, dt: f32) {
+    fn movement(&mut self, maze: &Maze, keys: &Vec<u32>, dt: f32) {
         let mut pos_tilewise = self.pos * 0.1;
         pos_tilewise.x = pos_tilewise.x.round();
         pos_tilewise.y = pos_tilewise.y.round();
@@ -618,7 +618,7 @@ pub struct PacSnail {
     ghost_movement_timer: f32,
     powerup_timer: f32,
     powerup_streak: usize,
-    maze: Maze<10>,
+    maze: Maze,
     pellet_count: usize,
     time: f32,
 }
@@ -626,7 +626,7 @@ pub struct PacSnail {
 impl PacSnail {
     pub fn new() -> Self {
         let mut s = Self {
-            maze: Maze::new(),
+            maze: Maze::new(10),
             pellets: vec![],
             pellet_count: 0,
             player: Player::new(),
@@ -701,14 +701,10 @@ impl PacSnail {
 
         self.player.reset();
 
-        let mut image = Image {
-            buffer: &mut self.bg_buffer,
-            width: 101,
-            height: 101,
-        };
+        let mut image = Image::new(&mut self.bg_buffer, 101, 101);
 
         self.maze
-            .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image, 0, 0);
+            .draw_background(DEFAULT_PALETTE[4], DEFAULT_PALETTE[5], &mut image);
 
         self.draw_pellets();
     }
@@ -815,11 +811,7 @@ impl PacSnail {
     pub fn render(&self, buffer: &mut [u8]) {
         buffer.copy_from_slice(&self.bg_buffer);
 
-        let mut image = Image {
-            buffer,
-            width: 101,
-            height: 101,
-        };
+        let mut image = Image::new(buffer, 101, 101);
 
         let animation_cycle = (self.time / ANIMATION_TIME).floor() as usize % 2 == 0;
         let ghost_status_draw = if self.powerup_timer > 3000.0 {

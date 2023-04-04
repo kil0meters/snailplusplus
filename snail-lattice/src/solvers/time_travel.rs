@@ -2,7 +2,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
     utils::Vec2,
@@ -24,123 +24,63 @@ struct PathTile {
 }
 
 impl PathTile {
-    fn draw(&self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
+    fn draw(&self, lfsr: &mut LFSR, image: &mut Image) {
         match self.directions {
             // up down
             [true, true, false, false] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 4,
-                    self.pos.y * 10,
-                    3,
-                    10,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 4, self.pos.y * 10, 3, 10, || {
+                    random_color(lfsr)
+                });
             }
             // left right
             [false, false, true, true] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10,
-                    self.pos.y * 10 + 4,
-                    10,
-                    3,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10, self.pos.y * 10 + 4, 10, 3, || {
+                    random_color(lfsr)
+                });
             }
 
             // up right
             [true, false, false, true] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 4,
-                    self.pos.y * 10,
-                    3,
-                    7,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 4, self.pos.y * 10, 3, 7, || {
+                    random_color(lfsr)
+                });
 
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 7,
-                    self.pos.y * 10 + 4,
-                    4,
-                    3,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 7, self.pos.y * 10 + 4, 4, 3, || {
+                    random_color(lfsr)
+                });
             }
 
             // up left
             [true, false, true, false] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 4,
-                    self.pos.y * 10,
-                    3,
-                    7,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 4, self.pos.y * 10, 3, 7, || {
+                    random_color(lfsr)
+                });
 
-                image.draw_rectangle_with(
-                    self.pos.x * 10,
-                    self.pos.y * 10 + 4,
-                    4,
-                    3,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10, self.pos.y * 10 + 4, 4, 3, || {
+                    random_color(lfsr)
+                });
             }
 
             // down right
             [false, true, false, true] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 4,
-                    self.pos.y * 10 + 4,
-                    3,
-                    7,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 4, self.pos.y * 10 + 4, 3, 7, || {
+                    random_color(lfsr)
+                });
 
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 7,
-                    self.pos.y * 10 + 4,
-                    4,
-                    3,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 7, self.pos.y * 10 + 4, 4, 3, || {
+                    random_color(lfsr)
+                });
             }
 
             // down left
             [false, true, true, false] => {
-                image.draw_rectangle_with(
-                    self.pos.x * 10 + 4,
-                    self.pos.y * 10 + 4,
-                    3,
-                    7,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10 + 4, self.pos.y * 10 + 4, 3, 7, || {
+                    random_color(lfsr)
+                });
 
-                image.draw_rectangle_with(
-                    self.pos.x * 10,
-                    self.pos.y * 10 + 4,
-                    4,
-                    3,
-                    || random_color(lfsr),
-                    bx,
-                    by,
-                );
+                image.draw_rectangle_with(self.pos.x * 10, self.pos.y * 10 + 4, 4, 3, || {
+                    random_color(lfsr)
+                });
             }
             _ => {}
         }
@@ -160,29 +100,22 @@ enum TimeTravelState {
     Normal,
 }
 
-pub struct TimeTravel<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    snail: Snail<S>,
+/// Time Travel Snail Upgrades:
+/// - Forward Time Travel: Move 50% faster in the present
+/// - Improved Time Relay: Move 50% faster in the past
+/// - Time Warp:           Backtrack Instnatly
+pub struct TimeTravel {
+    snail: Snail,
     state: TimeTravelState,
     path: Vec<PathTile>,
     upgrades: u32,
 
-    path_drawer: Snail<S>,
-    time_traveler: Tremaux<S>,
+    path_drawer: Snail,
+    time_traveler: Tremaux,
 }
 
-// Time Travel Snail Upgrades:
-// - Forward Time Travel: Move 50% faster in the present
-// - Improved Time Relay: Move 50% faster in the past
-// - Time Warp:           Backtrack Instnatly
-
-impl<const S: usize> Solver<S> for TimeTravel<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl TimeTravel {
+    pub fn new() -> Self {
         let mut path_drawer = Snail::new();
         path_drawer.active = false;
 
@@ -199,12 +132,14 @@ where
             time_traveler,
         }
     }
+}
 
+impl Solver for TimeTravel {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
 
-    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {
+    fn setup(&mut self, _maze: &Maze, _lfsr: &mut LFSR) {
         self.state = TimeTravelState::TimeTraveling;
         self.time_traveler.set_movement_time(self.movement_time());
         self.snail.reset();
@@ -213,7 +148,7 @@ where
         self.time_traveler.setup(_maze, _lfsr);
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         match self.state {
             TimeTravelState::TimeTraveling => match self.time_traveler.step(maze, lfsr) {
                 SolveStatus::Solved(_) => {
@@ -312,37 +247,34 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        maze: &Maze,
         lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         match self.state {
             TimeTravelState::TimeTraveling => {
-                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image, bx, by);
+                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image);
 
                 self.time_traveler
-                    .draw(animation_cycle, movement_timer, lfsr, image, bx, by);
+                    .draw(animation_cycle, movement_timer, maze, lfsr, image);
             }
             TimeTravelState::DrawingPath => {
                 for tile in &self.path {
-                    tile.draw(lfsr, image, bx, by);
+                    tile.draw(lfsr, image);
                 }
 
-                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image, bx, by);
+                self.snail.draw(GRAYSCALE_PALETTE, true, 0.0, image);
 
                 self.path_drawer.draw(
                     DEFAULT_PALETTE,
                     animation_cycle,
                     movement_timer / self.movement_time(),
                     image,
-                    bx,
-                    by,
                 );
             }
             TimeTravelState::Normal => {
                 for tile in &self.path {
-                    tile.draw(lfsr, image, bx, by);
+                    tile.draw(lfsr, image);
                 }
 
                 self.snail.draw(
@@ -350,8 +282,6 @@ where
                     animation_cycle,
                     movement_timer / self.movement_time(),
                     image,
-                    bx,
-                    by,
                 );
             }
         }

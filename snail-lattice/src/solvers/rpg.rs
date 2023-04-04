@@ -1,8 +1,10 @@
+use std::collections::HashSet;
+
 use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
     utils::Vec2,
@@ -15,30 +17,45 @@ use super::SolveStatus;
 /// - Sidequests:  Any snail RPG Snail runs into is automatically added to its party.
 /// - Recruitment: The snails come to RPG snail on their own.
 
-pub struct Rpg<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    party: Vec<Snail<S>>,
-    lost: Vec<Snail<S>>,
+pub struct Rpg {
+    party: Vec<Snail>,
+    lost: Vec<Snail>,
     upgrades: u32,
-    directions: [Option<Direction>; S * S],
+    directions: Vec<Option<Direction>>,
 
     current_sequence: Vec<Direction>,
 }
 
-impl<const S: usize> Rpg<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn generate_lost_snails(&mut self, lfsr: &mut LFSR) {
-        for _ in 0..(S / 2) {
-            let mut x = 0;
-            let mut y = 0;
-            while (x == 0 && y == 0) || (x == S - 1 && y == S - 1) {
-                x = lfsr.big() % S;
-                y = lfsr.big() % S;
+impl Rpg {
+    pub fn new() -> Self {
+        Rpg {
+            party: Vec::new(),
+            lost: Vec::new(),
+
+            directions: Vec::new(),
+            current_sequence: Vec::new(),
+            upgrades: 0,
+        }
+    }
+
+    fn generate_lost_snails(&mut self, lfsr: &mut LFSR, size: usize) {
+        let mut invalid_positions = HashSet::new();
+        invalid_positions.insert((0, 0));
+
+        for _ in 0..(size / 2) {
+            let mut x;
+            let mut y;
+
+            loop {
+                x = lfsr.big() % size;
+                y = lfsr.big() % size;
+
+                if !invalid_positions.contains(&(x, y)) {
+                    break;
+                }
             }
+
+            invalid_positions.insert((x, y));
 
             let mut new_snail = Snail::new();
             new_snail.pos = Vec2 { x, y };
@@ -49,21 +66,7 @@ where
     }
 }
 
-impl<const S: usize> Solver<S> for Rpg<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
-        Rpg {
-            party: vec![],
-            lost: vec![],
-
-            directions: [None; S * S],
-            current_sequence: vec![],
-            upgrades: 0,
-        }
-    }
-
+impl Solver for Rpg {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -72,10 +75,9 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        _maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         for snail in &self.party {
             snail.draw(
@@ -83,8 +85,6 @@ where
                 animation_cycle,
                 movement_timer / self.movement_time(),
                 image,
-                bx,
-                by,
             );
         }
 
@@ -94,25 +94,23 @@ where
                 animation_cycle,
                 movement_timer / self.movement_time(),
                 image,
-                bx,
-                by,
             );
         }
     }
 
-    fn setup(&mut self, maze: &Maze<S>, lfsr: &mut LFSR) {
+    fn setup(&mut self, maze: &Maze, lfsr: &mut LFSR) {
         self.lost.clear();
         self.party.clear();
 
         self.party.push(Snail::new());
-        self.generate_lost_snails(lfsr);
+        self.generate_lost_snails(lfsr, maze.size);
 
         if (self.upgrades & 0b100) != 0 {
-            self.directions = maze.get_directions(Vec2 { x: 0, y: 0 });
+            maze.get_directions(Vec2 { x: 0, y: 0 }, &mut self.directions);
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         // recruitment
         if (self.upgrades & 0b100) != 0 && !self.lost.is_empty() {
             if !(self.party[0].pos.x == 0 && self.party[0].pos.y == 0) {
@@ -122,7 +120,7 @@ where
 
             for lost_snail in &mut self.lost {
                 lost_snail.direction =
-                    match self.directions[lost_snail.pos.y * S + lost_snail.pos.x] {
+                    match self.directions[lost_snail.pos.y * maze.size + lost_snail.pos.x] {
                         Some(x) => x,
                         None => {
                             self.setup(maze, lfsr);

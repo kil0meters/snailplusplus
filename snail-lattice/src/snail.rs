@@ -1,6 +1,5 @@
 use crate::{
     image::Image,
-    maze::CELLS_PER_IDX,
     utils::{lerpi, Vec2},
 };
 
@@ -43,21 +42,15 @@ pub const GRAYSCALE_PALETTE: [[u8; 3]; 6] = [
 ];
 
 #[derive(Clone)]
-pub struct Snail<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
+pub struct Snail {
     pub pos: Vec2,
     pub prev_pos: Vec2,
     pub direction: Direction,
     pub active: bool,
 }
 
-impl<const S: usize> Snail<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    pub fn new() -> Snail<S> {
+impl Snail {
+    pub fn new() -> Snail {
         Snail {
             pos: Vec2 { x: 0, y: 0 },
             prev_pos: Vec2 { x: 0, y: 0 },
@@ -70,13 +63,9 @@ where
     pub fn draw(
         &self,
         palette: [[u8; 3]; 6],
-
         animation_cycle: bool,
         progress: f32,
-
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         let offset_y = if self.prev_pos.y != self.pos.y {
             lerpi(
@@ -102,12 +91,12 @@ where
             palette,
             animation_cycle || !self.active,
             self.direction,
-            bx + offset_x as usize,
-            by + offset_y as usize,
+            offset_x as usize,
+            offset_y as usize,
         );
     }
 
-    pub fn move_forward(&mut self, maze: &Maze<S>) -> bool {
+    pub fn move_forward(&mut self, maze: &Maze) -> bool {
         let cell = maze.get_cell(self.pos.x, self.pos.y);
         self.prev_pos = self.pos;
 

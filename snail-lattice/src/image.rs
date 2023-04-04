@@ -1,15 +1,29 @@
-use crate::{
-    direction::Direction,
-    utils::{Vec2i},
-};
+use crate::{direction::Direction, utils::Vec2i};
 
 pub struct Image<'a> {
     pub buffer: &'a mut [u8],
     pub width: usize,
     pub height: usize,
+    pub bx: usize,
+    pub by: usize,
 }
 
 impl<'a> Image<'a> {
+    pub fn new(buffer: &'a mut [u8], width: usize, height: usize) -> Image<'a> {
+        Image {
+            buffer,
+            width,
+            height,
+            bx: 0,
+            by: 0,
+        }
+    }
+
+    pub fn set_offset(&mut self, bx: usize, by: usize) {
+        self.bx = bx;
+        self.by = by;
+    }
+
     #[inline(always)]
     pub fn draw_pixel(&mut self, index: usize, pixel: [u8; 3]) {
         self.buffer[index] = pixel[0];
@@ -30,6 +44,9 @@ impl<'a> Image<'a> {
         y: usize,
         radius: i32,
     ) {
+        let x = x + self.bx;
+        let y = y + self.by;
+
         for dx in (-radius)..radius {
             for dy in (-radius)..radius {
                 if (dx * dx) + (dy * dy) < radius * radius {
@@ -49,6 +66,9 @@ impl<'a> Image<'a> {
     }
 
     pub fn draw_circle(&mut self, color: [u8; 3], x: usize, y: usize, radius: i32) {
+        let x = x + self.bx;
+        let y = y + self.by;
+
         for dx in (-radius)..radius {
             for dy in (-radius)..radius {
                 if (dx * dx) + (dy * dy) < radius * radius {
@@ -74,10 +94,8 @@ impl<'a> Image<'a> {
         w: usize,
         h: usize,
         mut color: impl FnMut() -> [u8; 3],
-        bx: usize,
-        by: usize,
     ) {
-        let px = 4 * ((y + by) * self.width + x + bx);
+        let px = 4 * ((y + self.by) * self.width + x + self.bx);
 
         for row in 0..h {
             for col in 0..w {
@@ -158,6 +176,9 @@ impl<'a> Image<'a> {
     }
 
     pub fn draw_text(&mut self, text: &str, mut x: usize, mut y: usize) {
+        x += self.bx;
+        y += self.by;
+
         let line_start = x;
 
         for c in text.chars() {
@@ -258,7 +279,7 @@ impl<'a> Image<'a> {
         for y in 0..GOAL_IMAGE_SIZE {
             for x in 0..GOAL_IMAGE_SIZE {
                 let goal_px = y * GOAL_IMAGE_SIZE + x;
-                let px = 4 * ((dy + x + 2) * self.width + dx + y + 2);
+                let px = 4 * ((self.by + dy + x + 2) * self.width + self.bx + dx + y + 2);
 
                 // not transparent
                 if goal_image[goal_px] != 255 {
@@ -278,6 +299,9 @@ impl<'a> Image<'a> {
         dx: usize,
         dy: usize,
     ) {
+        let dx = dx + self.bx;
+        let dy = dy + self.by;
+
         let snail_image = if animation_cycle {
             include_bytes!("../../assets/snail1_8x8.bin")
         } else {

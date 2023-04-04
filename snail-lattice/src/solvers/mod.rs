@@ -1,9 +1,4 @@
-use crate::{
-    image::Image,
-    lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX},
-    snail::DEFAULT_PALETTE,
-};
+use crate::{image::Image, lfsr::LFSR, maze::Maze, snail::DEFAULT_PALETTE};
 
 mod automaton;
 mod clones;
@@ -50,39 +45,32 @@ impl SolveStatus {
     }
 }
 
-pub trait Solver<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self;
-
+pub trait Solver {
     fn draw(
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        maze: &Maze,
         lfsr: &mut LFSR,
-
         image: &mut Image,
-        bx: usize,
-        by: usize,
     );
 
     fn set_upgrades(&mut self, upgrades: u32);
 
     // run upon maze generation
-    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {}
+    fn setup(&mut self, _maze: &Maze, _lfsr: &mut LFSR) {}
 
     // returns true if the step solved the maze
     // run at a fixed step rate based on movement_time
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus;
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus;
 
     fn movement_time(&self) -> f32;
 
-    fn custom_goal() -> bool {
+    fn custom_goal(&self) -> bool {
         false
     }
 
-    fn palette() -> [[u8; 3]; 6] {
+    fn palette(&self) -> [[u8; 3]; 6] {
         DEFAULT_PALETTE
     }
 }

@@ -251,11 +251,7 @@ impl FallingSnailsGame {
     }
 
     pub fn render(&self, buffer: &mut [u8]) {
-        let mut image = Image {
-            buffer,
-            width: 200,
-            height: 200,
-        };
+        let mut image = Image::new(buffer, 200, 200);
 
         for i in (0..image.buffer.len()).step_by(4) {
             image.buffer[i] = DEFAULT_PALETTE[4][0];
@@ -264,7 +260,7 @@ impl FallingSnailsGame {
             image.buffer[i + 3] = 0xff;
         }
 
-        image.draw_rectangle_with(50, 0, 100, 200, || DEFAULT_PALETTE[5], 0, 0);
+        image.draw_rectangle_with(50, 0, 100, 200, || DEFAULT_PALETTE[5]);
 
         self.draw_grid(&mut image);
 

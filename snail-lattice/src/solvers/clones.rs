@@ -1,7 +1,7 @@
 use crate::{
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE, GRAYSCALE_PALETTE},
     solvers::Solver,
 };
@@ -12,21 +12,15 @@ use super::SolveStatus;
 // - Self-Improvement:  Each Cloning Snail moves slightly faster than the last.
 // - Snail Singularity: Each Cloning Snail moves even faster than the last.
 
-pub struct Clones<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    active_snails: Vec<Snail<S>>,
-    inactive_snails: Vec<Snail<S>>,
+pub struct Clones {
+    active_snails: Vec<Snail>,
+    inactive_snails: Vec<Snail>,
     move_count: usize,
     upgrades: u32,
 }
 
-impl<const S: usize> Solver<S> for Clones<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl Clones {
+    pub fn new() -> Self {
         Clones {
             active_snails: vec![Snail::new()],
             inactive_snails: vec![],
@@ -34,7 +28,9 @@ where
             upgrades: 0,
         }
     }
+}
 
+impl Solver for Clones {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -43,10 +39,9 @@ where
         &mut self,
         animation_cycle: bool,
         mut movement_timer: f32,
+        _maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         movement_timer %= self.movement_time();
 
@@ -56,8 +51,6 @@ where
                 animation_cycle,
                 movement_timer / self.movement_time(),
                 image,
-                bx,
-                by,
             );
         }
 
@@ -67,20 +60,18 @@ where
                 animation_cycle,
                 movement_timer / self.movement_time(),
                 image,
-                bx,
-                by,
             );
         }
     }
 
-    fn setup(&mut self, _maze: &Maze<S>, _lfsr: &mut LFSR) {
+    fn setup(&mut self, _maze: &Maze, _lfsr: &mut LFSR) {
         self.move_count = 0;
         self.active_snails.clear();
         self.active_snails.push(Snail::new());
         self.inactive_snails.clear();
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, _lfsr: &mut LFSR) -> SolveStatus {
         self.move_count += 1;
         let mut new_snails = Vec::new();
 

@@ -4,7 +4,7 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
     snail::{Snail, DEFAULT_PALETTE},
     solvers::Solver,
 };
@@ -15,20 +15,14 @@ use super::SolveStatus;
 // being both way too slow and computationally intensive to be viable for this game, so we instead
 // simulate it with something aesthetically similar.
 
-struct LearningSnail<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
+struct LearningSnail {
     fitness: usize,
     counter: usize,
     moves: Vec<Direction>,
-    pub snail: Snail<S>,
+    pub snail: Snail,
 }
 
-impl<const S: usize> LearningSnail<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
+impl LearningSnail {
     fn new_random(lfsr: &mut LFSR, length: usize) -> Self {
         Self {
             fitness: usize::MAX,
@@ -47,7 +41,7 @@ where
     }
 
     fn random_moves(length: usize, lfsr: &mut LFSR) -> Vec<Direction> {
-        let mut moves = Vec::with_capacity(S * S);
+        let mut moves = Vec::new();
 
         for _ in 0..length {
             moves.push(Direction::from_number(lfsr.next().into()));
@@ -56,7 +50,7 @@ where
         moves
     }
 
-    fn crossover(&self, lfsr: &mut LFSR, other: &LearningSnail<S>) -> Vec<Direction> {
+    fn crossover(&self, lfsr: &mut LFSR, other: &LearningSnail) -> Vec<Direction> {
         let mut new_moves = self.moves.clone();
         let len = self.moves.len();
 
@@ -85,13 +79,13 @@ where
         }
     }
 
-    fn next_move(&mut self, maze: &Maze<S>, distances: &[usize]) {
+    fn next_move(&mut self, maze: &Maze, distances: &[usize]) {
         self.snail.direction = self.moves[self.counter];
         self.snail.move_forward(maze);
 
         self.counter += 1;
 
-        let dist = distances[self.snail.pos.y * S + self.snail.pos.x];
+        let dist = distances[self.snail.pos.y * maze.size + self.snail.pos.x];
         self.fitness = self.fitness.min(dist);
     }
 }
@@ -101,24 +95,31 @@ where
 /// - Uranium:         Learning Snails become more prone to beneficial mutation and faster movement, yielding more efficient solves.
 /// - Radium:          Learning Snails become more prone to beneficial mutaiton and faster movement, yielding more efficient solves.
 
-pub struct Learning<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    population: Vec<LearningSnail<S>>,
+pub struct Learning {
+    population: Vec<LearningSnail>,
     generation_timer: usize,
     generation_count: usize,
     fitness: usize,
-    distances: [usize; S * S],
+    distances: Vec<usize>,
     upgrades: u32,
     solve_sequence: Vec<Direction>,
     new_maze: bool,
 }
 
-impl<const S: usize> Learning<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
+impl Learning {
+    pub fn new() -> Self {
+        Learning {
+            population: Vec::new(),
+            generation_count: 0,
+            generation_timer: 0,
+            distances: Vec::new(),
+            solve_sequence: Vec::new(),
+            upgrades: 0,
+            fitness: 0,
+            new_maze: true,
+        }
+    }
+
     fn population_count(&self) -> usize {
         if (self.upgrades & 0b1) != 0 {
             24
@@ -132,23 +133,7 @@ where
     }
 }
 
-impl<const S: usize> Solver<S> for Learning<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
-        Learning {
-            population: Vec::new(),
-            generation_count: 0,
-            generation_timer: 0,
-            distances: [0; S * S],
-            solve_sequence: Vec::new(),
-            upgrades: 0,
-            fitness: 0,
-            new_maze: true,
-        }
-    }
-
+impl Solver for Learning {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -157,20 +142,21 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         let mut start = "generation:".to_string();
         start.push_str(&self.generation_count.to_string());
 
-        image.draw_text(&start, bx + 2, by + 1 + S * 10 - 6);
+        let height = maze.size * 10;
+
+        image.draw_text(&start, 2, 1 + height - 6);
 
         let mut start = "fitness:".to_string();
         start.push_str(&self.fitness.to_string());
 
-        image.draw_text(&start, bx + 2, by + 1 + S * 10 - 11);
+        image.draw_text(&start, 2, 1 + height - 11);
 
         for snail in self.population.iter() {
             snail.snail.draw(
@@ -178,13 +164,11 @@ where
                 animation_cycle,
                 movement_timer / self.movement_time(),
                 image,
-                bx,
-                by,
             );
         }
     }
 
-    fn step(&mut self, maze: &mut Maze<S>, lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus {
         if self.new_maze {
             maze.get_distances(maze.end_pos.x, maze.end_pos.y, &mut self.distances);
             self.solve_sequence = maze.get_solve_sequence(0, 0, maze.end_pos);

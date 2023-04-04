@@ -1,6 +1,4 @@
-#![allow(incomplete_features)]
 #![feature(drain_filter)]
-#![feature(generic_const_exprs)]
 #![feature(generic_arg_infer)]
 #![feature(test)]
 
@@ -19,16 +17,15 @@ mod utils;
 #[cfg(test)]
 mod tests {
     use crate::{
-        lattice::{MetaLattice, RpgLattice, SnailLattice},
+        lattice::WasmLattice,
         maze::{AutoMaze, SNAIL_MOVEMENT_TIME},
-        solvers::{Clones, Rpg},
     };
     use test::Bencher;
 
     #[bench]
     fn cloning_snail_tick(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<AutoMaze<100, Clones<100>>>::new(10, 0xFEAD);
-        lattice.alter(100);
+        let mut lattice = WasmLattice::new("clone", 0xFEAD);
+        lattice.alter(1000);
 
         b.iter(|| {
             lattice.tick(SNAIL_MOVEMENT_TIME);
@@ -37,9 +34,10 @@ mod tests {
 
     #[bench]
     fn cloning_snail_render(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<AutoMaze<100, Clones<100>>>::new(10, 0xFEAD);
-        lattice.alter(100);
-        lattice.tick(100000);
+        let mut lattice = WasmLattice::new("clone", 0xFEAD);
+        // let mut lattice = SnailLattice::<AutoMaze<100, Clones<100>>>::new(10, 0xFEAD);
+        lattice.alter(1000);
+        lattice.tick(100000.0);
 
         let dimensions = lattice.get_dimensions(100);
 
@@ -51,20 +49,10 @@ mod tests {
     }
 
     #[bench]
-    fn rpg_snail_tick(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<AutoMaze<100, Rpg<100>>>::new(10, 0xFEAD);
-        lattice.alter(100);
-
-        b.iter(|| {
-            lattice.tick(SNAIL_MOVEMENT_TIME);
-        });
-    }
-
-    #[bench]
-    fn rpg_snail_render(b: &mut Bencher) {
-        let mut lattice = SnailLattice::<AutoMaze<100, Rpg<100>>>::new(10, 0xFEAD);
-        lattice.alter(100);
-        lattice.tick(100000);
+    fn automaton_snail_render(b: &mut Bencher) {
+        let mut lattice = WasmLattice::new("automaton", 0xFEAD);
+        lattice.alter(1000);
+        lattice.tick(100000.0);
 
         let dimensions = lattice.get_dimensions(100);
 
@@ -75,28 +63,53 @@ mod tests {
         });
     }
 
-    #[bench]
-    fn meta_snail_tick(b: &mut Bencher) {
-        let mut lattice = MetaLattice::new(10, 0xFEAD);
-        lattice.alter(100);
-
-        b.iter(|| {
-            lattice.tick(SNAIL_MOVEMENT_TIME);
-        });
-    }
-
-    #[bench]
-    fn meta_snail_render(b: &mut Bencher) {
-        let mut lattice = MetaLattice::new(10, 0xFEAD);
-        lattice.alter(100);
-        lattice.tick(100000);
-
-        let dimensions = lattice.get_dimensions(100);
-
-        let mut buffer = vec![0; 4 * dimensions[0] * dimensions[1]];
-
-        b.iter(|| {
-            lattice.render(&mut buffer, 0, 100);
-        });
-    }
+    // #[bench]
+    // fn rpg_snail_tick(b: &mut Bencher) {
+    //     let mut lattice = SnailLattice::<AutoMaze<100, Rpg<100>>>::new(10, 0xFEAD);
+    //     lattice.alter(100);
+    //
+    //     b.iter(|| {
+    //         lattice.tick(SNAIL_MOVEMENT_TIME);
+    //     });
+    // }
+    //
+    // #[bench]
+    // fn rpg_snail_render(b: &mut Bencher) {
+    //     let mut lattice = SnailLattice::<AutoMaze<100, Rpg<100>>>::new(10, 0xFEAD);
+    //     lattice.alter(100);
+    //     lattice.tick(100000);
+    //
+    //     let dimensions = lattice.get_dimensions(100);
+    //
+    //     let mut buffer = vec![0; 4 * dimensions[0] * dimensions[1]];
+    //
+    //     b.iter(|| {
+    //         lattice.render(&mut buffer, 0, 100);
+    //     });
+    // }
+    //
+    // #[bench]
+    // fn meta_snail_tick(b: &mut Bencher) {
+    //     let mut lattice = MetaLattice::new(10, 0xFEAD);
+    //     lattice.alter(100);
+    //
+    //     b.iter(|| {
+    //         lattice.tick(SNAIL_MOVEMENT_TIME);
+    //     });
+    // }
+    //
+    // #[bench]
+    // fn meta_snail_render(b: &mut Bencher) {
+    //     let mut lattice = MetaLattice::new(10, 0xFEAD);
+    //     lattice.alter(100);
+    //     lattice.tick(100000);
+    //
+    //     let dimensions = lattice.get_dimensions(100);
+    //
+    //     let mut buffer = vec![0; 4 * dimensions[0] * dimensions[1]];
+    //
+    //     b.iter(|| {
+    //         lattice.render(&mut buffer, 0, 100);
+    //     });
+    // }
 }

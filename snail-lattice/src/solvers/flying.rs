@@ -2,8 +2,8 @@ use crate::{
     direction::Direction,
     image::Image,
     lfsr::LFSR,
-    maze::{Maze, CELLS_PER_IDX, SNAIL_MOVEMENT_TIME},
-    snail::{PHASE_2_PALETTE},
+    maze::{Maze, SNAIL_MOVEMENT_TIME},
+    snail::PHASE_2_PALETTE,
     solvers::Solver,
 };
 
@@ -26,25 +26,21 @@ fn interpolate_with_bezier(start: f32, end: f32, weight1: f32, weight2: f32, t: 
     p0 + p1 * weight1 + p2 * weight2 + p3
 }
 
-pub struct Flying<const S: usize>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
+pub struct Flying {
     upgrades: u32,
     swarm_weights: Vec<(f32, f32, f32, f32)>,
 }
 
-impl<const S: usize> Solver<S> for Flying<S>
-where
-    [usize; (S * S) / CELLS_PER_IDX + 1]: Sized,
-{
-    fn new() -> Self {
+impl Flying {
+    pub fn new() -> Self {
         Flying {
             upgrades: 0,
             swarm_weights: vec![],
         }
     }
+}
 
+impl Solver for Flying {
     fn set_upgrades(&mut self, upgrades: u32) {
         self.upgrades = upgrades;
     }
@@ -53,10 +49,9 @@ where
         &mut self,
         animation_cycle: bool,
         movement_timer: f32,
+        maze: &Maze,
         _lfsr: &mut LFSR,
         image: &mut Image,
-        bx: usize,
-        by: usize,
     ) {
         let progress = movement_timer / self.movement_time();
 
@@ -65,16 +60,26 @@ where
                 PHASE_2_PALETTE,
                 animation_cycle,
                 Direction::Right,
-                bx + interpolate_with_bezier(0.0, ((S - 1) * 10) as f32, weight1, weight2, progress)
-                    as usize,
-                by + interpolate_with_bezier(0.0, ((S - 1) * 10) as f32, weight3, weight4, progress)
-                    as usize,
+                interpolate_with_bezier(
+                    0.0,
+                    ((maze.size - 1) * 10) as f32,
+                    weight1,
+                    weight2,
+                    progress,
+                ) as usize,
+                interpolate_with_bezier(
+                    0.0,
+                    ((maze.size - 1) * 10) as f32,
+                    weight3,
+                    weight4,
+                    progress,
+                ) as usize,
             );
         }
     }
 
     //
-    fn setup(&mut self, _maze: &Maze<S>, lfsr: &mut LFSR) {
+    fn setup(&mut self, _maze: &Maze, lfsr: &mut LFSR) {
         self.swarm_weights.clear();
 
         let mut swarm_count = 6;
@@ -98,11 +103,11 @@ where
         }
     }
 
-    fn step(&mut self, _maze: &mut Maze<S>, _lfsr: &mut LFSR) -> SolveStatus {
+    fn step(&mut self, _maze: &mut Maze, _lfsr: &mut LFSR) -> SolveStatus {
         SolveStatus::Solved(self.swarm_weights.len())
     }
 
-    fn palette() -> [[u8; 3]; 6] {
+    fn palette(&self) -> [[u8; 3]; 6] {
         PHASE_2_PALETTE
     }
 

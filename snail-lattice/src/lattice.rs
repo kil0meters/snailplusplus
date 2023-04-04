@@ -24,24 +24,20 @@ pub enum MazeType {
 }
 
 pub trait TilableMaze {
-    const SIZE: usize;
-
-    fn new() -> Self;
+    fn size(&self) -> usize;
     fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> SolveStatus;
     fn set_upgrades(&mut self, upgrades: u32);
-    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize);
-    fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize);
+    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image);
+    fn draw_background(&mut self, image: &mut Image);
     fn generate(&mut self, lfsr: &mut LFSR);
 }
 
-pub struct SnailLattice<LatticeElement>
-where
-    LatticeElement: TilableMaze,
-{
+pub struct SnailLattice {
     width: usize,
-    mazes: Vec<LatticeElement>,
+    mazes: Vec<Box<dyn TilableMaze>>,
     lfsr: LFSR,
     upgrades: u32,
+    maze_size: usize,
 
     // stores the number of mazes solved by a given maze since the last query
     solve_count: Vec<u32>,
@@ -54,26 +50,20 @@ where
     render_marked: BTreeSet<usize>,
 }
 
-impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
-    pub fn new(width: usize, seed: u16) -> SnailLattice<LatticeElement> {
-        #[cfg(feature = "console_error_panic_hook")]
+impl SnailLattice {
+    pub fn new(maze_size: usize, width: usize, seed: u16) -> SnailLattice {
         set_panic_hook();
 
-        let mut lattice = SnailLattice::<LatticeElement> {
+        SnailLattice {
             width,
+            maze_size,
             upgrades: 0,
             mazes: Vec::new(),
             lfsr: LFSR::new(seed),
             solve_count: Vec::new(),
             bg_buffers: BTreeMap::new(),
             render_marked: BTreeSet::new(),
-        };
-
-        for maze in lattice.mazes.iter_mut() {
-            maze.generate(&mut lattice.lfsr);
         }
-
-        lattice
     }
 
     pub fn count(&self) -> usize {
@@ -84,8 +74,8 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         // ceiling division -> count / width
         let height = (count + self.width - 1) / self.width;
 
-        let height_px = (LatticeElement::SIZE * 10 + 1) * height;
-        let width_px = (LatticeElement::SIZE * 10 + 1) * self.width;
+        let height_px = (self.maze_size * 10 + 1) * height;
+        let width_px = (self.maze_size * 10 + 1) * self.width;
 
         vec![width_px, height_px]
     }
@@ -104,15 +94,11 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             return;
         }
 
-        let maze_size = LatticeElement::SIZE * 10 + 1;
+        let maze_size_px = self.maze_size * 10 + 1;
 
         let bg_buffer = match self.bg_buffers.get_mut(&((index << 16) + count)) {
             Some(buffer) => {
-                let mut bg_image = Image {
-                    buffer,
-                    width: dimensions[0],
-                    height: dimensions[1],
-                };
+                let mut bg_image = Image::new(buffer, dimensions[0], dimensions[1]);
 
                 let indexes = self
                     .render_marked
@@ -121,11 +107,11 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
                     .collect::<Vec<_>>();
 
                 for i in indexes {
-                    self.mazes[i].draw_background(
-                        &mut bg_image,
-                        maze_size * ((i - index) % self.width),
-                        maze_size * ((i - index) / self.width),
+                    bg_image.set_offset(
+                        maze_size_px * ((i - index) % self.width),
+                        maze_size_px * ((i - index) / self.width),
                     );
+                    self.mazes[i].draw_background(&mut bg_image);
 
                     self.render_marked.remove(&i);
                 }
@@ -135,18 +121,14 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             None => {
                 let mut bg_buffer = vec![0; buffer_size];
 
-                let mut bg_image = Image {
-                    buffer: &mut bg_buffer,
-                    width: dimensions[0],
-                    height: dimensions[1],
-                };
+                let mut bg_image = Image::new(&mut bg_buffer, dimensions[0], dimensions[1]);
 
                 for (i, maze) in self.mazes.iter_mut().skip(index).take(count).enumerate() {
-                    maze.draw_background(
-                        &mut bg_image,
-                        maze_size * (i % self.width),
-                        maze_size * (i / self.width),
+                    bg_image.set_offset(
+                        maze_size_px * (i % self.width),
+                        maze_size_px * (i / self.width),
                     );
+                    maze.draw_background(&mut bg_image);
                 }
 
                 self.bg_buffers.insert((index << 16) + count, bg_buffer);
@@ -158,20 +140,16 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
         let mut cx = 0;
         let mut cy = 0;
-
-        let mut image = Image {
-            buffer,
-            width: dimensions[0],
-            height: dimensions[1],
-        };
+        let mut image = Image::new(buffer, dimensions[0], dimensions[1]);
 
         for maze in self.mazes.iter_mut().skip(index).take(count) {
-            maze.draw_foreground(&mut self.lfsr, &mut image, cx, cy);
+            image.set_offset(cx, cy);
+            maze.draw_foreground(&mut self.lfsr, &mut image);
 
-            cx += maze_size;
+            cx += maze_size_px;
             if cx >= dimensions[0] {
                 cx = 0;
-                cy += maze_size;
+                cy += maze_size_px;
             }
         }
     }
@@ -227,7 +205,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
         total
     }
 
-    pub fn alter(&mut self, difference: i32) {
+    pub fn alter(&mut self, difference: i32, new_maze_fn: fn(usize) -> Box<dyn TilableMaze>) {
         if difference < 0 {
             for _ in 0..difference.abs() {
                 self.mazes.pop();
@@ -240,7 +218,7 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
             let mut time_offset = 0.0;
 
             for _ in 0..difference {
-                let mut new_maze = LatticeElement::new();
+                let mut new_maze = new_maze_fn(self.maze_size);
                 new_maze.set_upgrades(self.upgrades);
                 new_maze.generate(&mut self.lfsr);
 
@@ -259,32 +237,42 @@ impl<LatticeElement: TilableMaze> SnailLattice<LatticeElement> {
 
 #[wasm_bindgen]
 pub struct MetaMaze {
-    random_walk: AutoMaze<7, RandomWalk<7>>,
-    random_teleport: AutoMaze<7, RandomTeleport<7>>,
-    learning: AutoMaze<7, Learning<7>>,
-    hold_left: AutoMaze<7, HoldLeft<7>>,
-    inverted: AutoMaze<7, Inverted<7>>,
-    tremaux: AutoMaze<7, Tremaux<7>>,
-    time_travel: AutoMaze<7, TimeTravel<7>>,
-    clone: AutoMaze<7, Clones<7>>,
-    rpg: AutoMaze<7, Rpg<7>>,
+    size: usize,
+
+    random_walk: AutoMaze,
+    random_teleport: AutoMaze,
+    learning: AutoMaze,
+    hold_left: AutoMaze,
+    inverted: AutoMaze,
+    tremaux: AutoMaze,
+    time_travel: AutoMaze,
+    clone: AutoMaze,
+    rpg: AutoMaze,
+}
+
+impl MetaMaze {
+    fn new(size: usize) -> Self {
+        let size = size / 3;
+
+        MetaMaze {
+            size,
+
+            random_walk: AutoMaze::new(Box::new(RandomWalk::new()), size),
+            random_teleport: AutoMaze::new(Box::new(RandomTeleport::new()), size),
+            learning: AutoMaze::new(Box::new(Learning::new()), size),
+            hold_left: AutoMaze::new(Box::new(HoldLeft::new()), size),
+            inverted: AutoMaze::new(Box::new(Inverted::new()), size),
+            tremaux: AutoMaze::new(Box::new(Tremaux::new()), size),
+            time_travel: AutoMaze::new(Box::new(TimeTravel::new()), size),
+            clone: AutoMaze::new(Box::new(Clones::new()), size),
+            rpg: AutoMaze::new(Box::new(Rpg::new()), size),
+        }
+    }
 }
 
 impl TilableMaze for MetaMaze {
-    const SIZE: usize = 7 * 3;
-
-    fn new() -> Self {
-        MetaMaze {
-            random_walk: AutoMaze::new(),
-            random_teleport: AutoMaze::new(),
-            learning: AutoMaze::new(),
-            hold_left: AutoMaze::new(),
-            inverted: AutoMaze::new(),
-            tremaux: AutoMaze::new(),
-            time_travel: AutoMaze::new(),
-            clone: AutoMaze::new(),
-            rpg: AutoMaze::new(),
-        }
+    fn size(&self) -> usize {
+        self.size * 3
     }
 
     fn set_upgrades(&mut self, upgrades: u32) {
@@ -319,30 +307,72 @@ impl TilableMaze for MetaMaze {
         }
     }
 
-    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image, bx: usize, by: usize) {
-        self.random_walk.draw_foreground(lfsr, image, bx, by);
-        self.random_teleport
-            .draw_foreground(lfsr, image, bx + 70, by);
-        self.learning.draw_foreground(lfsr, image, bx + 140, by);
-        self.hold_left.draw_foreground(lfsr, image, bx, by + 70);
-        self.inverted.draw_foreground(lfsr, image, bx + 70, by + 70);
-        self.tremaux.draw_foreground(lfsr, image, bx + 140, by + 70);
-        self.rpg.draw_foreground(lfsr, image, bx, by + 140);
-        self.time_travel
-            .draw_foreground(lfsr, image, bx + 70, by + 140);
-        self.clone.draw_foreground(lfsr, image, bx + 140, by + 140);
+    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image) {
+        let bx = image.bx;
+        let by = image.by;
+        let size_px = self.size * 10;
+
+        self.random_walk.draw_background(image);
+
+        image.set_offset(bx + size_px, by);
+        self.random_teleport.draw_foreground(lfsr, image);
+
+        image.set_offset(bx + 2 * size_px, by);
+        self.learning.draw_foreground(lfsr, image);
+
+        image.set_offset(bx, by + size_px);
+        self.hold_left.draw_foreground(lfsr, image);
+
+        image.set_offset(bx + size_px, by + size_px);
+        self.inverted.draw_foreground(lfsr, image);
+
+        image.set_offset(bx + 2 * size_px, by + size_px);
+        self.tremaux.draw_foreground(lfsr, image);
+
+        image.set_offset(bx, by + 2 * size_px);
+        self.rpg.draw_foreground(lfsr, image);
+
+        image.set_offset(bx + size_px, by + 2 * size_px);
+        self.time_travel.draw_foreground(lfsr, image);
+
+        image.set_offset(bx + 2 * size_px, by + 2 * size_px);
+        self.clone.draw_foreground(lfsr, image);
+
+        image.set_offset(bx, by);
     }
 
-    fn draw_background(&mut self, image: &mut Image, bx: usize, by: usize) {
-        self.random_walk.draw_background(image, bx, by);
-        self.random_teleport.draw_background(image, bx + 70, by);
-        self.learning.draw_background(image, bx + 140, by);
-        self.hold_left.draw_background(image, bx, by + 70);
-        self.inverted.draw_background(image, bx + 70, by + 70);
-        self.tremaux.draw_background(image, bx + 140, by + 70);
-        self.rpg.draw_background(image, bx, by + 140);
-        self.time_travel.draw_background(image, bx + 70, by + 140);
-        self.clone.draw_background(image, bx + 140, by + 140);
+    fn draw_background(&mut self, image: &mut Image) {
+        let bx = image.bx;
+        let by = image.by;
+        let size_px = self.size * 10;
+
+        self.random_walk.draw_background(image);
+
+        image.set_offset(bx + size_px, by);
+        self.random_teleport.draw_background(image);
+
+        image.set_offset(bx + 2 * size_px, by);
+        self.learning.draw_background(image);
+
+        image.set_offset(bx, by + size_px);
+        self.hold_left.draw_background(image);
+
+        image.set_offset(bx + size_px, by + size_px);
+        self.inverted.draw_background(image);
+
+        image.set_offset(bx + 2 * size_px, by + size_px);
+        self.tremaux.draw_background(image);
+
+        image.set_offset(bx, by + 2 * size_px);
+        self.rpg.draw_background(image);
+
+        image.set_offset(bx + size_px, by + 2 * size_px);
+        self.time_travel.draw_background(image);
+
+        image.set_offset(bx + 2 * size_px, by + 2 * size_px);
+        self.clone.draw_background(image);
+
+        image.set_offset(bx, by);
     }
 
     fn generate(&mut self, lfsr: &mut LFSR) {
@@ -358,72 +388,130 @@ impl TilableMaze for MetaMaze {
     }
 }
 
-macro_rules! lattice_impl {
-    ($name:tt, $tile:ty) => {
-        #[wasm_bindgen]
-        pub struct $name(SnailLattice<$tile>);
-
-        #[wasm_bindgen]
-        impl $name {
-            #[wasm_bindgen(constructor)]
-            pub fn new(width: usize, seed: u16) -> Self {
-                Self(SnailLattice::new(width, seed))
-            }
-
-            #[wasm_bindgen]
-            pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
-                self.0.get_dimensions(count)
-            }
-
-            #[wasm_bindgen]
-            pub fn get_solve_count(&mut self) -> Vec<u32> {
-                self.0.get_solve_count()
-            }
-
-            #[wasm_bindgen]
-            pub fn set_upgrades(&mut self, upgrades: u32) {
-                self.0.set_upgrades(upgrades);
-            }
-
-            #[wasm_bindgen]
-            pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
-                self.0.render(buffer, index, count);
-            }
-
-            #[wasm_bindgen]
-            pub fn tick(&mut self, dt: f32) -> usize {
-                self.0.tick(dt)
-            }
-
-            #[wasm_bindgen]
-            pub fn alter(&mut self, difference: i32) {
-                self.0.alter(difference);
-            }
-
-            #[wasm_bindgen]
-            pub fn count(&self) -> usize {
-                self.0.mazes.len()
-            }
-
-            #[wasm_bindgen]
-            pub fn set_width(&mut self, width: usize) {
-                self.0.set_width(width);
-            }
-        }
-    };
+enum LatticeType {
+    RandomWalk,
+    RandomTeleport,
+    Learning,
+    HoldLeft,
+    Inverted,
+    Tremaux,
+    Rpg,
+    TimeTravel,
+    Clones,
+    Meta,
+    Demolitionist,
+    Telepathic,
+    Flying,
+    Automaton,
 }
 
-lattice_impl!(RandomWalkLattice, AutoMaze<5, RandomWalk<5>>);
-lattice_impl!(RandomTeleportLattice, AutoMaze<7, RandomTeleport<7>>);
-lattice_impl!(LearningLattice, AutoMaze<9, Learning<9>>);
-lattice_impl!(HoldLeftLattice, AutoMaze<9, HoldLeft<9>>);
-lattice_impl!(InvertedLattice, AutoMaze<9, Inverted<9>>);
-lattice_impl!(TremauxLattice, AutoMaze<11, Tremaux<11>>);
-lattice_impl!(RpgLattice, AutoMaze<11, Rpg<11>>);
-lattice_impl!(TimeTravelLattice, AutoMaze<13, TimeTravel<13>>);
-lattice_impl!(CloneLattice, AutoMaze<20, Clones<20>>);
-lattice_impl!(MetaLattice, MetaMaze);
-lattice_impl!(DemolitionistLattice, AutoMaze<15, Demolitionist<15>>);
-lattice_impl!(FlyingLattice, AutoMaze<15, Flying<15>>);
-lattice_impl!(TelepathicLattice, AutoMaze<11, Telepathic<11>>);
-lattice_impl!(AutomatonLattice, AutoMaze<20, Automaton<20>>);
+#[wasm_bindgen]
+pub struct WasmLattice {
+    lattice: SnailLattice,
+    lattice_type: LatticeType,
+}
+
+#[wasm_bindgen]
+impl WasmLattice {
+    #[wasm_bindgen(constructor)]
+    pub fn new(shop_key: &str, seed: u16) -> Self {
+        // see: ../../src/ShopProvider.tsx
+        let (lattice_type, width, size) = match shop_key {
+            "random-walk" => (LatticeType::RandomWalk, 4, 5),
+            "random-teleport" => (LatticeType::RandomTeleport, 3, 7),
+            "learning" => (LatticeType::Learning, 3, 9),
+            "hold-left" => (LatticeType::HoldLeft, 3, 9),
+            "inverted" => (LatticeType::Inverted, 3, 9),
+            "tremaux" => (LatticeType::Tremaux, 2, 11),
+            "rpg" => (LatticeType::Rpg, 2, 11),
+            "time-travel" => (LatticeType::TimeTravel, 2, 13),
+            "clone" => (LatticeType::Clones, 2, 20),
+            "meta" => (LatticeType::Meta, 2, 21),
+            "demolitionist" => (LatticeType::Demolitionist, 2, 15),
+            "flying" => (LatticeType::Flying, 2, 15),
+            "telepathic" => (LatticeType::Telepathic, 2, 11),
+            "automaton" => (LatticeType::Automaton, 2, 20),
+            _ => unreachable!(),
+        };
+
+        Self {
+            lattice: SnailLattice::new(size, width, seed),
+            lattice_type,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn get_dimensions(&self, count: usize) -> Vec<usize> {
+        self.lattice.get_dimensions(count)
+    }
+
+    #[wasm_bindgen]
+    pub fn get_solve_count(&mut self) -> Vec<u32> {
+        self.lattice.get_solve_count()
+    }
+
+    #[wasm_bindgen]
+    pub fn set_upgrades(&mut self, upgrades: u32) {
+        self.lattice.set_upgrades(upgrades);
+    }
+
+    #[wasm_bindgen]
+    pub fn render(&mut self, buffer: &mut [u8], index: usize, count: usize) {
+        self.lattice.render(buffer, index, count);
+    }
+
+    #[wasm_bindgen]
+    pub fn tick(&mut self, dt: f32) -> usize {
+        self.lattice.tick(dt)
+    }
+
+    #[wasm_bindgen]
+    pub fn alter(&mut self, difference: i32) {
+        macro_rules! lattice_type_match {
+            ($($name:tt),+) => (
+                match self.lattice_type {
+                    $(
+                        LatticeType::$name => self.lattice.alter(difference, |s| {
+                            Box::new(AutoMaze::new(Box::new($name::new()), s))
+                        }),
+                    )+
+
+                    LatticeType::Meta => self.lattice.alter(difference, |s| {
+                        Box::new(MetaMaze::new(s))
+                    }),
+                }
+            );
+        }
+
+        lattice_type_match!(
+            RandomWalk,
+            RandomTeleport,
+            Learning,
+            HoldLeft,
+            Inverted,
+            Tremaux,
+            Rpg,
+            TimeTravel,
+            Clones,
+            Demolitionist,
+            Flying,
+            Telepathic,
+            Automaton
+        );
+    }
+
+    #[wasm_bindgen]
+    pub fn count(&self) -> usize {
+        self.lattice.mazes.len()
+    }
+
+    #[wasm_bindgen]
+    pub fn get_width(&self) -> usize {
+        self.lattice.width
+    }
+
+    #[wasm_bindgen]
+    pub fn set_width(&mut self, width: usize) {
+        self.lattice.set_width(width);
+    }
+}
