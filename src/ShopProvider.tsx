@@ -16,7 +16,8 @@ export const SHOP_KEYS = [
     "demolitionist",
     "flying",
     "telepathic",
-    "automaton"
+    "automaton",
+    "fluid",
 ] as const;
 export type ShopKey = typeof SHOP_KEYS[number];
 
@@ -144,6 +145,14 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
     "automaton": {
         name: "Automaton Snail",
         description: "A hive mind that is able replicate itself according to the rules of a cellular automaton. Each snail which is created is counted as solving the maze.",
+        price: 20_00_000_000_000,
+        baseMultiplier: 3_000_000n,
+        latticeWidth: 2,
+        bgcolor: "#550000",
+    },
+    "fluid": {
+        name: "Fluid Snail",
+        description: "Snails are compressed into a fluid which slowly makes its way to the goal",
         price: 20_00_000_000_000,
         baseMultiplier: 3_000_000n,
         latticeWidth: 2,

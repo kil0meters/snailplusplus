@@ -7,8 +7,8 @@ use crate::{
     lfsr::LFSR,
     maze::AutoMaze,
     solvers::{
-        Automaton, Clones, Demolitionist, Flying, HoldLeft, Inverted, Learning, RandomTeleport,
-        RandomWalk, Rpg, SolveStatus, Telepathic, TimeTravel, Tremaux,
+        Automaton, Clones, Demolitionist, Fluid, Flying, HoldLeft, Inverted, Learning,
+        RandomTeleport, RandomWalk, Rpg, SolveStatus, Telepathic, TimeTravel, Tremaux,
     },
     utils::set_panic_hook,
 };
@@ -403,6 +403,7 @@ enum LatticeType {
     Telepathic,
     Flying,
     Automaton,
+    Fluid,
 }
 
 #[wasm_bindgen]
@@ -431,6 +432,7 @@ impl WasmLattice {
             "flying" => (LatticeType::Flying, 2, 15),
             "telepathic" => (LatticeType::Telepathic, 2, 11),
             "automaton" => (LatticeType::Automaton, 2, 20),
+            "fluid" => (LatticeType::Fluid, 2, 10),
             _ => unreachable!(),
         };
 
@@ -496,7 +498,8 @@ impl WasmLattice {
             Demolitionist,
             Flying,
             Telepathic,
-            Automaton
+            Automaton,
+            Fluid
         );
     }
 

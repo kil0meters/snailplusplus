@@ -1,4 +1,4 @@
-#![feature(generic_const_exprs)]
+// #![feature(generic_const_exprs)]
 
 // use snail_lattice::lattice::{MetaMaze, SnailLattice, TilableMaze};
 // use snail_lattice::maze::AutoMaze;

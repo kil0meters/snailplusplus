@@ -34,7 +34,7 @@ impl<'a> Image<'a> {
 
     #[inline(always)]
     pub fn draw_pixel_xy(&mut self, pixel: [u8; 3], x: usize, y: usize) {
-        self.draw_pixel(4 * (y * self.width + x), pixel);
+        self.draw_pixel(4 * ((y + self.by) * self.width + (x + self.bx)), pixel);
     }
 
     pub fn draw_circle_with(
