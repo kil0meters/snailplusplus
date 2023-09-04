@@ -17,7 +17,7 @@ export const SHOP_KEYS = [
     "flying",
     "telepathic",
     "automaton",
-    "fluid",
+    // "fluid",
 ] as const;
 export type ShopKey = typeof SHOP_KEYS[number];
 
@@ -150,14 +150,14 @@ export const SHOP: { [key in ShopKey]: ShopItem } = {
         latticeWidth: 2,
         bgcolor: "#550000",
     },
-    "fluid": {
-        name: "Fluid Snail",
-        description: "Snails are compressed into a fluid which slowly makes its way to the goal",
-        price: 20_00_000_000_000,
-        baseMultiplier: 3_000_000n,
-        latticeWidth: 2,
-        bgcolor: "#550000",
-    }
+    // "fluid": {
+    //     name: "Fluid Snail",
+    //     description: "Snails are compressed into a fluid which slowly makes its way to the goal",
+    //     price: 20_00_000_000_000,
+    //     baseMultiplier: 3_000_000n,
+    //     latticeWidth: 2,
+    //     bgcolor: "#550000",
+    // }
 };
 
 const SHOP_LISTINGS_DEFAULT: ShopListing[] = SHOP_KEYS.map((key) => {
