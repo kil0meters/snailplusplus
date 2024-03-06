@@ -133,7 +133,7 @@ impl Solver for Rpg {
             let target_pos = self.party[0].pos;
 
             // add any lost snails that are in the party
-            let new_snails = self.lost.drain_filter(|snail| snail.pos == target_pos);
+            let new_snails = self.lost.extract_if(|snail| snail.pos == target_pos);
 
             for mut snail in new_snails {
                 snail.prev_pos = target_pos;
@@ -186,7 +186,7 @@ impl Solver for Rpg {
                     // sidequests
                     if (self.upgrades & 0b10) != 0 && !self.party.is_empty() {
                         let target_pos = self.party[0].pos;
-                        let new_followers = self.lost.drain_filter(|lost| lost.pos == target_pos);
+                        let new_followers = self.lost.extract_if(|lost| lost.pos == target_pos);
                         self.party.extend(new_followers);
                     }
                 }

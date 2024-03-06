@@ -3,7 +3,7 @@ use std::{collections::VecDeque, mem::size_of};
 use crate::{
     direction::Direction,
     image::Image,
-    lattice::TilableMaze,
+    lattice::{MazeMesh, TilableMaze},
     lfsr::LFSR,
     solvers::{SolveStatus, Solver},
     utils::Vec2,
@@ -102,27 +102,8 @@ impl TilableMaze for AutoMaze {
         self.solver.set_upgrades(upgrades);
     }
 
-    fn draw_foreground(&mut self, lfsr: &mut LFSR, image: &mut Image) {
-        let animation_cycle = (self.clock / ANIMATION_TIME).round() as usize % 2 == 0;
-
-        // draw "snail"
-        self.solver.draw(
-            animation_cycle,
-            self.movement_timer,
-            &self.maze,
-            lfsr,
-            image,
-        );
-
-        if !self.solver.custom_goal() {
-            self.maze
-                .draw_foreground(self.solver.palette()[0], animation_cycle, image);
-        }
-    }
-
-    fn draw_background(&mut self, image: &mut Image) {
-        self.maze
-            .draw_background(self.solver.palette()[4], self.solver.palette()[5], image);
+    fn generate_mesh(&self) -> MazeMesh {
+        self.maze.mesh()
     }
 
     fn generate(&mut self, lfsr: &mut LFSR) {
@@ -150,6 +131,108 @@ impl Maze {
             },
             walls: vec![],
         }
+    }
+
+    pub fn mesh(&self) -> MazeMesh {
+        let mut vertices = vec![0.0; 2 * 4 * (self.size + 1) * (self.size + 1)];
+        let mut indices = vec![0; 3 * 4 * (self.size + 1) * (self.size + 1)];
+
+        let mut i = 0;
+        let mut ii = 0;
+        for iy in 0..=self.size {
+            let y = iy as f32;
+            for ix in 0..=self.size {
+                let x = ix as f32;
+
+                // top left
+                vertices[i * 2 + 0] = 0.0 + x;
+                vertices[i * 2 + 1] = -(0.0 + y);
+
+                // top right
+                vertices[i * 2 + 2] = 0.1 + x + if ix == self.size { 0.1 } else { 0.0 };
+                vertices[i * 2 + 3] = -(0.0 + y);
+
+                // bottom left
+                vertices[i * 2 + 4] = 0.0 + x;
+                vertices[i * 2 + 5] = -(0.1 + y) + if iy == self.size { -0.1 } else { 0.0 };
+
+                // bottom right
+                vertices[i * 2 + 6] = 0.1 + x + if ix == self.size { 0.1 } else { 0.0 };
+                vertices[i * 2 + 7] = -(0.1 + y) + if iy == self.size { -0.1 } else { 0.0 };
+
+                indices[ii] = i as u16; // TL
+                indices[ii + 1] = (i + 1) as u16; // TR
+                indices[ii + 2] = (i + 2) as u16; // BL
+
+                indices[ii + 3] = (i + 2) as u16; // BL
+                indices[ii + 4] = (i + 3) as u16; // BR
+                indices[ii + 5] = (i + 1) as u16; // TR
+
+                i += 4;
+                ii += 6;
+            }
+        }
+
+        i = 0;
+        for y in 0..self.size {
+            for x in 0..self.size {
+                if self.get_cell(x, y).has_wall(Direction::Up) {
+                    indices[ii] = (i + 1) as u16; // left-TR
+                    indices[ii + 1] = (i + 4 + 0) as u16; // right-TL
+                    indices[ii + 2] = (i + 3) as u16; // left-BR
+
+                    indices[ii + 3] = (i + 3) as u16; // left-BR
+                    indices[ii + 4] = (i + 4 + 0) as u16; // right-TL
+                    indices[ii + 5] = (i + 4 + 2) as u16; // right-BL
+
+                    ii += 6;
+                }
+
+                if self.get_cell(x, y).has_wall(Direction::Left) {
+                    indices[ii] = (i + 2) as u16; // top-BL
+                    indices[ii + 1] = (i + 3) as u16; // top-BR
+                    indices[ii + 2] = (i + 4 * (self.size + 1) + 0) as u16; // bottom-TL
+
+                    indices[ii + 3] = (i + 4 * (self.size + 1) + 0) as u16; // bottom-TL
+                    indices[ii + 4] = (i + 4 * (self.size + 1) + 1) as u16; // bottom-TR
+                    indices[ii + 5] = (i + 3) as u16; // top-BR
+
+                    ii += 6;
+                }
+
+                i += 4;
+            }
+
+            indices[ii] = (i + 2) as u16; // top-BL
+            indices[ii + 1] = (i + 3) as u16; // top-BR
+            indices[ii + 2] = (i + 4 * (self.size + 1) + 0) as u16; // bottom-TL
+
+            indices[ii + 3] = (i + 4 * (self.size + 1) + 0) as u16; // bottom-TL
+            indices[ii + 4] = (i + 4 * (self.size + 1) + 1) as u16; // bottom-TR
+            indices[ii + 5] = (i + 3) as u16; // top-BR
+
+            i += 4;
+            ii += 6;
+        }
+
+        for _x in 0..self.size {
+            indices[ii] = (i + 1) as u16; // left-TR
+            indices[ii + 1] = (i + 4 + 0) as u16; // right-TL
+            indices[ii + 2] = (i + 3) as u16; // left-BR
+
+            indices[ii + 3] = (i + 3) as u16; // left-BR
+            indices[ii + 4] = (i + 4 + 0) as u16; // right-TL
+            indices[ii + 5] = (i + 4 + 2) as u16; // right-BL
+
+            i += 4;
+            ii += 6;
+        }
+
+        return MazeMesh {
+            id: 0,
+            vertices,
+            indices,
+        };
     }
 
     pub fn remove_wall(&mut self, x: usize, y: usize, direction: Direction) {
@@ -422,53 +505,6 @@ impl Maze {
                     }
                 }
             }
-        }
-    }
-
-    pub fn draw_background(&self, fg_color: [u8; 3], bg_color: [u8; 3], image: &mut Image) {
-        let s = self.size;
-        let by = image.by;
-        let bx = image.bx;
-
-        for y in 0..(s * 10) {
-            for x in 0..s {
-                let cell = self.get_cell(x, y / 10);
-                let px = ((by + y) * image.width + bx + (x * 10)) * 4;
-
-                // Checking the bottom wall is redundant
-                if y % 10 == 0 && cell.has_wall(Direction::Up) {
-                    for l in (px..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, fg_color);
-                    }
-                } else {
-                    // if left wall, checking right wall is redundant
-                    if cell.has_wall(Direction::Left) || y % 10 == 0 {
-                        image.draw_pixel(px, fg_color);
-                    } else {
-                        image.draw_pixel(px, bg_color);
-                    }
-
-                    for l in ((px + 4)..(px + 4 * 10)).step_by(4) {
-                        image.draw_pixel(l, bg_color);
-                    }
-                }
-            }
-
-            // fill end pixel
-            let px = 4 * ((by + y) * image.width + bx + s * 10);
-            image.draw_pixel(px, fg_color);
-        }
-
-        let px = 4 * ((by + s * 10) * image.width + bx);
-        for l in (px..(px + 4 * (1 + 10 * s))).step_by(4) {
-            image.draw_pixel(l, fg_color);
-        }
-    }
-
-    fn draw_foreground(&self, goal_color: [u8; 3], animation_cycle: bool, image: &mut Image) {
-        // draw goal
-        if animation_cycle {
-            image.draw_goal(goal_color, self.end_pos.x * 10, self.end_pos.y * 10);
         }
     }
 }

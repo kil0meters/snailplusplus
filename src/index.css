@@ -2,7 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Press Start 2P";
-  src: url("../assets/font.woff2");
+.hamburger>span {
+    display: block;
+    position: absolute;
+    width: 28px;
+    height: 4px;
+    background: white;
+    left: 17px;
+
+    transition: 250ms ease-out;
+}
+
+.hamburger>span:nth-child(1) {
+    top: 16px;
+}
+
+.hamburger>span:nth-child(2) {
+    top: 26px;
+}
+
+.hamburger>span:nth-child(3) {
+    top: 36px;
+}
+
+.hamburger.clicked>span:nth-child(1) {
+    transform: translateY(10px) rotate(45deg);
+}
+
+.hamburger.clicked>span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.clicked>span:nth-child(3) {
+    transform: translateY(-10px) rotate(-45deg);
 }

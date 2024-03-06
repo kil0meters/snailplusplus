@@ -7,6 +7,8 @@
 //     RandomWalk, Rpg, Telepathic, TimeTravel, Tremaux,
 // };
 
+use snail_lattice::{image::Image, lfsr::LFSR, maze::Maze};
+
 const MAZE_COUNT: i32 = 20;
 const SECONDS: f64 = 10_000.0;
 const TICK_AMOUNT: f32 = SECONDS as f32 * 1000.0;
@@ -37,6 +39,15 @@ const TICK_AMOUNT: f32 = SECONDS as f32 * 1000.0;
 // }
 
 fn main() {
+    let mut lfsr = LFSR::new(23);
+    let mut maze = Maze::new(5);
+    maze.generate(&mut lfsr);
+
+    let mut buf = [0; 4 * 51 * 51];
+    let mut image = Image::new(&mut buf, 51, 51);
+    maze.draw_background([0x1e, 0x3a, 0x8a], [0x3b, 0x82, 0xf6], &mut image);
+    image.to_png("out.png");
+
     // run_bench::<AutoMaze<5, RandomWalk<5>>>("random-walk", 25.0, 25.0, 0b000);
     // run_bench::<AutoMaze<7, RandomTeleport<7>>>("random-teleport", 100.0, 74., 0b00);
     // run_bench::<AutoMaze<9, Learning<9>>>("learning", 1000.0, 5. * 81., 0b000);

@@ -1,3 +1,5 @@
+use image::{ImageBuffer, Rgb};
+
 use crate::{direction::Direction, utils::Vec2i};
 
 pub struct Image<'a> {
@@ -17,6 +19,25 @@ impl<'a> Image<'a> {
             bx: 0,
             by: 0,
         }
+    }
+
+    pub fn to_png(&self, path: &str) {
+        let mut img = ImageBuffer::new(self.width as u32, self.height as u32);
+        for x in 0..self.width {
+            for y in 0..self.height {
+                img.put_pixel(
+                    x as u32,
+                    y as u32,
+                    Rgb([
+                        self.buffer[4 * (y * self.height + x)],
+                        self.buffer[4 * (y * self.height + x) + 1],
+                        self.buffer[4 * (y * self.height + x) + 2],
+                    ]),
+                );
+            }
+        }
+
+        img.save(path).unwrap();
     }
 
     pub fn set_offset(&mut self, bx: usize, by: usize) {

@@ -1,34 +1,34 @@
 use crate::{image::Image, lfsr::LFSR, maze::Maze, snail::DEFAULT_PALETTE};
 
-mod automaton;
-mod clones;
-mod demolitionist;
-mod fluid;
-mod flying;
-mod hold_left;
-mod inverted;
-mod learning;
+// mod automaton;
+// mod clones;
+// mod demolitionist;
+// mod fluid;
+// mod flying;
+// mod hold_left;
+// mod inverted;
+// mod learning;
 mod random_teleport;
 mod random_walk;
-mod rpg;
-mod telepathic;
-mod time_travel;
-mod tremaux;
+// mod rpg;
+// mod telepathic;
+// mod time_travel;
+// mod tremaux;
 
-pub use automaton::Automaton;
-pub use clones::Clones;
-pub use demolitionist::Demolitionist;
-pub use fluid::Fluid;
-pub use flying::Flying;
-pub use hold_left::HoldLeft;
-pub use inverted::Inverted;
-pub use learning::Learning;
+// pub use automaton::Automaton;
+// pub use clones::Clones;
+// pub use demolitionist::Demolitionist;
+// pub use fluid::Fluid;
+// pub use flying::Flying;
+// pub use hold_left::HoldLeft;
+// pub use inverted::Inverted;
+// pub use learning::Learning;
 pub use random_teleport::RandomTeleport;
 pub use random_walk::RandomWalk;
-pub use rpg::Rpg;
-pub use telepathic::Telepathic;
-pub use time_travel::TimeTravel;
-pub use tremaux::Tremaux;
+// pub use rpg::Rpg;
+// pub use telepathic::Telepathic;
+// pub use time_travel::TimeTravel;
+// pub use tremaux::Tremaux;
 
 #[derive(Clone, Copy)]
 pub enum SolveStatus {
