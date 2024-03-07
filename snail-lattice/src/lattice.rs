@@ -25,6 +25,7 @@ pub trait TilableMaze {
     fn size(&self) -> usize;
     fn tick(&mut self, dt: f32, lfsr: &mut LFSR) -> SolveStatus;
     fn set_upgrades(&mut self, upgrades: u32);
+    fn render(&self, render_list: &mut Vec<f32>, lfsr: &mut LFSR);
     fn generate_mesh(&self) -> MazeMesh;
     fn generate(&mut self, lfsr: &mut LFSR);
 }
@@ -60,15 +61,21 @@ impl SnailLattice {
         self.mazes.len()
     }
 
-    pub fn render(&mut self, targets: Vec<usize>) -> Vec<u8> {
-        return vec![];
+    pub fn render(&mut self, targets: Vec<usize>) -> Vec<f32> {
+        let mut render_list = Vec::new();
+
+        for i in targets {
+            self.mazes[i].render(&mut render_list, &mut self.lfsr);
+        }
+
+        return render_list;
     }
 
     pub fn get_meshes(&mut self, targets: Vec<usize>) -> Vec<MazeMesh> {
         let mut meshes = Vec::new();
 
         for i in targets {
-            if (self.needs_new_mesh[i]) {
+            if self.needs_new_mesh[i] {
                 let mut new_mesh = self.mazes[i].generate_mesh();
                 new_mesh.id = i;
                 meshes.push(new_mesh);
@@ -137,7 +144,7 @@ impl SnailLattice {
                 new_maze.generate(&mut self.lfsr);
 
                 // offset time slightly
-                // new_maze.tick(time_offset, &mut self.lfsr);
+                new_maze.tick(time_offset, &mut self.lfsr);
 
                 self.mazes.push(new_maze);
                 self.solve_count.push(0);
@@ -383,6 +390,11 @@ impl WasmLattice {
     #[wasm_bindgen]
     pub fn tick(&mut self, dt: f32) -> usize {
         self.lattice.tick(dt)
+    }
+
+    #[wasm_bindgen]
+    pub fn render(&mut self, targets: Vec<usize>) -> Vec<f32> {
+        self.lattice.render(targets)
     }
 
     #[wasm_bindgen]

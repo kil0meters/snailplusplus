@@ -3,7 +3,7 @@ use crate::{
     image::Image,
     lfsr::LFSR,
     maze::{Maze, SNAIL_MOVEMENT_TIME},
-    snail::{Snail, DEFAULT_PALETTE},
+    snail::Snail,
     solvers::Solver,
 };
 
@@ -35,20 +35,9 @@ impl Solver for RandomWalk {
         self.upgrades = upgrades;
     }
 
-    fn draw(
-        &mut self,
-        animation_cycle: bool,
-        movement_timer: f32,
-        _maze: &Maze,
-        _lfsr: &mut LFSR,
-        image: &mut Image,
-    ) {
-        self.snail.draw(
-            DEFAULT_PALETTE,
-            animation_cycle,
-            movement_timer / self.movement_time(),
-            image,
-        );
+    fn render(&self, movement_timer: f32, lfsr: &mut LFSR, render_list: &mut Vec<f32>) {
+        self.snail
+            .render(movement_timer / self.movement_time(), render_list);
     }
 
     fn setup(&mut self, maze: &Maze, _lfsr: &mut LFSR) {

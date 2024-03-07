@@ -14,6 +14,8 @@ mod snail;
 pub mod solvers;
 mod utils;
 
+const SNAIL_RENDER_ID: f32 = 0.0;
+
 #[cfg(test)]
 mod tests {
     use crate::{

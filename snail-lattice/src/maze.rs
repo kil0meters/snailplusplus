@@ -106,6 +106,10 @@ impl TilableMaze for AutoMaze {
         self.maze.mesh()
     }
 
+    fn render(&self, render_list: &mut Vec<f32>, lfsr: &mut LFSR) {
+        self.solver.render(self.movement_timer, lfsr, render_list);
+    }
+
     fn generate(&mut self, lfsr: &mut LFSR) {
         self.maze.generate(lfsr);
         self.solver.setup(&self.maze, lfsr);

@@ -1,4 +1,4 @@
-use crate::{image::Image, lfsr::LFSR, maze::Maze, snail::DEFAULT_PALETTE};
+use crate::{image::Image, lfsr::LFSR, maze::Maze};
 
 // mod automaton;
 // mod clones;
@@ -48,14 +48,7 @@ impl SolveStatus {
 }
 
 pub trait Solver {
-    fn draw(
-        &mut self,
-        animation_cycle: bool,
-        movement_timer: f32,
-        maze: &Maze,
-        lfsr: &mut LFSR,
-        image: &mut Image,
-    );
+    fn render(&self, movement_timer: f32, lfsr: &mut LFSR, render_list: &mut Vec<f32>);
 
     fn set_upgrades(&mut self, upgrades: u32);
 
@@ -67,12 +60,4 @@ pub trait Solver {
     fn step(&mut self, maze: &mut Maze, lfsr: &mut LFSR) -> SolveStatus;
 
     fn movement_time(&self) -> f32;
-
-    fn custom_goal(&self) -> bool {
-        false
-    }
-
-    fn palette(&self) -> [[u8; 3]; 6] {
-        DEFAULT_PALETTE
-    }
 }

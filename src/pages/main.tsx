@@ -44,6 +44,8 @@ const Main = () => {
 
     onMount(() => {
         start();
+
+
     });
 
     addEventListener("wheel", (e) => {

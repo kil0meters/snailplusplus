@@ -1,45 +1,10 @@
 use crate::{
     image::Image,
-    utils::{lerpi, Vec2},
+    utils::{lerpf, Vec2},
+    SNAIL_RENDER_ID,
 };
 
 use super::{direction::Direction, maze::Maze};
-
-pub const DEFAULT_PALETTE: [[u8; 3]; 6] = [
-    [0xf8, 0xfc, 0x00], // yellow
-    [0xa8, 0x54, 0x50], // purple
-    [0xf8, 0x54, 0x00], // orange
-    [0xff, 0xff, 0xff], // white
-    [0x06, 0x8F, 0xEF], // light blue
-    [0x11, 0x0A, 0xEF], // dark blue
-];
-
-pub const PHASE_2_PALETTE: [[u8; 3]; 6] = [
-    [0xf8, 0xfc, 0x00], // yellow
-    [0xa8, 0x54, 0x50], // purple
-    [0xf8, 0x54, 0x00], // orange
-    [0xff, 0xff, 0xff], // white
-    [0x55, 0x00, 0x00], // light purple
-    [0x55, 0x55, 0x00], // dark purple
-];
-
-pub const INVERTED_PALETTE: [[u8; 3]; 6] = [
-    [0x07, 0x03, 0xff], // blue
-    [0x57, 0xab, 0xaf], // cyan?
-    [0x07, 0xab, 0xff], // light blue
-    [0x00, 0x00, 0x00], // black
-    [0xf9, 0x70, 0x10], // orange
-    [0xee, 0xf5, 0x10], // yellow
-];
-
-pub const GRAYSCALE_PALETTE: [[u8; 3]; 6] = [
-    [0xdf, 0xdf, 0xdf], // yellow
-    [0x6c, 0x6c, 0x6c], // purple
-    [0x7b, 0x7b, 0x7b], // orange
-    [0xff, 0xff, 0xff], // white
-    [0x70, 0x70, 0x70], // so far not relevant
-    [0x25, 0x25, 0x25], // so far not relevant
-];
 
 #[derive(Clone)]
 pub struct Snail {
@@ -60,40 +25,31 @@ impl Snail {
         }
     }
 
-    pub fn draw(
-        &self,
-        palette: [[u8; 3]; 6],
-        animation_cycle: bool,
-        progress: f32,
-        image: &mut Image,
-    ) {
+    pub fn render(&self, progress: f32, render_list: &mut Vec<f32>) {
         let offset_y = if self.prev_pos.y != self.pos.y {
-            lerpi(
-                (self.prev_pos.y * 10) as i32,
-                (self.pos.y * 10) as i32,
+            lerpf(
+                self.prev_pos.y as f32 * 10.0,
+                self.pos.y as f32 * 10.0,
                 progress,
             )
         } else {
-            (self.pos.y * 10) as i32
+            self.pos.y as f32 * 10.0
         };
 
         let offset_x = if self.prev_pos.x != self.pos.x {
-            lerpi(
-                (self.prev_pos.x * 10) as i32,
-                (self.pos.x * 10) as i32,
+            lerpf(
+                self.prev_pos.x as f32 * 10.0,
+                self.pos.x as f32 * 10.0,
                 progress,
             )
         } else {
-            (self.pos.x * 10) as i32
+            self.pos.x as f32 * 10.0
         };
 
-        image.draw_snail(
-            palette,
-            animation_cycle || !self.active,
-            self.direction,
-            offset_x as usize,
-            offset_y as usize,
-        );
+        // push to render list
+        render_list.push(SNAIL_RENDER_ID);
+        render_list.push(offset_x);
+        render_list.push(offset_y);
     }
 
     pub fn move_forward(&mut self, maze: &Maze) -> bool {

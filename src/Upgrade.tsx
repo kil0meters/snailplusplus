@@ -1,9 +1,9 @@
 import { Component, createSignal } from "solid-js"
-import { UPGRADES } from "./state/shop"
+import { UpgradeKey, UPGRADES } from "./state/shop"
 import { Popover } from "./Popover"
 
 export const Upgrade: Component<{
-    upgrade: keyof typeof UPGRADES,
+    upgrade: UpgradeKey,
     purchased: boolean,
     onClick?: (e: MouseEvent) => void
 }> = (props) => {

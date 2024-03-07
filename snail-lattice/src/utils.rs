@@ -161,9 +161,9 @@ pub fn lerpi(v1: i32, v2: i32, fact: f32) -> i32 {
     v1 + (fact * (v2 - v1) as f32).floor() as i32
 }
 
-// pub fn lerpf(v1: f32, v2: f32, fact: f32) -> f32 {
-//     v1 + (fact * (v2 - v1) as f32)
-// }
+pub fn lerpf(v1: f32, v2: f32, fact: f32) -> f32 {
+    v1 + (fact * (v2 - v1) as f32)
+}
 
 /* pub fn draw_rectangle(
     x: usize,

@@ -7,15 +7,21 @@ import globalPosition from "./state/position";
 import { SnailKey, SNAILS, SNAIL_NAMES } from "./state/shop";
 import { randomSeed } from "./util";
 
+const QUAD_VERTICES = [
+    0, 0,
+    0, 0.8,
+    0.8, 0,
+    0.8, 0.8
+];
+
 const FRAGMENT_SHADER = `
 precision mediump float;
 
 varying vec2 v_texCoord;
 uniform sampler2D u_diffuse;
-uniform vec4 u_color;
 
 void main() {
-  gl_FragColor = u_color; // texture2D(u_diffuse, v_texCoord);
+  gl_FragColor = texture2D(u_diffuse, v_texCoord);
 }
 `;
 
@@ -23,21 +29,25 @@ const VERTEX_SHADER = `
 uniform mat4 u_worldViewProjection;
 
 attribute vec4 a_position;
-attribute vec3 a_normal;
+attribute vec2 a_instance_pos;
 attribute vec2 a_texcoord;
 
 varying vec2 v_texCoord;
 
 void main() {
   v_texCoord = a_texcoord;
-  gl_Position = (u_worldViewProjection * a_position);
+  gl_Position = (u_worldViewProjection * vec4((a_position.xy + a_instance_pos), 0, 1));
 }
 `;
 
 
 function initEngine() {
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const gl = canvas.getContext("webgl2", { antialias: true });
+    const gl = canvas.getContext("webgl2", { antialias: true, alpha: true });
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
     const [globalPos, _] = globalPosition;
     twgl.setDefaults({ attribPrefix: "a_" });
 
@@ -49,10 +59,18 @@ function initEngine() {
     const viewProjection = m4.identity();
 
     function renderLattice(name: SnailKey, rect: DOMRect) {
-        const width = (rect.right - rect.left) * devicePixelRatio;
-        const height = (rect.bottom - rect.top) * devicePixelRatio;
-        const left = rect.left * devicePixelRatio;
-        const bottom = (canvas.clientHeight - rect.bottom) * devicePixelRatio;
+        const adjLeft = Math.max(rect.left, 0);
+        const adjRight = Math.min(rect.right, canvas.clientWidth);
+        const adjTop = Math.max(rect.top, 0);
+        const adjBottom = Math.min(rect.bottom, canvas.clientHeight);
+
+        const leftOffset = rect.left - adjLeft;
+        const topOffset = rect.top - adjTop;
+
+        const width = (adjRight - adjLeft) * devicePixelRatio;
+        const height = (adjBottom - adjTop) * devicePixelRatio;
+        const left = adjLeft * devicePixelRatio;
+        const bottom = (canvas.clientHeight - adjBottom) * devicePixelRatio;
         const scale = globalPos().scale;
 
         // if viewport is fully off screen
@@ -78,24 +96,25 @@ function initEngine() {
             u_world: m4.identity(),
             u_worldInverseTranspose: m4.identity(),
             u_worldViewProjection: m4.identity(),
-            u_color: [0.024, 0.561, 0.937, 1],
         };
 
         let world_initial = m4.copy(uni.u_world);
+        m4.translate(world_initial, [leftOffset / (20 * scale), -topOffset / (20 * scale), 0], world_initial);
+
         let mazes = SNAILS[name].mazes;
 
         let overflow = calculateOverflow(name, rect);
 
+        let [snail, _setSnail] = SNAILS[name].store;
         let i = 0;
-        let numMazesWidth = Math.ceil(mazeWidth / (mazeSize + 0.1));
-        let numMazesHeight = Math.ceil(mazeHeight / (mazeSize + 0.1));
+        let numMazesWidth = snail.width;
+        let numMazesHeight = snail.height;
 
         let maxVisibleHeight = numMazesHeight - overflow.bottom;
         let maxVisibleWidth = numMazesWidth - overflow.right;
 
         let visible = [];
 
-        let [snail, _setSnail] = SNAILS[name].store;
         let mazeCount = snail.count;
 
         for (let y = overflow.top; y < maxVisibleHeight; y++) {
@@ -122,35 +141,73 @@ function initEngine() {
             twgl.drawBufferInfo(gl, mazes[i]);
         }
 
+        m4.translate(world_initial, [0, 0, 1], uni.u_world);
+        m4.transpose(m4.inverse(uni.u_world, uni.u_worldInverseTranspose), uni.u_worldInverseTranspose);
+        m4.multiply(viewProjection, uni.u_world, uni.u_worldViewProjection);
+        uni.u_diffuse = textures["snail"];
+        twgl.setUniforms(programInfo, uni);
+
+        // gl.clear(gl.DEPTH_BUFFER_BIT); // TODO: probably not ideal, but i don't care for now
+
         // get all of the snails
-        // let snails = SNAIL[name].render(rendered);
+        // @ts-ignore
+        let snails = SNAILS[name].lattice.render(visible);
+
+        const quadPositions = new Float32Array(visible.length * 2);
+        for (let i = 0; i < visible.length; i++) {
+            let x = visible[i] % numMazesWidth;
+            let y = Math.floor(visible[i] / numMazesWidth);
+
+            quadPositions[i * 2] = x * (mazeSize + 0.1) + 0.1 + snails[i * 3 + 1] / 10;
+            quadPositions[i * 2 + 1] = -y * (mazeSize + 0.1) - 1 - snails[i * 3 + 2] / 10;
+        }
+
+
+        const quadTexCoords = [
+            0.0, 1,
+            0.0, 0.0,
+            8 / 18, 1,
+            8 / 18, 0.0,
+        ];
+
+        let snailBufferInfo = twgl.createBufferInfoFromArrays(gl, {
+            position: { numComponents: 2, data: QUAD_VERTICES },
+            instance_pos: { numComponents: 2, data: quadPositions, divisor: 1 },
+            texcoord: { numComponents: 2, data: quadTexCoords }
+        });
+
+        twgl.setBuffersAndAttributes(gl, programInfo, snailBufferInfo);
+        twgl.drawBufferInfo(gl, snailBufferInfo, gl.TRIANGLE_STRIP, snailBufferInfo.numElements, 0, visible.length);
     }
 
     function calculateOverflow(name: SnailKey, rect: DOMRect) {
         // size of a maze in pixels
         let mazeSize = SNAILS[name].size * 20 * globalPos().scale;
 
-        let leftOverflow = Math.floor(Math.max(-rect.left / mazeSize, 0));
-        let rightOverflow = Math.floor(Math.max((rect.right - window.innerWidth) / mazeSize, 0));
-        let topOverflow = Math.floor(Math.max(-rect.top / mazeSize, 0));
-        let bottomOverflow = Math.floor(Math.max((rect.bottom - window.innerHeight) / mazeSize, 0));
+        let leftOverflow = Math.floor(Math.max(-rect.left / mazeSize - 1, 0));
+        let rightOverflow = Math.floor(Math.max((rect.right - window.innerWidth) / mazeSize - 1, 0));
+        let topOverflow = Math.floor(Math.max(-rect.top / mazeSize - 1, 0));
+        let bottomOverflow = Math.floor(Math.max((rect.bottom - window.innerHeight) / mazeSize - 1, 0));
 
         return { left: leftOverflow, right: rightOverflow, top: topOverflow, bottom: bottomOverflow };
     }
 
     // TODO: make async
     function updateLatticeMazes(name: SnailKey, visible: number[]) {
-        const meshes = SNAILS[name].lattice.get_meshes(visible);
+        const meshes = SNAILS[name].lattice.get_meshes(new Uint32Array(visible));
 
         for (let mesh of meshes) {
             SNAILS[name].mazes[mesh.id] = twgl.createBufferInfoFromArrays(gl, {
                 position: { numComponents: 2, data: mesh.vertices },
                 indices: { numComponents: 3, data: mesh.indices },
+                instance_pos: { numComponents: 2, data: [0, 0], divisor: 1 },
             });
         }
     }
 
-    // initialize all lattices
+    let textures: Record<SnailKey, WebGLTexture> = {} as any;
+
+    // initialize all lattices, and textures
     for (let name of SNAIL_NAMES) {
         let [snail, _setSnail] = SNAILS[name].store;
         SNAILS[name].lattice = new WasmLattice(name, randomSeed());
@@ -163,16 +220,28 @@ function initEngine() {
 
             return count;
         }, 0);
+
+
+        textures[name] = twgl.createTexture(gl, {
+            src: `/assets/${name}.png`,
+            min: gl.LINEAR,
+            mag: gl.NEAREST,
+            wrap: gl.CLAMP_TO_EDGE,
+        });
     }
+
+    textures["snail"] = twgl.createTexture(gl, {
+        src: `/assets/snail.png`,
+        min: gl.LINEAR,
+        mag: gl.NEAREST,
+        wrap: gl.CLAMP_TO_EDGE,
+    });
 
     const tex = twgl.createTexture(gl, {
         min: gl.NEAREST,
         mag: gl.NEAREST,
         src: [
-            255, 255, 255, 255,
-            192, 192, 192, 255,
-            192, 192, 192, 255,
-            255, 255, 255, 255,
+            0x06, 0x8f, 0xef, 0xff,
         ],
     });
 
@@ -223,9 +292,17 @@ function initEngine() {
         }
     }
 
+    let prevTime = performance.now();
     const renderContinuously = function(time: number) {
+        let now = performance.now();
+
+        for (let name of SNAIL_NAMES) {
+            SNAILS[name].lattice.tick(now - prevTime);
+        }
+
         render(time);
         requestAnimationFrame(renderContinuously);
+        prevTime = now;
     };
     requestAnimationFrame(renderContinuously);
 }

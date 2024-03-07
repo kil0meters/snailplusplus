@@ -1,9 +1,8 @@
 import { Component, createSignal } from "solid-js";
 import globalPosition from "./state/position";
-import { SNAILS, UPGRADES } from "./state/shop";
+import { SNAILS } from "./state/shop";
 import { For } from "solid-js";
 import { Upgrade } from "./Upgrade";
-import { createStore } from "solid-js/store";
 
 const [menuShown, setMenuShown] = createSignal(true);
 
@@ -26,7 +25,7 @@ const SidebarEntry: Component<{ name: keyof typeof SNAILS }> = (props) => {
     let isHovering = false;
 
     const onClick = () => {
-        setSnail("count", (count) => count + 1);
+        setSnail("count", (count) => count + 1000);
     };
 
 
@@ -37,7 +36,7 @@ const SidebarEntry: Component<{ name: keyof typeof SNAILS }> = (props) => {
     }, 500);
 
     return (
-        <div class="p-4 flex flex-col gap-2" onMouseEnter={() => isHovering = true} onMouseLeave={() => isHovering = false}>
+        <div class="px-4 flex flex-col gap-2" onMouseEnter={() => isHovering = true} onMouseLeave={() => { isHovering = false; setSnailAnimation(true); }}>
             <div role="button" onClick={onClick} class="pointer rounded-md hover:bg-gray-800 transition-all flex text-white gap-3 select-none items-center">
                 <div class="bg-bg w-14 h-14 rounded-md flex items-center justify-center">
                     <div
@@ -74,7 +73,7 @@ const SidebarEntry: Component<{ name: keyof typeof SNAILS }> = (props) => {
 
 const SidebarBody = () => {
     return (
-        <div class={`z-ui fixed w-96 right-0 h-full top-[5.5rem] bg-black overflow-hidden border-white border-t-4 border-l-4 flex-grow rounded-tl-xl transition-all duration-300 ${menuShown() ? "" : "translate-x-96 opacity-0"}`}>
+        <div class={`z-ui fixed w-96 py-4 gap-2 right-0 h-full top-[5.5rem] bg-black overflow-hidden border-white border-t-4 border-l-4 flex flex-col flex-grow rounded-tl-xl transition-all duration-300 ${menuShown() ? "" : "translate-x-96 opacity-0"}`}>
             <SidebarEntry name="random-walk" />
             <SidebarEntry name="random-teleport" />
         </div>
